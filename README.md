@@ -1,0 +1,2 @@
+# ChronoLog
+Parallel log analyzer
