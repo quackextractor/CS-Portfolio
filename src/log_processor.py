@@ -111,24 +111,28 @@ class WriterProcess:
         self.last_flush = time.time()
 
     def run(self, queue, stop_flag):
-        try:
-            while not stop_flag.is_set() or not queue.empty():
-                self._process_queue(queue)
-                if self._should_flush():
-                    self.flush()
-        except KeyboardInterrupt:
-            print("Writer received stop signal. Flushing remaining data...")
-        finally:
-            # Ensure remaining queue items are processed before final flush
-            while not queue.empty():
-                self._process_queue(queue)
-            self.flush()
+        # open file inside the process
+        os.makedirs(os.path.dirname(self.output_path), exist_ok=True)
+        with open(self.output_path, "a", encoding="utf-8") as jsonl_file:
+            try:
+                while not stop_flag.is_set() or not queue.empty():
+                    self._process_queue(queue, jsonl_file)
+                    if self._should_flush():
+                        self.flush()
+            except KeyboardInterrupt:
+                print("Writer received stop signal. Flushing remaining data...")
+            finally:
+                while not queue.empty():
+                    self._process_queue(queue, jsonl_file)
+                self.flush()
 
-    def _process_queue(self, queue):
+    def _process_queue(self, queue, jsonl_file):
         try:
             delta_events, delta_timeline = queue.get(timeout=0.5)
             self._update_aggregated(delta_events)
             self.timeline.extend(delta_timeline)
+            for entry in delta_timeline:
+                jsonl_file.write(json.dumps(entry, ensure_ascii=False) + "\n")
         except Exception:
             pass
 
@@ -145,8 +149,15 @@ class WriterProcess:
         return False
 
     def flush(self):
+        # Only the summary/dashboard is rewritten in JSON
         dashboard = self._build_dashboard()
-        self._write_dashboard(dashboard)
+        dashboard_path = self.output_path + ".summary.json"
+        try:
+            with open(dashboard_path + ".tmp", "w", encoding="utf-8") as f:
+                json.dump(dashboard, f)
+            os.replace(dashboard_path + ".tmp", dashboard_path)
+        except Exception:
+            pass
 
     def _build_dashboard(self):
         summary = {
@@ -155,7 +166,7 @@ class WriterProcess:
         }
         metrics = self._compute_metrics()
         summary["metrics"] = metrics
-        return {"summary": summary, "timeline": self.timeline}
+        return {"summary": summary, "timeline_count": len(self.timeline)}
 
     def _compute_metrics(self):
         counts = {}
@@ -166,16 +177,6 @@ class WriterProcess:
                 counts[name] = counts.get(name, 0) + 1
                 sums[name] = sums.get(name, 0) + t["value"]
         return {name: {"count": cnt, "average": sums[name] / cnt if cnt else 0} for name, cnt in counts.items()}
-
-    def _write_dashboard(self, dashboard):
-        try:
-            os.makedirs(os.path.dirname(self.output_path), exist_ok=True)
-            tmp = self.output_path + ".tmp"
-            with open(tmp, "w", encoding="utf-8") as f:
-                json.dump(dashboard, f)
-            os.replace(tmp, self.output_path)
-        except Exception:
-            pass
 
 
 class LogProcessor:
