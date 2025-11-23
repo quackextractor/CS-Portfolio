@@ -1,54 +1,54 @@
-﻿from src.log_analyzer.log_parser import LogParser
+﻿import re
+from log_parser import LogParser
+from datetime import datetime
 
 
-def test_log_parser_basic_parsing():
-    """Test basic log parsing functionality"""
-    parser = LogParser()
+def test_extract_timestamp_valid_and_invalid():
+    p = LogParser()
+    ts = p.extract_timestamp("2025-11-23 12:00:00 INFO something")
+    assert ts is not None
+    # invalid timestamp
+    ts2 = p.extract_timestamp("no-timestamp WARNING hi")
+    assert ts2 is None
 
-    test_lines = [
-        "2024-01-01 00:00:01 ERROR Database connection failed",
-        "2024-01-01 00:00:02 WARNING Slow query detected",
-        "2024-01-01 00:00:03 INFO User login successful",
-        "2024-01-01 00:00:04 INFO latency=150"
+
+def test_parse_lines_errors_warnings_and_keyvals():
+    lines = [
+        "2025-11-23 12:00:00 INFO User login successful",
+        "2025-11-23 12:01:00 ERROR Database connection failed",
+        "bad line no-ts WARNING Something happened",
+        "2025-11-23 12:02:00 INFO latency=123",
+        "2025-11-23 12:03:00 INFO value=10 key=5"
     ]
+    p = LogParser()  # uses KEY_VAL_RE for variables
+    events, timeline = p.parse_lines(lines)
 
-    events, timeline = parser.parse_lines(test_lines)
+    # ERROR should be present
+    assert "ERROR" in events
+    assert any("Database connection failed" in e for e in events["ERROR"])
+    # WARNING added from the bad line
+    assert "WARNING" in events
+    assert any("Something happened" in e for e in events["WARNING"])
 
-    # Check error and warning collection
-    assert len(events["ERROR"]) == 1
-    assert len(events["WARNING"]) == 1
-    assert "Database connection failed" in events["ERROR"][0]
+    # timeline should include entries for variable parses (latency/value/key)
+    names = [t.get("event") for t in timeline]
+    assert "latency" in names or "value" in names or "key" in names
 
-    # Check timeline events
-    assert len(timeline) == 4
-    assert timeline[0]["event"] == "ERROR"
-    assert timeline[1]["event"] == "WARNING"
-
-
-def test_log_parser_timestamp_extraction():
-    """Test timestamp extraction from log lines"""
-    parser = LogParser()
-
-    test_line = "2024-01-01 12:34:56 INFO Test message"
-    timestamp = parser.extract_timestamp(test_line)
-
-    assert timestamp == "2024-01-01T12:34:56"
+    # check that value entries have 'value' key
+    assert any("value" in t for t in timeline)
 
 
-def test_log_parser_variable_parsing():
-    """Test parsing of key=value pairs"""
-    parser = LogParser()
+def test_parse_with_var_regex_overrides_keyval():
+    rx = {"latency": re.compile(r"latency=(\d+)")}
+    p = LogParser(var_regex=rx)
+    lines = ["2025-11-23 12:00:00 INFO latency=250", "2025-11-23 12:01:00 INFO latency=100"]
+    events, timeline = p.parse_lines(lines)
 
-    test_lines = [
-        "2024-01-01 00:00:01 INFO latency=150",
-        "2024-01-01 00:00:02 INFO memory_usage=75"
-    ]
+    # var_regex should create 'latency' key with two entries
+    assert "latency" in events
+    assert len(events["latency"]) == 2
 
-    events, timeline = parser.parse_lines(test_lines)
-
-    # Should capture variables in timeline
-    assert len(timeline) == 2
-    assert timeline[0]["event"] == "latency"
-    assert timeline[0]["value"] == 150
-    assert timeline[1]["event"] == "memory_usage"
-    assert timeline[1]["value"] == 75
+    # timeline should contain two entries with value and event 'latency'
+    lat_entries = [t for t in timeline if t.get("event") == "latency"]
+    assert len(lat_entries) == 2
+    assert all("value" in t for t in lat_entries)

@@ -1,6 +1,7 @@
-﻿import tempfile
-import os
-from bin.generate_sample_log import generate_log_line, main
+﻿import os
+import tempfile
+
+from bin.generate_sample_log import generate_log_line
 
 
 def test_generate_log_line():

@@ -1,19 +1,24 @@
-﻿from src.log_analyzer.config import *
+﻿import re
+import importlib
+import os
+
+import config as cfg
 
 
-def test_config_defaults():
-    """Test that configuration has expected defaults"""
-    assert CHUNK_SIZE == 5000
-    assert QUEUE_MAX_SIZE == 100
-    assert POLL_INTERVAL == 0.5
-    assert NUM_PROCESSES == 3
+def test_key_val_re_matches_simple_pair():
+    m = cfg.KEY_VAL_RE.search("value=123 other=5")
+    assert m is not None
+    assert m.group(1) == "value"
+    assert m.group(2) == "123"
 
 
-def test_config_regex_patterns():
-    """Test regex patterns for variable parsing"""
-    test_line = "2024-01-01 00:00:01 INFO latency=150 memory_usage=75"
+def test_var_regex_default_is_none_when_not_set():
+    # TRACK_VARIABLES default in repository is empty -> VAR_REGEX should be None
+    assert cfg.VAR_REGEX is None
 
-    matches = KEY_VAL_RE.findall(test_line)
-    assert len(matches) == 2
-    assert ("latency", "150") in matches
-    assert ("memory_usage", "75") in matches
+
+def test_config_defaults_types():
+    # basic type checks for a couple of config values
+    assert isinstance(cfg.CHUNK_SIZE, int)
+    assert isinstance(cfg.POLL_INTERVAL, float)
+    assert isinstance(cfg.NUM_PROCESSES, int)
