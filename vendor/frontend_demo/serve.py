@@ -2,10 +2,10 @@
 import os, json, math
 
 app = Flask(__name__)
-BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 OUTPUT_FILE = os.path.join(BASE_DIR, "output", "output.json")
 SUMMARY_FILE = os.path.join(BASE_DIR, "output", "output.json.summary.json")
-PUBLIC_DIR = os.path.join(BASE_DIR, "public")
+PUBLIC_DIR = os.path.join(BASE_DIR, "vendor", "frontend_demo", "public")
 
 @app.route('/')
 def index():
