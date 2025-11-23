@@ -15,6 +15,9 @@ body { padding: 20px; background: #f8f9fa; }
 .timeline-entry.warning { background: #fff7e6; }
 .timeline-entry.info    { background: #eef9ff; }
 .small-muted { color: #666; font-size: .9rem; }
+.msg-charts { display:flex; flex-wrap:wrap; gap:12px; align-items:stretch; }
+.msg-card { width: 320px; flex: 0 0 320px; }
+.msg-card canvas { width:100%; height:140px; }
 </style>
 </head>
 <body>
@@ -32,6 +35,15 @@ body { padding: 20px; background: #f8f9fa; }
             <div class="card p-3">
                 <h5 class="card-title">Counts</h5>
                 <canvas id="eventChart" height="160"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="mb-3">
+        <div class="card p-3">
+            <h5 class="card-title mb-2">Message metrics (per-template charts)</h5>
+            <div id="messageCharts" class="msg-charts">
+                <!-- message charts will be appended here -->
             </div>
         </div>
     </div>
@@ -65,6 +77,7 @@ let currentPage = 1;
 let perPage = parseInt(document.getElementById('per-page').value, 10) || 30;
 let totalEvents = null; // will read from summary.timeline_count
 let latencyChart = null, eventChart = null;
+const messageCharts = {}; // id -> Chart instance
 
 async function fetchJSON(path) {
     const resp = await fetch(path);
@@ -81,10 +94,29 @@ function humanizeTemplate(t) {
     return t;
 }
 
+function interpolateTemplate(t, vals) {
+    if (!t) return "";
+    let i = 0;
+    return t.replace(/\{num\}/g, () => {
+        if (Array.isArray(vals) && i < vals.length) {
+            const v = vals[i++];
+            return String(v);
+        }
+        i++;
+        return '…';
+    });
+}
+
 function resolveMessage(e) {
-    // If the entry carries a msg_id, resolve to the template (we can't restore numbers)
+    // If the entry carries a msg_id, resolve to the template and inject msg_values if present
     if (e.msg_id !== undefined && templates[String(e.msg_id)] !== undefined) {
-        return humanizeTemplate(templates[String(e.msg_id)]);
+        const tpl = templates[String(e.msg_id)];
+        if (Array.isArray(e.msg_values) && e.msg_values.length > 0) {
+            // reconstruct numeric placeholders with provided values
+            return interpolateTemplate(tpl, e.msg_values);
+        }
+        // no values: show a human-friendly template (numbers elided)
+        return humanizeTemplate(tpl);
     }
     // If it has value, show value
     if (e.value !== undefined) {
@@ -110,10 +142,15 @@ function renderTimeline(entries) {
         const time = e.time ? `[${e.time}] ` : '';
         const msg = resolveMessage(e);
         d.innerHTML = `<div><strong>${time}${(e.event||'').toUpperCase()}</strong></div>
-                       <div class="small-muted">${msg}</div>`;
+                       <div class="small-muted">${escapeHtml(msg)}</div>`;
         frag.appendChild(d);
     });
     container.appendChild(frag);
+}
+
+function escapeHtml(s) {
+    if (!s) return '';
+    return s.replace(/[&<>"']/g, function(m){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]); });
 }
 
 async function loadTemplates() {
@@ -132,7 +169,7 @@ async function loadSummaryAndCharts() {
     try {
         const s = await fetchJSON('/summary');
         if (s && s.timeline_count !== undefined) totalEvents = s.timeline_count;
-        // build/refresh charts
+
         // latency timeseries last N points
         const points = await fetchJSON('/timeseries?metric=latency&limit=500');
         const labels = points.map(p => p.time);
@@ -166,6 +203,67 @@ async function loadSummaryAndCharts() {
             eventChart.data.datasets[0].data = [errors,warnings];
             eventChart.update();
         }
+
+        // per-message charts: for each template try to fetch timeseries; create chart if any points
+        const msgContainer = document.getElementById('messageCharts');
+        // keep track of which ids we saw this round; remove obsolete charts
+        const seenIds = new Set();
+
+        const templateIds = Object.keys(templates || {});
+        await Promise.all(templateIds.map(async (id) => {
+            try {
+                const points = await fetchJSON(`/timeseries?metric=msg_${id}&limit=500`);
+                if (!points || points.length === 0) {
+                    return;
+                }
+                seenIds.add(id);
+                // prepare labels/values
+                const labels = points.map(p => p.time);
+                const values = points.map(p => p.value);
+
+                // create container/card for this chart if not exists
+                let card = document.getElementById(`msg-card-${id}`);
+                if (!card) {
+                    card = document.createElement('div');
+                    card.className = 'card p-2 msg-card';
+                    card.id = `msg-card-${id}`;
+                    card.innerHTML = `<div class="small-muted mb-1">${escapeHtml(humanizeTemplate(templates[id]))}</div>
+                                      <canvas id="msgChart-${id}"></canvas>`;
+                    msgContainer.appendChild(card);
+                }
+                const ctx = document.getElementById(`msgChart-${id}`).getContext('2d');
+
+                // update or create chart instance
+                if (!messageCharts[id]) {
+                    messageCharts[id] = new Chart(ctx, {
+                        type: 'line',
+                        data: { labels, datasets: [{ label: `msg_${id}`, data: values, fill:false, pointRadius:1 }] },
+                        options: { plugins:{legend:{display:false}}, scales: { x: { display: false } } }
+                    });
+                } else {
+                    messageCharts[id].data.labels = labels;
+                    messageCharts[id].data.datasets[0].data = values;
+                    messageCharts[id].update();
+                }
+            } catch (err) {
+                // ignore per-message errors
+                console.warn('message chart load failed for id', id, err);
+            }
+        }));
+
+        // remove any message chart DOM + chart object for ids not seen
+        Object.keys(messageCharts).forEach(existingId => {
+            if (!seenIds.has(existingId)) {
+                // destroy chart and remove element
+                try {
+                    messageCharts[existingId].destroy();
+                } catch (e) {}
+                delete messageCharts[existingId];
+                const el = document.getElementById(`msg-card-${existingId}`);
+                if (el && el.parentNode) el.parentNode.removeChild(el);
+            }
+        });
+
     } catch (err) {
         console.warn('chart load failed', err);
     }

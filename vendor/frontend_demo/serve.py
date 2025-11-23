@@ -1,10 +1,11 @@
-﻿from flask import Flask, send_from_directory, jsonify, request, abort
-import os, json, math
+﻿from flask import Flask, send_from_directory, jsonify, request
+import os, json
 
 app = Flask(__name__)
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-OUTPUT_FILE = os.path.join(BASE_DIR, "output", "output.json")
-SUMMARY_FILE = os.path.join(BASE_DIR, "output", "output.json.summary.json")
+MESSAGES_FILE = os.path.join(BASE_DIR, "output", "messages.jsonl")
+TIMELINE_FILE = os.path.join(BASE_DIR, "output", "timeline.jsonl")
+SUMMARY_FILE = os.path.join(BASE_DIR, "output", "summary.json")
 PUBLIC_DIR = os.path.join(BASE_DIR, "vendor", "frontend_demo", "public")
 
 @app.route('/')
@@ -16,19 +17,25 @@ def summary():
     if not os.path.exists(SUMMARY_FILE):
         return jsonify({}), 404
     with open(SUMMARY_FILE, 'r', encoding='utf-8') as f:
-        return jsonify(json.load(f))
+        try:
+            return jsonify(json.load(f))
+        except Exception:
+            return jsonify({}), 500
 
 @app.route('/messages')
 def messages():
     templates = {}
-    if not os.path.exists(OUTPUT_FILE):
+    if not os.path.exists(MESSAGES_FILE):
         return jsonify(templates)
-    with open(OUTPUT_FILE, 'r', encoding='utf-8') as f:
+    with open(MESSAGES_FILE, 'r', encoding='utf-8') as f:
         for line in f:
+            line = line.strip()
+            if not line:
+                continue
             try:
                 obj = json.loads(line)
                 if "template" in obj and "id" in obj:
-                    templates[int(obj["id"])] = obj["template"]
+                    templates[str(int(obj["id"]))] = obj["template"]
             except Exception:
                 continue
     return jsonify(templates)
@@ -40,18 +47,21 @@ def timeline_page():
     start_idx = (page - 1) * per_page
     end_idx = page * per_page
 
-    if not os.path.exists(OUTPUT_FILE):
+    if not os.path.exists(TIMELINE_FILE):
         return jsonify([])
 
     result = []
     seen = 0
-    with open(OUTPUT_FILE, 'r', encoding='utf-8') as f:
+    with open(TIMELINE_FILE, 'r', encoding='utf-8') as f:
         for line in f:
+            line = line.strip()
+            if not line:
+                continue
             try:
                 obj = json.loads(line)
             except Exception:
                 continue
-            # skip template definitions
+            # skip template definitions if any (messages file should hold those)
             if "template" in obj:
                 continue
             # this is an event row
@@ -65,24 +75,81 @@ def timeline_page():
 
 @app.route('/timeseries')
 def timeseries():
+    """
+    Supported metric values:
+      - latency          => collects events where event == 'latency' and 'value' present
+      - msg_<id>         => collects events where msg_id == <id> and msg_values present (takes first msg_value)
+      - any event name   => if event matches and contains 'value' or 'msg_values' (first) it will be used
+    Returns list of {time, value}
+    """
     metric = request.args.get('metric', 'latency')
     limit = max(1, min(5000, int(request.args.get('limit', 500))))
 
-    if not os.path.exists(OUTPUT_FILE):
+    if not os.path.exists(TIMELINE_FILE):
         return jsonify([])
 
     points = []
-    # collect matching events (value present and event==metric or event name equals metric)
-    with open(OUTPUT_FILE, 'r', encoding='utf-8') as f:
-        for line in f:
+    try:
+        # try to detect msg_<id>
+        msg_id = None
+        if metric.startswith('msg_'):
             try:
-                obj = json.loads(line)
+                msg_id = int(metric.split('_', 1)[1])
             except Exception:
-                continue
-            if "template" in obj:
-                continue
-            if "value" in obj and (obj.get("event") == metric or obj.get("event").lower() == metric.lower()):
-                points.append({"time": obj.get("time"), "value": obj.get("value")})
+                msg_id = None
+
+        with open(TIMELINE_FILE, 'r', encoding='utf-8') as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    obj = json.loads(line)
+                except Exception:
+                    continue
+
+                # latency metric
+                if metric.lower() == 'latency':
+                    if obj.get('event', '').lower() == 'latency' and 'value' in obj:
+                        try:
+                            v = float(obj.get('value'))
+                        except Exception:
+                            v = obj.get('value')
+                        points.append({"time": obj.get("time"), "value": v})
+                    continue
+
+                # explicit msg_<id>
+                if msg_id is not None:
+                    if obj.get('msg_id') == msg_id and isinstance(obj.get('msg_values'), list) and len(obj.get('msg_values')) > 0:
+                        first = obj.get('msg_values')[0]
+                        # try parse numeric
+                        try:
+                            v = float(first)
+                        except Exception:
+                            # not numeric, skip
+                            continue
+                        points.append({"time": obj.get("time"), "value": v})
+                    continue
+
+                # fallback: match by event name
+                if obj.get('event', '').lower() == metric.lower():
+                    if 'value' in obj:
+                        try:
+                            v = float(obj.get('value'))
+                        except Exception:
+                            v = obj.get('value')
+                        points.append({"time": obj.get("time"), "value": v})
+                    elif isinstance(obj.get('msg_values'), list) and len(obj.get('msg_values')) > 0:
+                        first = obj.get('msg_values')[0]
+                        try:
+                            v = float(first)
+                        except Exception:
+                            continue
+                        points.append({"time": obj.get("time"), "value": v})
+                    # else ignore non-numeric
+    except Exception:
+        return jsonify([])
+
     if len(points) > limit:
         points = points[-limit:]
     return jsonify(points)

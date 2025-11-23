@@ -3,7 +3,7 @@ import re
 
 # Config
 INPUT_FILE_PATH = os.getenv("INPUT_FILE_PATH", "../input/sample.log")
-OUTPUT_PATH = os.getenv("OUTPUT_PATH", "../output/output.json")
+OUTPUT_PATH = os.getenv("OUTPUT_PATH", "../output/")
 CHUNK_SIZE = int(os.getenv("CHUNK_SIZE", "5000"))
 QUEUE_MAX_SIZE = int(os.getenv("QUEUE_MAX_SIZE", "100"))
 POLL_INTERVAL = float(os.getenv("POLL_INTERVAL", "0.5"))
