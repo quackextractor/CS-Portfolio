@@ -18,26 +18,24 @@ class WriterProcess:
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
         self.timeline_path = self.output_dir / "timeline.jsonl"
-        self.msg_file_path = self.output_dir / "messages.jsonl"
+        self.msg_file_path = self.output_dir / "messages.json"  # single JSON file
         self.summary_path = self.output_dir / "summary.json"
 
     def run(self, queue, stop_flag):
-        with open(self.timeline_path, "a", encoding="utf-8") as timeline_file, \
-             open(self.msg_file_path, "a", encoding="utf-8") as msg_file:
-
+        with open(self.timeline_path, "a", encoding="utf-8") as timeline_file:
             try:
                 while not stop_flag.is_set() or not queue.empty():
-                    self._process_queue(queue, timeline_file, msg_file)
+                    self._process_queue(queue, timeline_file)
                     if self._should_flush():
                         self.flush()
             except KeyboardInterrupt:
                 pass
             finally:
                 while not queue.empty():
-                    self._process_queue(queue, timeline_file, msg_file)
+                    self._process_queue(queue, timeline_file)
                 self.flush()
 
-    def _process_queue(self, queue, timeline_file, msg_file):
+    def _process_queue(self, queue, timeline_file):
         try:
             delta_events, delta_timeline = queue.get(timeout=0.5)
             self._update_aggregated(delta_events)
@@ -55,11 +53,6 @@ class WriterProcess:
                         msg_id = self.msg_id_counter
                         self.msg_store[tmpl] = msg_id
                         self.msg_id_counter += 1
-
-                        msg_file.write(json.dumps(
-                            {"id": msg_id, "template": tmpl},
-                            ensure_ascii=False
-                        ) + "\n")
 
                     entry["msg_id"] = msg_id
                     if nums:
@@ -87,11 +80,22 @@ class WriterProcess:
 
     def flush(self):
         dashboard = self._build_dashboard()
-        tmp = str(self.summary_path) + ".tmp"
+        tmp_summary = str(self.summary_path) + ".tmp"
         try:
-            with open(tmp, "w", encoding="utf-8") as f:
+            with open(tmp_summary, "w", encoding="utf-8") as f:
                 json.dump(dashboard, f)
-            os.replace(tmp, self.summary_path)
+            os.replace(tmp_summary, self.summary_path)
+        except Exception:
+            pass
+
+        # overwrite messages.json atomically
+        tmp_msgs = str(self.msg_file_path) + ".tmp"
+        try:
+            msgs = [{"id": mid, "template": tmpl} for tmpl, mid in self.msg_store.items()]
+            msgs.sort(key=lambda x: x["id"])
+            with open(tmp_msgs, "w", encoding="utf-8") as f:
+                json.dump(msgs, f, ensure_ascii=False)
+            os.replace(tmp_msgs, self.msg_file_path)
         except Exception:
             pass
 

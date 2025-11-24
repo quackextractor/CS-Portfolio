@@ -3,7 +3,7 @@ import os, json
 
 app = Flask(__name__)
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-MESSAGES_FILE = os.path.join(BASE_DIR, "output", "messages.jsonl")
+MESSAGES_FILE = os.path.join(BASE_DIR, "output", "messages.json")
 TIMELINE_FILE = os.path.join(BASE_DIR, "output", "timeline.jsonl")
 SUMMARY_FILE = os.path.join(BASE_DIR, "output", "summary.json")
 PUBLIC_DIR = os.path.join(BASE_DIR, "vendor", "frontend_demo", "public")
@@ -24,21 +24,16 @@ def summary():
 
 @app.route('/messages')
 def messages():
-    templates = {}
     if not os.path.exists(MESSAGES_FILE):
+        return jsonify({})
+
+    try:
+        with open(MESSAGES_FILE, 'r', encoding='utf-8') as f:
+            objs = json.load(f)  # load full array
+        templates = {str(obj["id"]): obj["template"] for obj in objs if "id" in obj and "template" in obj}
         return jsonify(templates)
-    with open(MESSAGES_FILE, 'r', encoding='utf-8') as f:
-        for line in f:
-            line = line.strip()
-            if not line:
-                continue
-            try:
-                obj = json.loads(line)
-                if "template" in obj and "id" in obj:
-                    templates[str(int(obj["id"]))] = obj["template"]
-            except Exception:
-                continue
-    return jsonify(templates)
+    except Exception:
+        return jsonify({}), 500
 
 @app.route('/timeline')
 def timeline_page():
