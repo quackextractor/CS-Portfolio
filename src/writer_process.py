@@ -2,11 +2,12 @@
 import os
 import re
 import time
+from pathlib import Path
 from config import OUTPUT_PATH, WRITER_FLUSH_INTERVAL
 
 class WriterProcess:
     def __init__(self, output_path=OUTPUT_PATH, flush_interval=WRITER_FLUSH_INTERVAL):
-        self.output_dir = output_path
+        self.output_dir = Path(output_path).resolve()
         self.flush_interval = flush_interval
         self.aggregated = {}
         self.timeline = []
@@ -14,11 +15,11 @@ class WriterProcess:
         self.msg_id_counter = 0
         self.last_flush = time.time()
 
-        os.makedirs(self.output_dir, exist_ok=True)
+        self.output_dir.mkdir(parents=True, exist_ok=True)
 
-        self.timeline_path = os.path.join(self.output_dir, "timeline.jsonl")
-        self.msg_file_path = os.path.join(self.output_dir, "messages.jsonl")
-        self.summary_path = os.path.join(self.output_dir, "summary.json")
+        self.timeline_path = self.output_dir / "timeline.jsonl"
+        self.msg_file_path = self.output_dir / "messages.jsonl"
+        self.summary_path = self.output_dir / "summary.json"
 
     def run(self, queue, stop_flag):
         with open(self.timeline_path, "a", encoding="utf-8") as timeline_file, \
@@ -46,7 +47,6 @@ class WriterProcess:
 
                 if msg_key:
                     stripped = re.sub(r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} ", "", msg_key)
-
                     nums = re.findall(r"\b\d+\b", stripped)
                     tmpl = re.sub(r"\b\d+\b", "{num}", stripped)
 
@@ -87,7 +87,7 @@ class WriterProcess:
 
     def flush(self):
         dashboard = self._build_dashboard()
-        tmp = self.summary_path + ".tmp"
+        tmp = str(self.summary_path) + ".tmp"
         try:
             with open(tmp, "w", encoding="utf-8") as f:
                 json.dump(dashboard, f)
