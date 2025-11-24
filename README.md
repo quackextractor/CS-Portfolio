@@ -1,50 +1,104 @@
+
 # ChronoLog
-Parallel log analyzer
+Parallel log analyzer for large log files with live and batch processing modes, metrics tracking, and web-based visualization.
+
+## Overview
+ChronoLog is a high-performance log analyzer designed to efficiently process large logs. 
+It can detect errors, warnings, custom metrics, and latency events over time, producing JSON outputs for timelines, summaries, and message templates. 
+A lightweight frontend dashboard allows visual exploration of logs and metrics.
+
+## Features
+- Parallel processing using multiple worker processes
+- Incremental (live) or batch processing modes
+- Automatic detection of key-value metrics in logs
+- Aggregated outputs: timeline, summary, and message templates
+- Frontend dashboard for event visualization and metrics plotting
 
 ## Requirements
-- Modern python installed and added to system PATH
+- Python 3.9+ installed and added to system PATH
   - [Official Python download](https://www.python.org/downloads/)
   - [Adding python to PATH - geeksforgeeks.org](https://www.geeksforgeeks.org/python/how-to-add-python-to-windows-path/)
 
-
 ### Installing dependencies (optional)
-Needed for the frontend demo in `/vendor/`
-
+Needed for the frontend demo in `/vendor/`:
 ```commandline
 pip install -r requirements.txt
+````
+
+## Configuration
+
+ChronoLog can be customized via environment variables (see `.env.example`):
+## Processing Modes
+
+* `batch` (default): reads current log file and exits
+* `live`: tails the log file and processes new entries continuously
+
+You can switch modes using:
+
+```commandline
+python src/main.py --mode live
 ```
 
 ## Running Unit Tests
+
 ```commandline
 set PYTHONPATH=%CD%\src
 python -m unittest discover -s tests -v
 ```
 
-or 
+or
 
 ```commandline
 python tests/run_all_tests.py
 ```
 
 ## Running the project
+
 ### 1. Generating a sample log
+
 ```commandline
 python bin/generate_sample_log.py
 ```
 
 ### 2. Analyzing using ChronoLog
+
 ```commandline
 python src/main.py
 ```
 
-### 3. Running FrontEnd Demo
-Dependencies need to be installed for this. [Guide Here](#installing-dependencies-optional)
+### 3. Running Frontend Demo
+
+Dependencies must be installed. Then:
+
 ```commandline
 python vendor/frontend_demo/serve.py
 ```
-Running on http://127.0.0.1:8000
+
+Open [http://127.0.0.1:8000](http://127.0.0.1:8000) in a browser to explore logs and metrics.
+
+## Output Files
+
+ChronoLog stores results in the output directory:
+
+* `timeline.jsonl` — chronological list of events
+* `messages.json` — unique message templates with IDs
+* `summary.json` — aggregated statistics (error/warning counts, metrics)
 
 ## Cleanup
+
 ```commandline
 python bin/util_clear_dirs.py
 ```
+
+## Performance Tips
+
+* Adjust `CHUNK_SIZE` and `NUM_PROCESSES` for large log files to optimize throughput
+* `QUEUE_MAX_SIZE` can be tuned to prevent memory spikes
+
+## License
+
+MIT License. See `LICENSE` for details.
+
+## Contributing
+
+Feel free to fork the project, submit pull requests, or report issues. Ensure tests pass before submitting changes.
