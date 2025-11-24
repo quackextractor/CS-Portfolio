@@ -39,5 +39,9 @@ python src/main.py
 
 ### 3. Running FrontEnd Demo
 Dependencies need to be installed for this. [Guide Here](#installing-dependencies-optional)
+```commandline
+python vendor/frontend_demo/serve.py
+```
+Running on http://127.0.0.1:8000
 
 TODO: ADD INSTRUCTIONS HERE!!!
