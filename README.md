@@ -2,6 +2,15 @@
 # ChronoLog
 Parallel log analyzer for large log files with live and batch processing modes, metrics tracking, and web-based visualization.
 
+## Cloning the Repository
+
+To get started with ChronoLog, clone the repository from GitHub:
+
+```bash
+git clone https://github.com/quackextractor/ChronoLog.git
+cd ChronoLog
+```
+
 ## Overview
 ChronoLog is a high-performance log analyzer designed to efficiently process large logs. 
 It can detect errors, warnings, custom metrics, and latency events over time, producing JSON outputs for timelines, summaries, and message templates. 
