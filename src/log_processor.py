@@ -15,7 +15,7 @@ class LogProcessor:
 
     def start(self, live=True):
         """
-        live=True  -> keep tailing the file until interrupted (original behaviour)
+        live=True  -> keep tailing the file until interrupted
         live=False -> read available data, process, then exit once processing is complete
         """
         writer_proc = multiprocessing.Process(
