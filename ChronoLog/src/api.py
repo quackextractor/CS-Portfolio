@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_from_directory
 from flasgger import Swagger
 from facade import ChronoLogFacade
 
@@ -127,6 +127,28 @@ def get_timeseries():
         
     data = facade.get_timeseries(metric, limit)
     return jsonify(data)
+
+@app.route('/api/messages', methods=['GET'])
+def get_messages():
+    """
+    Get all message templates
+    ---
+    tags:
+      - Messages
+    responses:
+      200:
+        description: Map of message IDs to templates
+        schema:
+          type: object
+          additionalProperties:
+            type: string
+    """
+    data = facade.get_messages()
+    return jsonify(data)
+
+@app.route('/')
+def index():
+    return send_from_directory('../vendor/frontend_demo/public', 'index.html')
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)

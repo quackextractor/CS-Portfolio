@@ -5,6 +5,14 @@ class ChronoLogFacade:
     def __init__(self):
         self.db = SQLConnection()
 
+    def get_messages(self):
+        """
+        Retrieves all message templates.
+        Returns a dict {id: template}
+        """
+        rows = self.db.execute_query("SELECT MessageId, Template FROM Messages")
+        return {str(row.MessageId): row.Template for row in rows}
+
     def get_or_create_message_id(self, template):
         """
         Gets existing message ID or creates a new one.
