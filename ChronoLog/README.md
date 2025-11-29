@@ -45,7 +45,13 @@ pip install -r requirements.txt
 
 ## Configuration
 
-ChronoLog can be customized via environment variables (see `.env.example`):
+ChronoLog can be customized via environment variables (see `.env.example`).
+
+### Database Setup
+1. Ensure Microsoft SQL Server is running.
+2. Run the SQL scripts in `database/` to create the schema and stored procedures.
+3. Configure `DB_CONNECTION_STRING` in your `.env` file.
+
 
 ## Running Unit Tests
 

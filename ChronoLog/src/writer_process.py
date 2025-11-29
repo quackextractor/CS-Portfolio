@@ -1,129 +1,84 @@
-﻿import json
-import os
+﻿import time
 import re
-import time
-from pathlib import Path
-from config import OUTPUT_PATH, WRITER_FLUSH_INTERVAL
+import json
+import os
+from facade import ChronoLogFacade
+from config import WRITER_FLUSH_INTERVAL
 
 class WriterProcess:
-    def __init__(self, output_path=OUTPUT_PATH, flush_interval=WRITER_FLUSH_INTERVAL):
-        self.output_dir = Path(output_path).resolve()
+    def __init__(self, flush_interval=WRITER_FLUSH_INTERVAL):
         self.flush_interval = flush_interval
-        self.aggregated = {}
-        self.timeline = []
-        self.msg_store = {}
-        self.msg_id_counter = 0
-        self.last_flush = time.time()
-
-        self.output_dir.mkdir(parents=True, exist_ok=True)
-
-        self.timeline_path = self.output_dir / "timeline.jsonl"
-        self.msg_file_path = self.output_dir / "messages.json"  # single JSON file
-        self.summary_path = self.output_dir / "summary.json"
+        self.facade = ChronoLogFacade()
+        # We can keep a local cache to reduce DB hits for the same template in this process
+        self.msg_cache = {} 
 
     def run(self, queue, stop_flag):
-        with open(self.timeline_path, "a", encoding="utf-8") as timeline_file:
-            try:
-                while not stop_flag.is_set() or not queue.empty():
-                    self._process_queue(queue, timeline_file)
-                    if self._should_flush():
-                        self.flush()
-            except KeyboardInterrupt:
-                pass
-            finally:
-                while not queue.empty():
-                    self._process_queue(queue, timeline_file)
-                self.flush()
-
-    def _process_queue(self, queue, timeline_file):
+        print(f"WriterProcess started. PID: {os.getpid()}")
         try:
-            delta_events, delta_timeline = queue.get(timeout=0.5)
-            self._update_aggregated(delta_events)
+            while not stop_flag.is_set() or not queue.empty():
+                self._process_queue(queue)
+        except KeyboardInterrupt:
+            print("WriterProcess interrupted")
+        except Exception as e:
+            print(f"WriterProcess crashed: {e}")
+        finally:
+            print("WriterProcess draining queue...")
+            while not queue.empty():
+                self._process_queue(queue)
+            print("WriterProcess finished")
 
+    def _process_queue(self, queue):
+        try:
+            # We can still process in chunks from the queue
+            item = queue.get(timeout=0.5)
+            if not item:
+                return
+                
+            delta_events, delta_timeline = item
+            print(f"Writer received chunk with {len(delta_timeline)} events") # DEBUG
+            
+            bulk_data = []
             for entry in delta_timeline:
-                msg_key = entry.get("msg")
+                processed = self._prepare_entry(entry)
+                if processed:
+                    bulk_data.append(processed)
+            
+            if bulk_data:
+                print(f"Bulk inserting {len(bulk_data)} events") # DEBUG
+                self.facade.bulk_insert_timeline_events(bulk_data)
+            else:
+                # pass
+                print("No data to insert") # DEBUG
 
-                if msg_key:
-                    stripped = re.sub(r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} ", "", msg_key)
-                    nums = re.findall(r"\b\d+\b", stripped)
-                    tmpl = re.sub(r"\b\d+\b", "{num}", stripped)
-
-                    msg_id = self.msg_store.get(tmpl)
-                    if msg_id is None:
-                        msg_id = self.msg_id_counter
-                        self.msg_store[tmpl] = msg_id
-                        self.msg_id_counter += 1
-
-                    entry["msg_id"] = msg_id
-                    if nums:
-                        entry["msg_values"] = nums
-                    del entry["msg"]
-
-                self.timeline.append(entry)
-                timeline_file.write(json.dumps(entry, ensure_ascii=False) + "\n")
-
-        except Exception:
+        except Exception as e:
+            print(f"Writer error: {e}") # DEBUG
             pass
 
-    def _update_aggregated(self, delta_events):
-        if not delta_events:
-            return
-        for k, v in delta_events.items():
-            self.aggregated.setdefault(k, []).extend(v)
+    def _prepare_entry(self, entry):
+        msg_key = entry.get("msg")
+        msg_id = None
+        msg_values = None
 
-    def _should_flush(self):
-        now = time.time()
-        if now - self.last_flush >= self.flush_interval:
-            self.last_flush = now
-            return True
-        return False
+        if msg_key:
+            stripped = re.sub(r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} ", "", msg_key)
+            nums = re.findall(r"\b\d+\b", stripped)
+            tmpl = re.sub(r"\b\d+\b", "{num}", stripped)
 
-    def flush(self):
-        dashboard = self._build_dashboard()
-        tmp_summary = str(self.summary_path) + ".tmp"
-        try:
-            with open(tmp_summary, "w", encoding="utf-8") as f:
-                json.dump(dashboard, f)
-            os.replace(tmp_summary, self.summary_path)
-        except Exception:
-            pass
+            # Check local cache first
+            msg_id = self.msg_cache.get(tmpl)
+            if msg_id is None:
+                # Get from DB (or create)
+                msg_id = self.facade.get_or_create_message_id(tmpl)
+                if msg_id is not None:
+                    self.msg_cache[tmpl] = msg_id
 
-        # overwrite messages.json atomically
-        tmp_msgs = str(self.msg_file_path) + ".tmp"
-        try:
-            msgs = [{"id": mid, "template": tmpl} for tmpl, mid in self.msg_store.items()]
-            msgs.sort(key=lambda x: x["id"])
-            with open(tmp_msgs, "w", encoding="utf-8") as f:
-                json.dump(msgs, f, ensure_ascii=False)
-            os.replace(tmp_msgs, self.msg_file_path)
-        except Exception:
-            pass
-
-    def _build_dashboard(self):
-        return {
-            "summary": {
-                "error_count": len(self.aggregated.get("ERROR", [])),
-                "warning_count": len(self.aggregated.get("WARNING", [])),
-                "metrics": self._compute_metrics()
-            },
-            "timeline_count": len(self.timeline),
-            "unique_messages": len(self.msg_store)
-        }
-
-    def _compute_metrics(self):
-        counts = {}
-        sums = {}
-        for t in self.timeline:
-            if "value" not in t:
-                continue
-            name = t["event"]
-            counts[name] = counts.get(name, 0) + 1
-            sums[name] = sums.get(name, 0) + t["value"]
+            if nums:
+                msg_values = json.dumps(nums) # Pre-serialize for JSON
 
         return {
-            name: {
-                "count": cnt,
-                "average": sums[name] / cnt if cnt else 0
-            }
-            for name, cnt in counts.items()
+            "time": entry["time"],
+            "event": entry["event"],
+            "msg_id": msg_id,
+            "msg_values": msg_values,
+            "value": str(entry.get("value")) if entry.get("value") is not None else None
         }

@@ -17,6 +17,7 @@ CHUNK_SIZE = int(os.getenv("CHUNK_SIZE", "5000"))
 QUEUE_MAX_SIZE = int(os.getenv("QUEUE_MAX_SIZE", "100"))
 POLL_INTERVAL = float(os.getenv("POLL_INTERVAL", "0.5"))
 NUM_PROCESSES = int(os.getenv("NUM_PROCESSES", "3"))
+NUM_WRITERS = int(os.getenv("NUM_WRITERS", "2"))
 WRITER_FLUSH_INTERVAL = 2.0
 QUEUE_PUT_TIMEOUT = 1.0
 

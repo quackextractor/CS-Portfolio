@@ -1,14 +1,15 @@
 ﻿import multiprocessing
 import time
-from config import INPUT_FILE_PATH, NUM_PROCESSES, QUEUE_MAX_SIZE, QUEUE_PUT_TIMEOUT
+from config import INPUT_FILE_PATH, NUM_PROCESSES, QUEUE_MAX_SIZE, QUEUE_PUT_TIMEOUT, NUM_WRITERS
 from log_parser import LogParser
 from file_chunk_reader import FileChunkReader
 from writer_process import WriterProcess
 
 class LogProcessor:
-    def __init__(self, input_file=INPUT_FILE_PATH, num_processes=NUM_PROCESSES):
+    def __init__(self, input_file=INPUT_FILE_PATH, num_processes=NUM_PROCESSES, num_writers=NUM_WRITERS):
         self.input_file = input_file
         self.num_processes = num_processes
+        self.num_writers = num_writers
         self.parser = LogParser()
         self.queue = multiprocessing.Queue(maxsize=QUEUE_MAX_SIZE)
         self.stop_flag = multiprocessing.Event()
@@ -18,11 +19,14 @@ class LogProcessor:
         live=True  -> keep tailing the file until interrupted
         live=False -> read available data, process, then exit once processing is complete
         """
-        writer_proc = multiprocessing.Process(
-            target=WriterProcess().run,
-            args=(self.queue, self.stop_flag)
-        )
-        writer_proc.start()
+        writers = []
+        for _ in range(self.num_writers):
+            wp = multiprocessing.Process(
+                target=WriterProcess().run,
+                args=(self.queue, self.stop_flag)
+            )
+            wp.start()
+            writers.append(wp)
 
         pool = multiprocessing.Pool(self.num_processes)
         reader = FileChunkReader(self.input_file, live=live)
@@ -39,14 +43,14 @@ class LogProcessor:
             if not live:
                 pool.close()
                 pool.join()
-                # All worker callbacks have been invoked or will be. Signal writer to finish after it drains the queue.
+                # All worker callbacks have been invoked or will be. Signal writers to finish after they drain the queue.
                 self.stop_flag.set()
 
         except KeyboardInterrupt:
             print("User requested stop.")
             self._handle_interrupt(pool)
         finally:
-            self._shutdown(pool, writer_proc)
+            self._shutdown(pool, writers)
 
     def _on_result(self, result):
         events, timeline = result
@@ -73,7 +77,7 @@ class LogProcessor:
             pass
         pool.join()
 
-    def _shutdown(self, pool, writer_proc):
+    def _shutdown(self, pool, writers):
         # If pool wasn't closed (live mode or interrupted), attempt graceful close then join.
         try:
             pool.close()
@@ -84,14 +88,15 @@ class LogProcessor:
         except Exception:
             pass
 
-        # Ensure writer is signalled to stop (if not already).
+        # Ensure writers are signalled to stop (if not already).
         self.stop_flag.set()
 
-        # Wait for writer to finish writing remaining queued items.
-        writer_proc.join(timeout=10)
-        if writer_proc.is_alive():
-            try:
-                writer_proc.terminate()
-            except Exception:
-                pass
-            writer_proc.join()
+        # Wait for writers to finish writing remaining queued items.
+        for wp in writers:
+            wp.join(timeout=10)
+            if wp.is_alive():
+                try:
+                    wp.terminate()
+                except Exception:
+                    pass
+                wp.join()
