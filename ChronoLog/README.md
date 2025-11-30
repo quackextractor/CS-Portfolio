@@ -21,7 +21,6 @@ A lightweight frontend dashboard allows visual exploration of logs and metrics.
 - Incremental (live) or batch processing modes
 - Automatic detection of key-value metrics in logs
 - Aggregated outputs: timeline, summary, and message templates
-- Frontend dashboard for event visualization and metrics plotting
 
 ## Docs
 Recommended programs for markdown:
