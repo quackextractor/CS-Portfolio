@@ -83,5 +83,5 @@ class WriterProcess:
             "event": entry["event"],
             "msg_id": msg_id,
             "msg_values": msg_values,
-            "value": str(entry.get("value")) if entry.get("value") is not None else None
+            "value": entry.get("value") # Pass as number or None
         }

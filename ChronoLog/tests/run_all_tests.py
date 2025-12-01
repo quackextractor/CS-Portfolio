@@ -1,23 +1,23 @@
-﻿import os
-import sys
+﻿import sys
 import unittest
+from pathlib import Path
 
 # Resolve project root (one level above tests/)
-PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 # Ensure project root is first in path
-if PROJECT_ROOT not in sys.path:
-    sys.path.insert(0, PROJECT_ROOT)
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
 # Ensure src is also on path
-SRC_PATH = os.path.join(PROJECT_ROOT, "src")
-if SRC_PATH not in sys.path:
-    sys.path.insert(0, SRC_PATH)
+SRC_PATH = PROJECT_ROOT / "src"
+if str(SRC_PATH) not in sys.path:
+    sys.path.insert(0, str(SRC_PATH))
 
 if __name__ == "__main__":
-    tests_dir = os.path.dirname(__file__)
+    tests_dir = Path(__file__).parent
     loader = unittest.TestLoader()
-    suite = loader.discover(start_dir=tests_dir, pattern="test_*.py")
+    suite = loader.discover(start_dir=str(tests_dir), pattern="test_*.py")
     runner = unittest.TextTestRunner(verbosity=3)
     result = runner.run(suite)
     sys.exit(not result.wasSuccessful())

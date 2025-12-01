@@ -57,14 +57,21 @@ class LogProcessor:
         self._safe_queue_put((events, timeline))
 
     def _safe_queue_put(self, item):
-        retries = 3
-        for _ in range(retries):
+        # Implement backpressure: wait until queue has space
+        while not self.stop_flag.is_set():
             try:
-                self.queue.put(item, timeout=QUEUE_PUT_TIMEOUT)
+                self.queue.put(item, timeout=1.0)
                 return
-            except Exception:
-                time.sleep(0.1)
-        print("Warning: dropped log chunk due to full queue")
+            except Exception: # queue.Full
+                # Queue is full, wait and retry
+                # In a real app, we might want to log this occasionally if it persists
+                continue
+        
+        # If we get here, stop_flag is set, try one last time or just drop
+        try:
+            self.queue.put(item, timeout=0.1)
+        except Exception:
+            print("Warning: dropped log chunk during shutdown")
 
     def _on_error(self, exc):
         print("worker error:", exc)

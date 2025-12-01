@@ -22,12 +22,29 @@ class LogParser:
         return events, timeline
 
     def extract_timestamp(self, line):
-        time_str = line.split(" ", 2)[:2]
-        ts = " ".join(time_str)
-        try:
-            return datetime.strptime(ts, "%Y-%m-%d %H:%M:%S").isoformat()
-        except Exception:
+        # Try to extract timestamp from the beginning of the line
+        # Supports:
+        # YYYY-MM-DD HH:MM:SS
+        # YYYY-MM-DDTHH:MM:SS
+        parts = line.split(" ", 2)
+        if len(parts) < 2:
             return None
+        
+        # Try space separated first
+        ts_str = f"{parts[0]} {parts[1]}"
+        try:
+            return datetime.strptime(ts_str, "%Y-%m-%d %H:%M:%S").isoformat()
+        except ValueError:
+            pass
+            
+        # Try ISO format (first part only)
+        ts_str = parts[0]
+        try:
+            return datetime.fromisoformat(ts_str).isoformat()
+        except ValueError:
+            pass
+            
+        return None
 
     def parse_errors_warnings(self, line, timestamp, events, timeline):
         if "ERROR" in line:

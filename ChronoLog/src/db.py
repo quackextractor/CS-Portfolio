@@ -29,41 +29,57 @@ class SQLConnection:
         self._initialized = True
 
     def get_connection(self):
-        """Returns a new connection or reuses an existing one (if we were doing pooling manually, 
-           but pyodbc handles pooling by default). 
-           For simplicity in this singleton, we'll maintain one global connection object 
-           or create a new one if it's closed.
-           Actually, for multi-threaded apps (like Flask), it's often better to create a new connection per request 
-           or use a proper pool. PyODBC manages pooling at the driver level.
-           Let's return a new connection each time to be safe with threads, 
-           relying on driver pooling."""
-        return pyodbc.connect(self.connection_string)
+        """
+        Returns a connection. Reuses the existing connection if it's open.
+        """
+        if self._conn:
+            try:
+                # Check if connection is still alive
+                # This is a simple check; for production, a more robust pool is better.
+                # But for this assignment, reusing the single connection is sufficient 
+                # to fix the "new connection per query" issue.
+                self._conn.cursor().execute("SELECT 1")
+                return self._conn
+            except Exception:
+                # Connection might be closed or broken
+                self._conn = None
+
+        self._conn = pyodbc.connect(self.connection_string)
+        return self._conn
 
     def execute_query(self, query, params=None):
-        with self.get_connection() as conn:
-            cursor = conn.cursor()
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        try:
             if params:
                 cursor.execute(query, params)
             else:
                 cursor.execute(query)
             return cursor.fetchall()
+        finally:
+            cursor.close()
+            # Do not close conn here as we are reusing it
 
     def execute_non_query(self, query, params=None):
-        with self.get_connection() as conn:
-            cursor = conn.cursor()
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        try:
             if params:
                 cursor.execute(query, params)
             else:
                 cursor.execute(query)
             conn.commit()
+        finally:
+            cursor.close()
 
     def execute_sp(self, sp_name, params=None):
         """
         Executes a stored procedure.
         params: list or tuple of parameters
         """
-        with self.get_connection() as conn:
-            cursor = conn.cursor()
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        try:
             # Construct the SQL for SP call
             # Example: EXEC sp_name ?, ?
             if params:
@@ -82,3 +98,5 @@ class SQLConnection:
             
             conn.commit()
             return None
+        finally:
+            cursor.close()
