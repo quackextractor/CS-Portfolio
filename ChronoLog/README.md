@@ -94,23 +94,24 @@ python src/main.py --mode live
 python src/main.py
 ```
 
-### 3. Running Frontend Demo
+### 3. Running the API
 
-Dependencies must be installed. Then:
+The project now exposes data via a Flask API.
 
 ```commandline
-python vendor/frontend_demo/serve.py
+python src/api.py
 ```
 
-Open [http://127.0.0.1:8000](http://127.0.0.1:8000) in a browser to explore logs and metrics.
+The API will be available at [http://127.0.0.1:5000](http://127.0.0.1:5000).
+Swagger documentation is available at [http://127.0.0.1:5000/apidocs](http://127.0.0.1:5000/apidocs).
 
-## Output Files
+## Data Storage
 
-ChronoLog stores results in the output directory:
-
-* `timeline.jsonl` — chronological list of events
-* `messages.json` — unique message templates with IDs
-* `summary.json` — aggregated statistics (error/warning counts, metrics)
+ChronoLog stores results in a Microsoft SQL Server database.
+The schema includes tables for:
+* `TimelineEvents`: Individual log events
+* `Messages`: Unique message templates
+* `Summary`: Aggregated statistics
 
 ## Cleanup
 
