@@ -6,6 +6,15 @@ app = Flask(__name__)
 swagger = Swagger(app)
 facade = ChronoLogFacade()
 
+
+@app.errorhandler(404)
+def not_found(error):
+    return jsonify({"error": "Not found"}), 404
+
+@app.errorhandler(500)
+def internal_error(error):
+    return jsonify({"error": "Internal server error"}), 500
+
 @app.route('/api/summary', methods=['GET'])
 def get_summary():
     """
@@ -36,6 +45,8 @@ def get_summary():
                   type: number
     """
     data = facade.get_summary()
+    if not data:
+        return jsonify({"error": "Summary data not available"}), 404
     return jsonify(data)
 
 @app.route('/api/timeline', methods=['GET'])
@@ -126,6 +137,8 @@ def get_timeseries():
         return jsonify({"error": "Metric parameter is required"}), 400
         
     data = facade.get_timeseries(metric, limit)
+    if not data:
+        return jsonify({"error": f"No data found for metric: {metric}"}), 404
     return jsonify(data)
 
 @app.route('/api/messages', methods=['GET'])
