@@ -6,12 +6,10 @@ import re
 ROOT = Path(__file__).resolve().parent.parent
 
 INPUT_DIR = ROOT / "input"
-OUTPUT_DIR = ROOT / "output"
 
 DEFAULT_INPUT_FILE = INPUT_DIR / "sample.log"
 
 INPUT_FILE_PATH = Path(os.getenv("INPUT_FILE_PATH", DEFAULT_INPUT_FILE))
-OUTPUT_PATH = Path(os.getenv("OUTPUT_PATH", OUTPUT_DIR))
 
 CHUNK_SIZE = int(os.getenv("CHUNK_SIZE", "5000"))
 QUEUE_MAX_SIZE = int(os.getenv("QUEUE_MAX_SIZE", "100"))
