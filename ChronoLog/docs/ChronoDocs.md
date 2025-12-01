@@ -41,19 +41,19 @@ graph TD
 ### Output Requirements
 
 ```mermaid
-graph TD
-    A[Output] --> B[Structured Data]
-    A --> C[Visualization Files]
-    A --> D[Metrics]
-    
-    B --> B1[JSON Format]
-    B --> B2[Timeline Events]
-    
-    C --> C1[Charts (generated files)]
-    C --> C2[CSV/JSON for external tools]
-    
-    D --> D1[Error Counts]
-    D --> D2[Performance Metrics]
+flowchart TD
+  A["Output"] --> B["Structured Data"]
+  A --> C["Visualization Files"]
+  A --> D["Metrics"]
+
+  B --> B1["JSON Format"]
+  B --> B2["Timeline Events"]
+
+  C --> C1["Charts (generated files)"]
+  C --> C2["CSV/JSON for external tools"]
+
+  D --> D1["Error Counts"]
+  D --> D2["Performance Metrics"]
 ```
 
 ## System Architecture
@@ -61,63 +61,183 @@ graph TD
 ### High-Level Architecture
 
 ```mermaid
-graph TB
-    subgraph "Input Layer"
-        A[Log Files]
-        B[File Reader]
-    end
-    
-    subgraph "Processing Layer"
-        C[Chunk Reader]
-        D[Worker Pool]
-        E[Log Parser]
-    end
-    
-    subgraph "Output Layer"
-        F[Writer Process]
-        G[JSON Files]
-    end
-    
-    subgraph "Visualization Output"
-        I[Charts (files)]
-    end
-    
-    A --> B --> C --> D --> E --> F --> G --> I
+sequenceDiagram
+  participant P as Initializer
+  participant R as FileReader
+  participant F as ChunkReader
+  participant Q as Queue
+  participant W as WorkerPool
+
+  P->>R: Initialize reader
+  loop Until EOF/Interrupt
+    R->>F: Read CHUNK_SIZE lines
+    F-->>R: Return lines
+    R->>Q: Send chunk to queue
+    R->>R: Wait POLL_INTERVAL
+  end
 ```
 
-### Core Components
+### Worker Processing Flow
 
 ```mermaid
-graph LR
-    A[FileChunkReader] --> B[LogProcessor]
-    B --> C[Worker Pool]
-    C --> D[LogParser]
-    D --> E[WriterProcess]
-    E --> F[Output Files]
+sequenceDiagram
+    participant Q as Queue
+    participant W as Worker Process
+    participant P as LogParser
+    participant WP as WriterProcess
     
-    G[Config] --> A
-    G --> B
-    G --> C
+    Q->>W: Get chunk from queue
+    W->>P: Parse lines
+    P->>P: Extract timestamps
+    P->>P: Detect errors/warnings
+    P->>P: Parse metrics
+    P->>W: Return events & timeline
+    W->>WP: Send results via queue
 ```
 
-### Data Flow Components
+### Writing Output Flow
 
 ```mermaid
-graph TB
-    A[Raw Logs] --> B[FileChunkReader]
-    B --> C[Processing Queue]
-    C --> D[Worker Processes]
-    D --> E[Parsed Events]
-    E --> F[Writer Process]
-    F --> G[timeline.jsonl]
-    F --> H[messages.json]
-    F --> I[summary.json]
+sequenceDiagram
+    participant WP as WriterProcess
+    participant Q as Results Queue
+    participant T as Timeline File
+    participant M as Messages File
+    participant S as Summary File
+    
+    loop Until stop_flag
+        Q->>WP: Get parsed results
+        WP->>WP: Aggregate data
+        WP->>T: Append to timeline.jsonl
+        WP->>WP: Update message templates
+        WP->>M: Write messages.json
+        WP->>S: Write summary.json
+        WP->>WP: Check flush interval
+    end
 ```
 
-## Application Flow
+### Batch Mode Flow
 
-### Main Application Flow
+```mermaid
+stateDiagram-v2
+    [*] --> StartBatch
+    StartBatch --> ReadFile: Open input file
+    ReadFile --> ProcessChunks: Read CHUNK_SIZE
+    ProcessChunks --> MoreData: Chunk processed
+    MoreData --> ReadFile: Yes
+    MoreData --> WriteOutput: No
+    WriteOutput --> Cleanup: Files written
+    Cleanup --> [*]: Exit
+```
 
+### Live Mode Flow
+
+```mermaid
+stateDiagram-v2
+    [*] --> StartLive
+    StartLive --> ReadAvailable: Read current data
+    ReadAvailable --> ProcessChunks: Process available
+    ProcessChunks --> WaitForMore: Wait POLL_INTERVAL
+    WaitForMore --> CheckFile: Check for new data
+    CheckFile --> ReadAvailable: New data found
+    CheckFile --> WaitForMore: No new data
+    WaitForMore --> [*]: Interrupted
+```
+
+## Interfaces & Dependencies
+
+### Third-Party Libraries
+
+```text
+# requirements.txt
+python-dotenv>=0.20.0
+pytest>=7.0
+```
+
+(Flask / web dashboard is **not** part of the core project. Visualization is produced as files to be consumed by external tools.)
+
+### External Services
+
+* None - standalone application
+
+### System Requirements
+
+* Python 3.9+
+* Operating System: Windows/Linux/macOS
+* Storage: Sufficient space for log files and output
+
+## Legal & Licensing
+
+### License Information
+
+* **License**: MIT License
+* **Copyright**: 2025 LostSoul
+* **Permissions**: Commercial use, modification, distribution
+* **Conditions**: Include original license
+* **Limitations**: No warranty
+
+### Copyright Notice
+
+All original code is MIT licensed. Third-party libraries maintain their respective licenses.
+
+## Configuration
+
+### Environment Variables
+
+```bash
+# .env.example
+INPUT_FILE_PATH=    # Path to input log file
+CHUNK_SIZE=1000     # Lines per processing chunk
+QUEUE_MAX_SIZE=10   # Max chunks in queue
+POLL_INTERVAL=0.5   # Seconds between file checks
+NUM_PROCESSES=3     # Worker processes count
+OUTPUT_PATH=        # Output directory path
+```
+
+### Configuration Files
+
+* **.env**: Environment variables (optional)
+* **config.py**: Central configuration management
+
+## Installation & Setup
+
+### Quick Start
+
+```bash
+# 1. Generate sample log
+python bin/generate_sample_log.py
+
+# 2. Analyze logs (batch mode)
+python src/main.py
+```
+
+### Detailed Installation
+
+1. **Prerequisites**: Python 3.9+ in PATH
+2. **Dependencies**: `pip install -r requirements.txt`
+3. **Project Structure**:
+
+   ```
+   ChronoLog/
+   ├── src/          # Core application
+   ├── tests/        # Unit tests
+   ├── input/        # Log files
+   ├── output/       # Analysis results
+   └── bin/          # Utilities
+   ```
+
+## Error Handling
+
+### Common Error States
+
+| Error Type      | Cause               | Resolution                          |
+| --------------- | ------------------- | ----------------------------------- |
+| FileNotFound    | Input file missing  | Check INPUT_FILE_PATH               |
+| PermissionError | File access denied  | Adjust file permissions             |
+| MemoryError     | Queue overflow      | Reduce CHUNK_SIZE or QUEUE_MAX_SIZE |
+| ParserError     | Malformed log lines | Check log format                    |
+
+### Error Recovery
 ```mermaid
 sequenceDiagram
     participant U as User
@@ -369,46 +489,43 @@ python tests/run_all_tests.py
 
 ## Data Schema
 
-### Output Files Structure
+### Database Schema
 
-#### timeline.jsonl
+The backend relies on a Microsoft SQL Server database designed for write-heavy workloads and efficient analytical queries.
 
-```json
-{
-  "time": "2025-11-23T12:00:00",
-  "event": "error",
-  "msg_id": 1,
-  "msg_values": ["123"]
-}
-```
+#### Tables
 
-#### messages.json
+*   **`Messages`**: Stores unique log message templates.
+    *   Columns: `MessageId` (PK), `Template` (Unique), `CreatedAt`.
+    *   Optimization: Normalizing templates reduces storage size and allows for efficient aggregation.
+*   **`TimelineEvents`**: Stores individual log occurrences.
+    *   Columns: `EventId` (PK), `EventTime`, `EventType`, `MessageId` (FK), `MessageValues` (JSON), `Value`.
+    *   Indexes: `IX_TimelineEvents_EventTime`, `IX_TimelineEvents_EventType`, `IX_TimelineEvents_Pagination`.
 
-```json
-{
-  "id": 1,
-  "template": "ERROR Database connection failed for user {num}"
-}
-```
+#### Stored Procedures
 
-#### summary.json
+*   **`sp_BulkInsertTimelineEvents`**: High-performance bulk insert of events.
+*   **`sp_GetTimelinePage`**: Retrieves paginated timeline events with joined message templates.
+*   **`sp_GetSummary`**: Calculates dashboard metrics in a single query.
+*   **`sp_GetTimeseries`**: Generates time-series data for metrics.
+*   **`sp_GetOrInsertMessage`**: Idempotent registration of message templates.
 
-```json
-{
-  "summary": {
-    "error_count": 45,
-    "warning_count": 120,
-    "metrics": {
-      "latency": {
-        "count": 1000,
-        "average": 275.5
-      }
-    }
-  },
-  "timeline_count": 50000,
-  "unique_messages": 25
-}
-```
+#### Views
+
+*   **`vw_TimelineWithMessages`**: Denormalized view for easier querying.
+*   **`vw_EventSummary`**: Pre-aggregated summary statistics.
+*   **`vw_LatestEvents`**: Real-time monitoring view.
+*   **`vw_ErrorsAndWarnings`**: Filtered view for issues.
+
+## API Reference
+
+The application exposes a RESTful API (built with Flask) to serve data to the frontend:
+
+*   **`GET /api/summary`**: Returns high-level statistics (error counts, total events, latency metrics).
+*   **`GET /api/timeline`**: Provides paginated access to the event timeline. Supports `page` and `per_page` parameters.
+*   **`GET /api/timeseries`**: Retrieves timeseries data for specific metrics (e.g., latency). Requires a `metric` parameter.
+*   **`GET /api/messages`**: Lists all unique message templates and their IDs.
+*   **Swagger UI**: Available at `/apidocs/` for interactive exploration.
 
 ## Performance Optimization
 
@@ -460,3 +577,4 @@ python bin/util_clear_dirs.py
 * Allow for ignoring certain message value tracking via .env
 * Use a database instead of json files
 * Improve configurability: allow for defining custom events
+```
