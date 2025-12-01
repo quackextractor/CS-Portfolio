@@ -10,7 +10,6 @@ class WriterProcess:
     def __init__(self, flush_interval=WRITER_FLUSH_INTERVAL):
         self.flush_interval = flush_interval
         self.facade = ChronoLogFacade()
-        # We can keep a local cache to reduce DB hits for the same template in this process
         self.msg_cache = {} 
 
     def run(self, queue, stop_flag):
@@ -30,7 +29,6 @@ class WriterProcess:
 
     def _process_queue(self, queue_obj):
         try:
-            # We can still process in chunks from the queue
             item = queue_obj.get(timeout=0.5)
             if not item:
                 return
@@ -52,6 +50,7 @@ class WriterProcess:
                 print("No data to insert") # DEBUG
 
         except queue.Empty:
+            print("Writer queue empty, waiting...") # DEBUG
             pass
         except Exception as e:
             print(f"Writer error: {e}") # DEBUG
@@ -73,10 +72,11 @@ class WriterProcess:
                 # Get from DB (or create)
                 msg_id = self.facade.get_or_create_message_id(tmpl)
                 if msg_id is not None:
+                    msg_id = int(msg_id)
                     self.msg_cache[tmpl] = msg_id
 
             if nums:
-                msg_values = json.dumps(nums) # Pre-serialize for JSON
+                msg_values = json.dumps(nums)
 
         return {
             "time": entry["time"],
