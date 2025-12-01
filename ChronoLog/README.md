@@ -7,8 +7,8 @@ Parallel log analyzer for large log files with live and batch processing modes, 
 To get started with ChronoLog, clone the repository from GitHub:
 
 ```bash
-git clone https://github.com/quackextractor/ChronoLog.git
-cd ChronoLog
+git clone https://github.com/quackextractor/CS-Portfolio.git
+cd CS-Portfolio/ChronoLog
 ```
 
 ## Overview
