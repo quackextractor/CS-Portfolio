@@ -2,6 +2,7 @@
 import re
 import json
 import os
+import queue
 from facade import ChronoLogFacade
 from config import WRITER_FLUSH_INTERVAL
 
@@ -27,10 +28,10 @@ class WriterProcess:
                 self._process_queue(queue)
             print("WriterProcess finished")
 
-    def _process_queue(self, queue):
+    def _process_queue(self, queue_obj):
         try:
             # We can still process in chunks from the queue
-            item = queue.get(timeout=0.5)
+            item = queue_obj.get(timeout=0.5)
             if not item:
                 return
                 
@@ -50,6 +51,8 @@ class WriterProcess:
                 # pass
                 print("No data to insert") # DEBUG
 
+        except queue.Empty:
+            pass
         except Exception as e:
             print(f"Writer error: {e}") # DEBUG
             pass
