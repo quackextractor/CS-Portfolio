@@ -1,75 +1,192 @@
 ﻿import unittest
-import tempfile
-import json
-import queue
-import os
-from src.writer_process import WriterProcess
+class TestWriterProcess(unittest.TestCase):
+    def setUp(self):
+        # Patch the facade class where it is imported in writer_process
+        self.facade_patcher = patch('src.writer_process.ChronoLogFacade')
+        self.MockFacade = self.facade_patcher.start()
+        self.mock_facade_instance = self.MockFacade.return_value
+        
+        # Initialize WriterProcess
+        self.wp = WriterProcess(flush_interval=0.01)
 
+    def tearDown(self):
+        self.facade_patcher.stop()
+
+    def test_init(self):
+        """Test initialization of WriterProcess."""
+        self.assertEqual(self.wp.flush_interval, 0.01)
+        self.assertEqual(self.wp.facade, self.mock_facade_instance)
+        self.assertEqual(self.wp.msg_cache, {})
+
+    def test_prepare_entry_valid(self):
+        """Test _prepare_entry with valid data."""
+        entry = {
+            "time": "2023-10-27T10:00:00",
+            "event": "INFO",
+            "msg": "2023-10-27 10:00:00 INFO User 123 logged in",
+            "value": None
+        }
+        
+        # Mock facade behavior
+        self.mock_facade_instance.get_or_create_message_id.return_value = 5
+        
+        result = self.wp._prepare_entry(entry)
+        
+        self.assertEqual(result["time"], "2023-10-27T10:00:00")
+        self.assertEqual(result["event"], "INFO")
+        self.assertEqual(result["msg_id"], 5)
+        self.assertEqual(result["msg_values"], '["123"]') # JSON string
+        self.assertIsNone(result["value"])
+        
+        # Verify cache interaction
+        self.mock_facade_instance.get_or_create_message_id.assert_called_with("INFO User {num} logged in")
+        self.assertEqual(self.wp.msg_cache["INFO User {num} logged in"], 5)
+
+    def test_prepare_entry_cached(self):
+        """Test _prepare_entry uses local cache."""
+        entry = {
+            "time": "2023-10-27T10:00:00",
+            "event": "INFO",
+            "msg": "2023-10-27 10:00:00 INFO User 123 logged in",
+            "value": None
+        }
+        
+        # Pre-populate cache
+        self.wp.msg_cache["INFO User {num} logged in"] = 10
+        
+        result = self.wp._prepare_entry(entry)
+        
+        self.assertEqual(result["msg_id"], 10)
+        self.mock_facade_instance.get_or_create_message_id.assert_not_called()
+
+    def test_process_queue_bulk_insert(self):
+        """Test _process_queue calls bulk_insert_timeline_events."""
+        q = queue.Queue()
+        
+        events = {"INFO": ["User 123 logged in"]}
+        timeline = [
+            {"time": "2023-10-27T10:00:00", "event": "INFO", "msg": "2023-10-27 10:00:00 INFO User 123 logged in", "value": None},
+            {"time": "2023-10-27T10:00:01", "event": "INFO", "msg": "2023-10-27 10:00:01 INFO User 456 logged in", "value": None}
+        ]
+        q.put((events, timeline))
+        
+        self.mock_facade_instance.get_or_create_message_id.return_value = 1
+        
+        self.wp._process_queue(q)
+        
+        self.mock_facade_instance.bulk_insert_timeline_events.assert_called_once()
+        call_args = self.mock_facade_instance.bulk_insert_timeline_events.call_args[0][0]
+        self.assertEqual(len(call_args), 2)
+        self.assertEqual(call_args[0]["msg_values"], '["123"]')
+        self.assertEqual(call_args[1]["msg_values"], '["456"]')
+
+    def test_process_queue_empty_item(self):
+        """Test _process_queue handles None/empty item gracefully."""
+        q = MagicMock()
+        q.get.return_value = None # Simulate empty or None
+import unittest
+from unittest.mock import MagicMock, patch
+import queue
+import time
+from src.writer_process import WriterProcess
 
 class TestWriterProcess(unittest.TestCase):
     def setUp(self):
-        self.tmpdir = tempfile.TemporaryDirectory()
-        # treat output_path as a directory
-        self.out_dir = os.path.join(self.tmpdir.name, "out")
-        os.makedirs(self.out_dir, exist_ok=True)
-
-        # writer writes a timeline file named timeline.jsonl inside this dir
-        self.timeline_path = os.path.join(self.out_dir, "timeline.jsonl")
-        self.summary_path = os.path.join(self.out_dir, "summary.json")
-
-        self.wp = WriterProcess(output_path=self.out_dir, flush_interval=0.01)
+        # Patch the facade class where it is imported in writer_process
+        self.facade_patcher = patch('src.writer_process.ChronoLogFacade')
+        self.MockFacade = self.facade_patcher.start()
+        self.mock_facade_instance = self.MockFacade.return_value
+        
+        # Initialize WriterProcess
+        self.wp = WriterProcess(flush_interval=0.01)
 
     def tearDown(self):
-        self.tmpdir.cleanup()
+        self.facade_patcher.stop()
 
-    def test_update_aggregated_and_build_dashboard(self):
-        delta = {"ERROR": ["e1"], "CUSTOM": ["c1", "c2"]}
-        self.wp._update_aggregated(delta)
-        self.assertIn("ERROR", self.wp.aggregated)
-        self.assertIn("CUSTOM", self.wp.aggregated)
-        summary = self.wp._build_dashboard()
-        self.assertIsInstance(summary, dict)
-        self.assertIn("summary", summary)
-        self.assertEqual(summary["summary"]["error_count"], 1)
+    def test_init(self):
+        """Test initialization of WriterProcess."""
+        self.assertEqual(self.wp.flush_interval, 0.01)
+        self.assertEqual(self.wp.facade, self.mock_facade_instance)
+        self.assertEqual(self.wp.msg_cache, {})
 
-    def test_process_queue_writes_and_flush_creates_summary(self):
+    def test_prepare_entry_valid(self):
+        """Test _prepare_entry with valid data."""
+        entry = {
+            "time": "2023-10-27T10:00:00",
+            "event": "INFO",
+            "msg": "2023-10-27 10:00:00 INFO User 123 logged in",
+            "value": None
+        }
+        
+        # Mock facade behavior
+        self.mock_facade_instance.get_or_create_message_id.return_value = 5
+        
+        result = self.wp._prepare_entry(entry)
+        
+        self.assertEqual(result["time"], "2023-10-27T10:00:00")
+        self.assertEqual(result["event"], "INFO")
+        self.assertEqual(result["msg_id"], 5)
+        self.assertEqual(result["msg_values"], '["123"]') # JSON string
+        self.assertIsNone(result["value"])
+        
+        # Verify cache interaction
+        self.mock_facade_instance.get_or_create_message_id.assert_called_with("INFO User {num} logged in")
+        self.assertEqual(self.wp.msg_cache["INFO User {num} logged in"], 5)
+
+    def test_prepare_entry_cached(self):
+        """Test _prepare_entry uses local cache."""
+        entry = {
+            "time": "2023-10-27T10:00:00",
+            "event": "INFO",
+            "msg": "2023-10-27 10:00:00 INFO User 123 logged in",
+            "value": None
+        }
+        
+        # Pre-populate cache
+        self.wp.msg_cache["INFO User {num} logged in"] = 10
+        
+        result = self.wp._prepare_entry(entry)
+        
+        self.assertEqual(result["msg_id"], 10)
+        self.mock_facade_instance.get_or_create_message_id.assert_not_called()
+
+    def test_process_queue_bulk_insert(self):
+        """Test _process_queue calls bulk_insert_timeline_events."""
         q = queue.Queue()
-
-        events = {"ERROR": ["Database failed"]}
+        
+        events = {"INFO": ["User 123 logged in"]}
         timeline = [
-            {"time": "2025-11-23T12:00:00", "event": "error", "msg": "2025-11-23 12:00:00 ERROR Database failed"}
+            {"time": "2023-10-27T10:00:00", "event": "INFO", "msg": "2023-10-27 10:00:00 INFO User 123 logged in", "value": None},
+            {"time": "2023-10-27T10:00:01", "event": "INFO", "msg": "2023-10-27 10:00:01 INFO User 456 logged in", "value": None}
         ]
         q.put((events, timeline))
+        
+        self.mock_facade_instance.get_or_create_message_id.return_value = 1
+        
+        self.wp._process_queue(q)
+        
+        self.mock_facade_instance.bulk_insert_timeline_events.assert_called_once()
+        call_args = self.mock_facade_instance.bulk_insert_timeline_events.call_args[0][0]
+        self.assertEqual(len(call_args), 2)
+        self.assertEqual(call_args[0]["msg_values"], '["123"]')
+        self.assertEqual(call_args[1]["msg_values"], '["456"]')
 
-        # open writer’s actual timeline file path
-        with open(self.timeline_path, "a", encoding="utf-8") as fh, \
-             open(os.path.join(self.out_dir, "messages.jsonl"), "a", encoding="utf-8") as mfh:
-            self.wp._process_queue(q, fh, mfh)
+    def test_process_queue_empty_item(self):
+        """Test _process_queue handles None/empty item gracefully."""
+        q = MagicMock()
+        q.get.return_value = None # Simulate empty or None
+        
+        self.wp._process_queue(q)
+        
+        self.mock_facade_instance.bulk_insert_timeline_events.assert_not_called()
 
-        with open(self.timeline_path, "r", encoding="utf-8") as fh:
-            lines = [l.strip() for l in fh if l.strip()]
-        self.assertTrue(len(lines) >= 1)
-
-        self.wp.flush()
-        self.assertTrue(os.path.exists(self.summary_path))
-
-        with open(self.summary_path, "r", encoding="utf-8") as f:
-            data = json.load(f)
-        self.assertIn("summary", data)
-        self.assertGreaterEqual(data.get("timeline_count", 0), 1)
-
-    def test_compute_metrics(self):
-        self.wp.timeline = [
-            {"event": "latency", "value": 100},
-            {"event": "latency", "value": 200},
-            {"event": "other", "value": 10}
-        ]
-        metrics = self.wp._compute_metrics()
-        self.assertIn("latency", metrics)
-        self.assertEqual(metrics["latency"]["count"], 2)
-        self.assertEqual(metrics["latency"]["average"], 150.0)
-        self.assertEqual(metrics["other"]["count"], 1)
-
+    def test_process_queue_exception(self):
+        """Test _process_queue handles exceptions."""
+        q = MagicMock()
+        q.get.side_effect = Exception("Queue error")
+        
+        # Should not raise exception
+        self.wp._process_queue(q)
 
 if __name__ == "__main__":
     unittest.main()

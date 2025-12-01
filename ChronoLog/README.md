@@ -32,15 +32,19 @@ Read the docs at `/docs/ChronoDocs.md`
 pUML diagram: `/docs/diagram.puml`
 
 ## Requirements
-- Python 3.9+ installed and added to system PATH
-  - [Official Python download](https://www.python.org/downloads/)
-  - [Adding python to PATH - geeksforgeeks.org](https://www.geeksforgeeks.org/python/how-to-add-python-to-windows-path/)
 
-### Installing dependencies (optional)
-Needed for the frontend demo in `/vendor/`:
+- Python 3.9+ installed and added to system PATH
+
+  - Official Python download: [https://www.python.org/downloads/](https://www.python.org/downloads/)
+  - Adding Python to PATH: [https://www.geeksforgeeks.org/python/how-to-add-python-to-windows-path/](https://www.geeksforgeeks.org/python/how-to-add-python-to-windows-path/)
+- Git installed and available in system PATH
+
+  - Git download: [https://git-scm.com/install/](https://git-scm.com/install/)
+
+### Installing dependencies
 ```commandline
 pip install -r requirements.txt
-````
+```
 
 ## Configuration
 
