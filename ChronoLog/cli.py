@@ -1,6 +1,7 @@
 import argparse
 import os
 import sys
+import unittest
 from pathlib import Path
 from dotenv import load_dotenv
 
@@ -139,6 +140,19 @@ def cmd_run_api(args):
     script = Path("src/api.py")
     run_script(script)
 
+def cmd_test(args):
+    """Run all tests."""
+    print("Running all tests...")
+    loader = unittest.TestLoader()
+    start_dir = Path(__file__).parent / "tests"
+    suite = loader.discover(start_dir)
+    runner = unittest.TextTestRunner(verbosity=2)
+    result = runner.run(suite)
+    if not result.wasSuccessful():
+        print("\n[FAILED] Some tests failed.")
+        sys.exit(1)
+    print("\n[OK] All tests passed.")
+
 def cmd_auto(args):
     """Automate setup and run."""
     print("Starting automated setup and run...\n")
@@ -194,6 +208,9 @@ def main():
     
     # Run API command
     subparsers.add_parser("run-api", help="Run the API server")
+
+    # Test command
+    subparsers.add_parser("test", help="Run all tests")
     
     # Auto command
     subparsers.add_parser("auto", help="Automate setup and run processor")
@@ -210,6 +227,8 @@ def main():
         cmd_run_processor(args)
     elif args.command == "run-api":
         cmd_run_api(args)
+    elif args.command == "test":
+        cmd_test(args)
     elif args.command == "auto":
         cmd_auto(args)
     else:
