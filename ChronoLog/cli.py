@@ -107,7 +107,13 @@ def cmd_run_processor(args):
     script = Path("src/main.py")
     # Pass through any extra arguments if we had them, but for now just run it
     # We could add specific args to the CLI if needed
-    run_script(script)
+    if args and getattr(args, 'live', False):
+        # Add --mode live if requested
+        # We need to construct the args list for the subprocess
+        script_args = ["--mode", "live"]
+        run_script(script, script_args)
+    else:
+        run_script(script)
 
 def cmd_run_api(args):
     """Run the API server."""
@@ -157,7 +163,8 @@ def main():
     subparsers.add_parser("generate-logs", help="Generate sample logs")
     
     # Run processor command
-    subparsers.add_parser("run-processor", help="Run the log processor")
+    rp_parser = subparsers.add_parser("run-processor", help="Run the log processor")
+    rp_parser.add_argument("--live", action="store_true", help="Run in live mode (tail log file)")
     
     # Run API command
     subparsers.add_parser("run-api", help="Run the API server")
