@@ -56,6 +56,31 @@ ChronoLog can be customized via environment variables (see `.env.example`).
 3. Configure `DB_CONNECTION_STRING` in your `.env` file.
 
 
+## CLI Management Tool
+
+The project includes a `cli.py` CLI tool to help with common tasks.
+
+### Commands
+
+*   `check`: Run system checks (environment, database, input files).
+*   `setup`: Run database setup scripts.
+*   `generate-logs`: Generate sample log files.
+*   `run-processor`: Run the log processor.
+*   `run-api`: Run the API server.
+*   `auto`: Automate setup and run the processor.
+
+### Usage Examples
+
+Check system status:
+```bash
+python cli.py check
+```
+
+Automated setup and run:
+```bash
+python cli.py auto
+```
+
 ## Running Unit Tests
 
 ```commandline
