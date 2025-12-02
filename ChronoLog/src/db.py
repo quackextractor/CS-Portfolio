@@ -25,8 +25,65 @@ class SQLConnection:
         if not self.connection_string:
             raise ValueError("DB_CONNECTION_STRING environment variable not set")
         
+        self._ensure_database_exists()
+        
         self._conn = None
         self._initialized = True
+
+    def _ensure_database_exists(self):
+        """
+        Parses the connection string to find the target database,
+        connects to 'master', checks if the target database exists,
+        and creates it if it doesn't.
+        """
+        # Simple parsing to find DATABASE=... or Database=...
+        # This assumes the connection string format is standard ODBC
+        import re
+        match = re.search(r"(?i)(?:DATABASE|Initial Catalog)\s*=\s*([^;]+)", self.connection_string)
+        if not match:
+            # If no database specified, nothing to create
+            return
+        
+        target_db = match.group(1).strip()
+        
+        # Create a connection string for master
+        # We replace the database part with 'master' or remove it and rely on default
+        # Ideally, we explicitly connect to master.
+        
+        # Regex to replace the database part with 'master'
+        master_conn_str = re.sub(r"(?i)(?:DATABASE|Initial Catalog)\s*=\s*[^;]+", "DATABASE=master", self.connection_string)
+        
+        # If the original string didn't have DATABASE, we might need to append it? 
+        # But we only got here if we found it.
+        
+        try:
+            # Connect to master
+            # We use a fresh connection here, not self.get_connection() because self._conn isn't ready
+            with pyodbc.connect(master_conn_str, autocommit=True) as conn:
+                cursor = conn.cursor()
+                
+                # Check if DB exists
+                # SQL Server specific check
+                check_query = "SELECT name FROM sys.databases WHERE name = ?"
+                cursor.execute(check_query, (target_db,))
+                if not cursor.fetchone():
+                    print(f"Database '{target_db}' does not exist. Creating...")
+                    # CREATE DATABASE cannot run in a multi-statement transaction usually, 
+                    # but autocommit=True helps.
+                    # Parameterization for identifiers is not supported in standard SQL, 
+                    # so we must be careful. Ideally validate target_db is safe.
+                    # For this internal tool, we assume env var is safe-ish.
+                    # But let's at least quote it.
+                    cursor.execute(f"CREATE DATABASE [{target_db}]")
+                    print(f"Database '{target_db}' created successfully.")
+                else:
+                    pass
+                    # print(f"Database '{target_db}' already exists.")
+                    
+        except Exception as e:
+            print(f"Warning: Could not ensure database '{target_db}' exists. Error: {e}")
+            # We don't raise here because maybe the user doesn't have permissions 
+            # but the DB exists, or some other issue. We let the main connection try.
 
     def get_connection(self):
         """
