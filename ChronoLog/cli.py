@@ -57,6 +57,17 @@ def check_input_files():
     print(f"[OK] Found {len(files)} file(s) in 'input' directory.")
     return True
 
+def check_db_initialized():
+    """Check if database schema is initialized."""
+    try:
+        from db import SQLConnection
+        conn = SQLConnection()
+        # Try to select from a table that should exist
+        conn.execute_query("SELECT TOP 1 * FROM Messages")
+        return True
+    except Exception:
+        return False
+
 def cmd_check(args):
     """Run all checks."""
     print("Running system checks...\n")
@@ -65,6 +76,13 @@ def cmd_check(args):
         return # Stop if env is missing
     
     db_ok = check_db_connection()
+    if db_ok:
+        if check_db_initialized():
+            print("[OK] Database schema is initialized.")
+        else:
+            print("[WARNING] Database connected but schema appears missing.")
+            print("   Run 'python cli.py setup' to initialize, or 'python cli.py auto' to automate everything.")
+            
     input_ok = check_input_files()
     
     if env_ok and db_ok and input_ok:
@@ -129,15 +147,23 @@ def cmd_auto(args):
     if not check_env():
         return
     
-    # 2. Check DB
+    # 2. Check DB Connection
     if not check_db_connection():
-        print("Attempting to set up database...")
-        cmd_setup(None)
-        if not check_db_connection():
-            print("[FAILED] Database setup failed or connection still invalid. Aborting.")
-            return
+        print("[FAILED] Could not connect to database. Aborting.")
+        return
 
-    # 3. Check Input
+    # 3. Check DB Schema
+    if not check_db_initialized():
+        print("Database schema not found. Running setup...")
+        cmd_setup(None)
+        if not check_db_initialized():
+            print("[FAILED] Database setup failed. Aborting.")
+            return
+        print("[OK] Database schema initialized.")
+    else:
+        print("[OK] Database schema already initialized.")
+
+    # 4. Check Input
     if not check_input_files():
         print("Attempting to generate sample logs...")
         cmd_generate_logs(None)
@@ -145,7 +171,7 @@ def cmd_auto(args):
             print("[FAILED] Failed to generate input files. Aborting.")
             return
 
-    # 4. Run Processor
+    # 5. Run Processor
     print("\n[OK] Setup complete. Launching Log Processor...")
     cmd_run_processor(None)
 
