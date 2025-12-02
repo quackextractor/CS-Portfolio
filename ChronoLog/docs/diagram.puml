@@ -65,28 +65,60 @@ package "Processing" {
     }
 }
 
+package "Database" {
+    class SQLConnection {
+        connection_string
+        get_connection()
+        execute_query()
+        execute_non_query()
+        execute_sp()
+        _ensure_database_exists()
+    }
+
+    class ChronoLogFacade {
+        db
+        get_messages()
+        get_or_create_message_id()
+        insert_timeline_event()
+        bulk_insert_timeline_events()
+        get_timeline_page()
+        get_summary()
+        get_timeseries()
+    }
+}
+
 package "Writer" {
     class WriterProcess {
-        output_dir
         flush_interval
-        aggregated
-        timeline
-        msg_store
-        msg_id_counter
-        last_flush
+        facade
+        msg_cache
         run()
         _process_queue()
-        _update_aggregated()
-        _should_flush()
-        flush()
-        _build_dashboard()
-        _compute_metrics()
+        _prepare_entry()
+    }
+}
+
+package "API" {
+    class FlaskApp {
+        get_summary()
+        get_timeline()
+        get_timeseries()
+        get_messages()
     }
 }
 
 package "CLI" {
-    class Main {
-        parse_args()
+    class CLI {
+        check_env()
+        check_db_connection()
+        check_input_files()
+        cmd_check()
+        cmd_setup()
+        cmd_generate_logs()
+        cmd_run_processor()
+        cmd_run_api()
+        cmd_auto()
+        main()
     }
 }
 
@@ -96,7 +128,14 @@ LogProcessor --> LogParser : uses
 LogProcessor --> FileChunkReader : uses
 LogProcessor --> WriterProcess : manages writer process
 LogProcessor --> multiprocessing.Queue
-WriterProcess --> Config : output paths
-Main --> LogProcessor : starts
+
+WriterProcess --> ChronoLogFacade : uses
+ChronoLogFacade --> SQLConnection : uses
+
+CLI --> LogProcessor : starts
+CLI --> FlaskApp : starts
+CLI --> SQLConnection : checks connection
+
+FlaskApp --> ChronoLogFacade : uses
 
 @enduml
