@@ -20,28 +20,6 @@ The application utilizes several key design patterns to ensure modularity, scala
 2.  **Singleton Pattern**:
     - Implemented in `src/db.py` as `SQLConnection`.
     - **Purpose**: Ensures that the database connection configuration is managed centrally. While it currently creates new connections per call (leveraging driver-level pooling), the class structure prevents multiple instances of the connection manager from being created.
-# Changelog
-
-## [V2] - 2025-12-01
-Next review: 2025-12-02
-
-### Changed
-- **Storage Backend**: Migrated from file-based storage (JSON/JSONL) to a Microsoft SQL Server (MSSQL) database.
-    - Previous versions relied on `messages.json` for templates and `timeline.jsonl` for event data.
-    - The new implementation uses a relational schema with stored procedures for efficient data access and manipulation.
-
-### Technical Implementation Details
-
-#### Design Patterns
-The application utilizes several key design patterns to ensure modularity, scalability, and maintainability:
-
-1.  **Facade Pattern**:
-    - Implemented in `src/facade.py` as `ChronoLogFacade`.
-    - **Purpose**: Provides a simplified, high-level interface for the application to interact with the database. It hides the complexity of raw SQL queries and stored procedure calls, exposing clean methods like `get_messages`, `insert_timeline_event`, and `get_timeseries`.
-
-2.  **Singleton Pattern**:
-    - Implemented in `src/db.py` as `SQLConnection`.
-    - **Purpose**: Ensures that the database connection configuration is managed centrally. While it currently creates new connections per call (leveraging driver-level pooling), the class structure prevents multiple instances of the connection manager from being created.
 
 3.  **Producer-Consumer Pattern**:
     - **Producer**: `LogProcessor` (in `src/log_processor.py`) reads log files, parses them, and pushes structured data into a queue.
