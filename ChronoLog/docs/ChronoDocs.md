@@ -606,4 +606,3 @@ python bin/util_clear_dirs.py
 * Allow for ignoring certain message value tracking via .env
 * Use a database instead of json files
 * Improve configurability: allow for defining custom events
-```
