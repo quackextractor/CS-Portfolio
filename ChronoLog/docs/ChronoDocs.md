@@ -25,16 +25,16 @@ This tool addresses the critical need for efficient log analysis in high-volume 
 *   **Live Monitoring:** Provides real-time visibility into system health, enabling immediate reaction to emerging issues.
 
 ### Implementation
-We have engineered ChronoLog with a focus on **robustness** and **scalability**.
+ChronoLog is engineered with a focus on **robustness** and **scalability**.
 *   **Parallel Processing Engine:** Unlike traditional scripts that read one line at a time, ChronoLog utilizes the full power of modern multi-core processors. It splits the work across multiple "workers," allowing it to process millions of log lines in minutes.
-*   **Enterprise-Grade Storage:** We utilize **Microsoft SQL Server** to store the analyzed data. This ensures that your data is safe, structured, and ready for complex reporting.
-*   **Modular Architecture:** The system is built in distinct blocks (Reader, Processor, Writer). This means if one part needs an upgrade (e.g., changing the log format), we can do it without disrupting the entire system.
+*   **Enterprise-Grade Storage:** The system utilizes **Microsoft SQL Server** to store the analyzed data. This ensures that your data is safe, structured, and ready for complex reporting.
+*   **Modular Architecture:** The system is built in distinct blocks (Reader, Processor, Writer). This means if one part needs an upgrade (e.g., changing the log format), it can be done without disrupting the entire system.
 
 ### Testing
-To ensure reliability in a business context, we employ a rigorous testing strategy:
-*   **Unit Testing:** We test every individual component in isolation (e.g., "Does the timestamp parser handle leap years correctly?").
-*   **Integration Testing:** We simulate full end-to-end runs to ensure that data flows correctly from the log file to the database.
-*   **Stress Testing:** We subject the system to massive datasets to guarantee it remains stable under heavy load, ensuring it won't fail when you need it most.
+To ensure reliability in a business context, the project employs a rigorous testing strategy:
+*   **Unit Testing:** Individual components are tested in isolation (e.g., "Does the timestamp parser handle leap years correctly?").
+*   **Integration Testing:** Full end-to-end runs are simulated to ensure that data flows correctly from the log file to the database.
+*   **Stress Testing:** The system is subjected to massive datasets to guarantee it remains stable under heavy load, ensuring it won't fail when you need it most.
 
 ### Reasoning: Why and How?
 *   **Why Python?** It allows for rapid development and maintenance, reducing the total cost of ownership.
