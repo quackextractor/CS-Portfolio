@@ -124,18 +124,19 @@ package "CLI" {
 
 Config --> FileChunkReader : provides constants
 Config --> LogParser : provides regex
-LogProcessor --> LogParser : uses
-LogProcessor --> FileChunkReader : uses
-LogProcessor --> WriterProcess : manages writer process
-LogProcessor --> multiprocessing.Queue
 
-WriterProcess --> ChronoLogFacade : uses
-ChronoLogFacade --> SQLConnection : uses
+LogProcessor --> LogParser : _on_result() uses parse_lines()
+LogProcessor --> FileChunkReader : start() iterates
+LogProcessor --> WriterProcess : start() spawns
+LogProcessor --> multiprocessing.Queue : uses
 
-CLI --> LogProcessor : starts
-CLI --> FlaskApp : starts
-CLI --> SQLConnection : checks connection
+WriterProcess --> ChronoLogFacade : _process_queue() calls bulk_insert_timeline_events()
+ChronoLogFacade --> SQLConnection : all methods use execute_sp()
 
-FlaskApp --> ChronoLogFacade : uses
+CLI --> LogProcessor : cmd_run_processor() calls start()
+CLI --> FlaskApp : cmd_run_api() starts app
+CLI --> SQLConnection : check_db_connection() uses get_connection()
+
+FlaskApp --> ChronoLogFacade : route handlers call facade methods
 
 @enduml
