@@ -56,8 +56,7 @@ class SQLConnection:
         # Regex to replace the database part with 'master'
         master_conn_str = re.sub(r"(?i)(?:DATABASE|Initial Catalog)\s*=\s*[^;]+", "DATABASE=master", self.connection_string)
         
-        # If the original string didn't have DATABASE, we might need to append it? 
-        # But we only got here if we found it.
+
         
         try:
             # Connect to master
@@ -71,12 +70,7 @@ class SQLConnection:
                 cursor.execute(check_query, (target_db,))
                 if not cursor.fetchone():
                     print(f"Database '{target_db}' does not exist. Creating...")
-                    # CREATE DATABASE cannot run in a multi-statement transaction usually, 
-                    # but autocommit=True helps.
-                    # Parameterization for identifiers is not supported in standard SQL, 
-                    # so we must be careful. Ideally validate target_db is safe.
-                    # For this internal tool, we assume env var is safe-ish.
-                    # But let's at least quote it.
+
                     cursor.execute(f"CREATE DATABASE [{target_db}]")
                     print(f"Database '{target_db}' created successfully.")
                 else:
@@ -96,9 +90,7 @@ class SQLConnection:
         if self._conn:
             try:
                 # Check if connection is still alive
-                # This is a simple check; for production, a more robust pool is better.
-                # But for this assignment, reusing the single connection is sufficient 
-                # to fix the "new connection per query" issue.
+
                 self._conn.cursor().execute("SELECT 1")
                 return self._conn
             except Exception:

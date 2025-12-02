@@ -3,7 +3,7 @@
 -- MS SQL Server
 -- =============================================
 
--- Removed DB creation logic to use existing DB from connection string
+
 
 
 -- =============================================
