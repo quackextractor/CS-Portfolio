@@ -606,3 +606,15 @@ python bin/util_clear_dirs.py
 * Allow for ignoring certain message value tracking via .env
 * Use a database instead of json files
 * Improve configurability: allow for defining custom events
+
+## Strategic Analysis
+
+### SWOT Analysis
+
+| **Strengths** | **Weaknesses** |
+| :--- | :--- |
+| **Performance:** Parallel processing handles GB-scale logs efficiently.<br>**Scalability:** SQL Server backend supports massive datasets.<br>**Flexibility:** Supports both batch and live tailing modes.<br>**Modularity:** Clean architecture allows easy extension. | **Complexity:** Requires SQL Server infrastructure.<br>**UI:** No built-in web dashboard (relies on API/external tools).<br>**Dependencies:** Heavier setup compared to simple grep/awk scripts. |
+
+| **Opportunities** | **Threats** |
+| :--- | :--- |
+| **Cloud Integration:** Deploy as a serverless function or container.<br>**AI/ML:** Add predictive anomaly detection.<br>**Visualization:** Build a dedicated React/Next.js frontend.<br>**Ecosystem:** Create plugins for common log formats (Nginx, Apache). | **Competition:** Established enterprise tools (Splunk, ELK, Datadog).<br>**Adoption:** Users may prefer "all-in-one" SaaS solutions.<br>**Resource Intensity:** High CPU usage during peak processing. |
