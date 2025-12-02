@@ -1,6 +1,7 @@
 from flask import Flask, jsonify, request, send_from_directory
 from flasgger import Swagger
 from facade import ChronoLogFacade
+from db import DatabaseConnectionError
 
 app = Flask(__name__)
 swagger = Swagger(app)
@@ -14,6 +15,10 @@ def not_found(error):
 @app.errorhandler(500)
 def internal_error(error):
     return jsonify({"error": "Internal server error"}), 500
+
+@app.errorhandler(DatabaseConnectionError)
+def database_error(error):
+    return jsonify({"error": "Database unavailable", "details": str(error)}), 503
 
 @app.route('/api/summary', methods=['GET'])
 def get_summary():

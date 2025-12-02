@@ -5,6 +5,9 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+class DatabaseConnectionError(Exception):
+    pass
+
 class SQLConnection:
     _instance = None
     _lock = threading.Lock()
@@ -88,6 +91,7 @@ class SQLConnection:
     def get_connection(self):
         """
         Returns a connection. Reuses the existing connection if it's open.
+        Raises DatabaseConnectionError if connection fails.
         """
         if self._conn:
             try:
@@ -101,8 +105,11 @@ class SQLConnection:
                 # Connection might be closed or broken
                 self._conn = None
 
-        self._conn = pyodbc.connect(self.connection_string)
-        return self._conn
+        try:
+            self._conn = pyodbc.connect(self.connection_string)
+            return self._conn
+        except pyodbc.Error as e:
+            raise DatabaseConnectionError(f"Failed to connect to database: {e}")
 
     def execute_query(self, query, params=None):
         conn = self.get_connection()
