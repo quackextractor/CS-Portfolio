@@ -221,8 +221,44 @@ def check_web_dependencies():
         except subprocess.CalledProcessError:
             print("[FAILED] Could not build web application. Please run 'npm run build' in 'web/' manually.")
 
+
+def kill_port_process(port):
+    """Find and kill process listening on a specific port (Windows only for now)."""
+    print(f"Checking for process on port {port}...")
+    try:
+        # Run netstat to find process using the port
+        # -a: Display all connections and listening ports.
+        # -n: Displays addresses and port numbers in numerical form.
+        # -o: Displays the owning process ID associated with each connection.
+        output = subprocess.check_output(f"netstat -ano | findstr :{port}", shell=True).decode()
+        
+        if not output:
+             return
+
+        # Parse lines to find the PID
+        # Output format: TCP    127.0.0.1:5000         0.0.0.0:0              LISTENING       1234
+        for line in output.splitlines():
+            parts = line.split()
+            if len(parts) >= 5 and f":{port}" in parts[1]:
+                pid = parts[-1]
+                print(f"Found process {pid} listening on port {port}. Killing it...")
+                try:
+                    subprocess.check_call(f"taskkill /F /PID {pid}", shell=True)
+                    print(f"[OK] Process {pid} terminated.")
+                except subprocess.CalledProcessError:
+                    print(f"[FAILED] Could not kill process {pid}.")
+                return # Only kill one, usually enough
+    except subprocess.CalledProcessError:
+        # netstat returns error if no match found (grep/findstr behavior)
+        pass 
+    except Exception as e:
+        print(f"[WARNING] Error checking port {port}: {e}")
+
 def cmd_run_api(args):
     """Run the API server."""
+    # Ensure auto-cleanup of port 5000
+    kill_port_process(5000)
+
     # Ensure web dependencies are ready before starting API
     check_web_dependencies()
     
