@@ -1,4 +1,5 @@
 from flask import Flask, jsonify, request, send_from_directory
+import pathlib
 from flasgger import Swagger
 from facade import ChronoLogFacade
 from db import DatabaseConnectionError
@@ -6,7 +7,12 @@ from db import DatabaseConnectionError
 import logging
 import sys
 
-app = Flask(__name__, static_folder='../web/dist', static_url_path='')
+
+# Setup absolute paths
+BASE_DIR = pathlib.Path(__file__).parent.resolve()
+DIST_DIR = BASE_DIR.parent / 'web' / 'dist'
+
+app = Flask(__name__, static_folder=str(DIST_DIR), static_url_path='')
 
 # Add a simple request logger for visibility that prints to stdout
 print("API MODULE LOADED", flush=True)
@@ -180,9 +186,12 @@ def get_messages():
     data = facade.get_messages()
     return jsonify(data)
 
-@app.route('/')
-def index():
-    return send_from_directory('../web/dist', 'index.html')
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>')
+def serve(path):
+    if path and (DIST_DIR / path).exists():
+        return send_from_directory(DIST_DIR, path)
+    return send_from_directory(DIST_DIR, 'index.html')
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)

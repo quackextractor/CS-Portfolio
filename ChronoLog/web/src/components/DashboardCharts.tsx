@@ -34,8 +34,8 @@ export function DashboardCharts({ summary }: DashboardChartsProps) {
                 <CardHeader className="pb-2">
                     <CardTitle className="text-sm font-medium">Latency (Last 500)</CardTitle>
                 </CardHeader>
-                <CardContent className="h-[250px] p-0 pb-2">
-                    <div className="w-full h-full min-w-0" style={{ minHeight: '100%' }}>
+                <CardContent className="h-[250px] p-0 relative min-w-0">
+                    <div className="absolute inset-0 w-full h-full">
                         <ResponsiveContainer width="100%" height="100%">
                             <LineChart data={latencyData}>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
@@ -69,8 +69,8 @@ export function DashboardCharts({ summary }: DashboardChartsProps) {
                 <CardHeader className="pb-2">
                     <CardTitle className="text-sm font-medium">Event Counts</CardTitle>
                 </CardHeader>
-                <CardContent className="h-[250px] p-0 pb-2">
-                    <div className="w-full h-full min-w-0" style={{ minHeight: '100%' }}>
+                <CardContent className="h-[250px] p-0 relative min-w-0">
+                    <div className="absolute inset-0 w-full h-full">
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={countData} layout="vertical" margin={{ left: 20 }}>
                                 <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="hsl(var(--border))" />

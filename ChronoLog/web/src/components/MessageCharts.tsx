@@ -48,8 +48,8 @@ export function MessageMetrics({ templates }: MessageMetricsProps) {
                             <div className="px-3 pt-3 text-xs text-muted-foreground h-8 overflow-hidden text-ellipsis line-clamp-1" title={templates[chart.id]}>
                                 {humanizeTemplate(templates[chart.id])}
                             </div>
-                            <div className="h-[120px] w-full px-2 pb-2">
-                                <div className="w-full h-full min-w-0" style={{ minHeight: '100%' }}>
+                            <div className="h-[120px] w-full px-2 pb-2 relative">
+                                <div className="absolute inset-0 w-full h-full p-2">
                                     <ResponsiveContainer width="100%" height="100%">
                                         <LineChart data={chart.data}>
                                             <XAxis
