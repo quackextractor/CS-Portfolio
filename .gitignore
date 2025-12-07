@@ -221,3 +221,6 @@ components.json
 # OS trash
 .DS_Store
 Thumbs.db
+
+
+!ChronoLog/web/src/lib/
