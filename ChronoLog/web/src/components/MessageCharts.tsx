@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import type { MessageTemplates, TimeseriesPoint } from "@/types";
 import { api } from "@/lib/api";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LineChart, Line, ResponsiveContainer, YAxis, Tooltip, XAxis } from "recharts";
 import { humanizeTemplate } from "@/lib/formatters";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface MessageMetricsProps {
     templates: MessageTemplates;
@@ -11,6 +12,7 @@ interface MessageMetricsProps {
 
 export function MessageMetrics({ templates }: MessageMetricsProps) {
     const [charts, setCharts] = useState<{ id: string; data: TimeseriesPoint[] }[]>([]);
+    const [limit, setLimit] = useState<number>(50);
 
     useEffect(() => {
         // Load all message metrics in parallel
@@ -19,7 +21,7 @@ export function MessageMetrics({ templates }: MessageMetricsProps) {
             const results = await Promise.all(
                 ids.map(async id => {
                     try {
-                        const data = await api.getTimeseries(`msg_${id}`, 50);
+                        const data = await api.getTimeseries(`msg_${id}`, limit);
                         if (data && data.length > 0) return { id, data };
                     } catch (e) {
                         return null;
@@ -32,14 +34,26 @@ export function MessageMetrics({ templates }: MessageMetricsProps) {
         if (Object.keys(templates).length > 0) {
             load();
         }
-    }, [templates]);
+    }, [templates, limit]);
 
     if (charts.length === 0) return null;
 
     return (
         <Card className="">
-            <CardHeader className="pb-2">
-                <h3 className="text-lg font-semibold">Message Metrics</h3>
+            <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
+                <CardTitle className="text-lg font-semibold">Message Metrics (Last {limit})</CardTitle>
+                <Select value={String(limit)} onValueChange={(v) => setLimit(Number(v))}>
+                    <SelectTrigger className="w-[100px] h-8 text-xs">
+                        <SelectValue placeholder="Limit" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="50">50</SelectItem>
+                        <SelectItem value="100">100</SelectItem>
+                        <SelectItem value="200">200</SelectItem>
+                        <SelectItem value="500">500</SelectItem>
+                        <SelectItem value="1000">1000</SelectItem>
+                    </SelectContent>
+                </Select>
             </CardHeader>
             <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
