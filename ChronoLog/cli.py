@@ -2,11 +2,31 @@ import argparse
 import os
 import sys
 import unittest
+import subprocess
 from pathlib import Path
 from dotenv import load_dotenv
 
 # Add src to path so we can import modules
 sys.path.append(str(Path(__file__).parent / "src"))
+
+def install_python_dependencies():
+    """Install Python dependencies from requirements.txt."""
+    print("Detected missing Python dependencies. Installing...")
+    try:
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "-r", "requirements.txt"])
+        print("[OK] Python dependencies installed.")
+        print("Please re-run the command.")
+        sys.exit(0)
+    except subprocess.CalledProcessError:
+        print("[FAILED] Could not install dependencies.")
+        sys.exit(1)
+
+# Try imports, install if missing
+try:
+    from dotenv import load_dotenv
+    import pyodbc # Check for ODBC driver support if needed, though usually just python package
+except ImportError:
+    install_python_dependencies()
 
 def check_env():
     """Check if .env file exists and has required variables."""
@@ -95,7 +115,6 @@ def cmd_check(args):
 
 def run_script(script_path, args=None):
     """Run a python script using subprocess."""
-    import subprocess
     cmd = [sys.executable, str(script_path)]
     if args:
         cmd.extend(args)
@@ -134,8 +153,42 @@ def cmd_run_processor(args):
     else:
         run_script(script)
 
+def check_web_dependencies():
+    """Check and ensure web dependencies are installed and built."""
+    web_dir = Path("web")
+    if not web_dir.exists():
+        print("[WARNING] 'web' directory not found. Skipping web dependency check.")
+        return
+
+    node_modules = web_dir / "node_modules"
+    dist_dir = web_dir / "dist"
+
+    # Install dependencies if missing
+    if not node_modules.exists():
+        print("Web dependencies not found. Running 'npm install'...")
+        try:
+            # shell=True is often needed on Windows for npm to be found correctly in path if prompt doesn't map it directly
+            # safely use shell=True here for standard command
+            subprocess.check_call("npm install", shell=True, cwd=web_dir)
+            print("[OK] Web dependencies installed.")
+        except subprocess.CalledProcessError:
+            print("[FAILED] Could not install web dependencies. Please run 'npm install' in 'web/' manually.")
+            # We don't exit, might still want to try running API
+    
+    # Build if missing
+    if not dist_dir.exists():
+        print("Web build not found. Running 'npm run build'...")
+        try:
+            subprocess.check_call("npm run build", shell=True, cwd=web_dir)
+            print("[OK] Web application built.")
+        except subprocess.CalledProcessError:
+            print("[FAILED] Could not build web application. Please run 'npm run build' in 'web/' manually.")
+
 def cmd_run_api(args):
     """Run the API server."""
+    # Ensure web dependencies are ready before starting API
+    check_web_dependencies()
+    
     print("Starting API server...")
     script = Path("src/api.py")
     run_script(script)
@@ -184,8 +237,11 @@ def cmd_auto(args):
         if not check_input_files():
             print("[FAILED] Failed to generate input files. Aborting.")
             return
+            
+    # 5. Check Web Dependencies (Optimistic check for auto mode too)
+    check_web_dependencies()
 
-    # 5. Run Processor
+    # 6. Run Processor
     print("\n[OK] Setup complete. Launching Log Processor...")
     cmd_run_processor(None)
 
