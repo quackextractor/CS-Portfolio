@@ -9,7 +9,13 @@ Next review: 2025-12-09
 
 ### Improved
 - **DB Connection Logic**: Enhanced the robustness and efficiency of database connections.
+    - **Connection Stability**: Refactored `SQLConnection` to establish fresh connections for each operation, preventing issues with stale connections or timeouts.
+    - **Resource Cleanup**: Implemented strict `try...finally` blocks with `conn.close()` throughout the codebase to ensure database resources are released immediately after use.
+    - **Error Handling**: Introduced `DatabaseConnectionError` to gracefully handle and propagate connection failures.
 - **CLI**: Improved the Command Line Interface for better usability and functionality.
+    - **Interactive Mode**: Running `cli.py` without arguments now launches an interactive menu, simplifying task execution.
+    - **Dependency & Build Management**: Added automatic checks for Python dependencies and the new Web frontend. The CLI now handles `npm install` and rebuilds the frontend if source files are stale.
+    - **Port Management**: Integrated a cross-platform (Windows/Linux) port killer to automatically free up port 5000 before starting the API.
 
 ## [V2] - 2025-12-01
 Next review: 2025-12-02
