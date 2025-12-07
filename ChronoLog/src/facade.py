@@ -52,12 +52,12 @@ class ChronoLogFacade:
         events_json = json.dumps(events)
         self.db.execute_sp("sp_BulkInsertTimelineEvents", (events_json,))
 
-    def get_timeline_page(self, page=1, per_page=30):
+    def get_timeline_page(self, page=1, per_page=30, event_type=None):
         """
         Retrieves a page of timeline events.
         Returns a list of dictionaries.
         """
-        rows = self.db.execute_sp("sp_GetTimelinePage", (page, per_page))
+        rows = self.db.execute_sp("sp_GetTimelinePage", (page, per_page, event_type))
         if not rows:
             return []
         

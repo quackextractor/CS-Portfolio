@@ -16,15 +16,23 @@ interface TimelineProps {
 export function Timeline({ templates, totalEvents }: TimelineProps) {
     const [page, setPage] = useState(1);
     const [perPage, setPerPage] = useState(30);
+    const [filterType, setFilterType] = useState<string>("all");
     const [events, setEvents] = useState<TimelineEvent[]>([]);
+    const [total, setTotal] = useState<number | null>(totalEvents);
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
         const load = async () => {
             setLoading(true);
             try {
-                const data = await api.getTimeline(page, perPage);
+                const typeParam = filterType === "all" ? undefined : filterType;
+                const data = await api.getTimeline(page, perPage, typeParam);
                 setEvents(data);
+                if (data.length > 0 && data[0].total_count !== undefined) {
+                    setTotal(data[0].total_count);
+                } else if (data.length === 0) {
+                    setTotal(0);
+                }
             } catch (e) {
                 console.error(e);
             } finally {
@@ -32,13 +40,25 @@ export function Timeline({ templates, totalEvents }: TimelineProps) {
             }
         };
         load();
-    }, [page, perPage]);
+    }, [page, perPage, filterType]);
 
-    const maxPage = totalEvents ? Math.max(1, Math.ceil(totalEvents / perPage)) : 1;
+    // Update local total when prop changes, but only if no filter is active (or verify consistency)
+    useEffect(() => {
+        if (filterType === "all") {
+            setTotal(totalEvents);
+        }
+    }, [totalEvents, filterType]);
+
+    const maxPage = total !== null ? Math.max(1, Math.ceil(total / perPage)) : 1;
 
     // Reset page when perPage changes
     const onPerPageChange = (val: string) => {
         setPerPage(Number(val));
+        setPage(1);
+    };
+
+    const onFilterChange = (val: string) => {
+        setFilterType(val);
         setPage(1);
     };
 
@@ -59,6 +79,18 @@ export function Timeline({ templates, totalEvents }: TimelineProps) {
                             <SelectItem value="100">100</SelectItem>
                         </SelectContent>
                     </Select>
+                    <span className="text-sm text-muted-foreground ml-2">Type</span>
+                    <Select value={filterType} onValueChange={onFilterChange}>
+                        <SelectTrigger className="w-[100px] h-8">
+                            <SelectValue placeholder="All" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All</SelectItem>
+                            <SelectItem value="error">Error</SelectItem>
+                            <SelectItem value="warning">Warning</SelectItem>
+                            <SelectItem value="info">Info</SelectItem>
+                        </SelectContent>
+                    </Select>
                 </div>
             </CardHeader>
             <CardContent className="flex-1 overflow-hidden flex flex-col gap-4">
@@ -74,13 +106,13 @@ export function Timeline({ templates, totalEvents }: TimelineProps) {
                             Prev
                         </Button>
                         <span className="text-sm tabular-nums">
-                            Page {page} {totalEvents ? `of ${maxPage}` : ''}
+                            Page {page} {total !== null ? `of ${maxPage}` : ''}
                         </span>
                         <Button
                             variant="outline"
                             size="sm"
                             onClick={() => setPage(p => p + 1)}
-                            disabled={(totalEvents !== null && page >= maxPage) || loading}
+                            disabled={(total !== null && page >= maxPage) || loading}
                         >
                             Next
                         </Button>

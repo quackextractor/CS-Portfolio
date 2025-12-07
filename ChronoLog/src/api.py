@@ -3,7 +3,18 @@ from flasgger import Swagger
 from facade import ChronoLogFacade
 from db import DatabaseConnectionError
 
+import logging
+import sys
+
 app = Flask(__name__, static_folder='../web/dist/assets', static_url_path='/assets')
+
+# Add a simple request logger for visibility that prints to stdout
+print("API MODULE LOADED", flush=True)
+
+@app.before_request
+def log_request():
+    print(f"API REQUEST: {request.method} {request.path}", flush=True)
+
 swagger = Swagger(app)
 facade = ChronoLogFacade()
 
@@ -72,6 +83,10 @@ def get_timeline():
         type: integer
         default: 30
         description: Items per page
+      - name: type
+        in: query
+        type: string
+        description: Filter by event type (error, warning, etc.)
     responses:
       200:
         description: List of timeline events
@@ -101,7 +116,8 @@ def get_timeline():
     """
     page = request.args.get('page', 1, type=int)
     per_page = request.args.get('per_page', 30, type=int)
-    data = facade.get_timeline_page(page, per_page)
+    event_type = request.args.get('type')
+    data = facade.get_timeline_page(page, per_page, event_type)
     return jsonify(data)
 
 @app.route('/api/timeseries', methods=['GET'])

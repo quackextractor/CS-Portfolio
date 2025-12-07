@@ -121,7 +121,10 @@ def run_script(script_path, args=None):
     
     print(f"Running: {' '.join(cmd)}")
     try:
-        subprocess.check_call(cmd)
+        # Force unbuffered output to ensure logs appear immediately
+        env = os.environ.copy()
+        env["PYTHONUNBUFFERED"] = "1"
+        subprocess.check_call(cmd, env=env)
         return True
     except subprocess.CalledProcessError:
         print(f"[FAILED] Error running {script_path}")
@@ -175,11 +178,45 @@ def check_web_dependencies():
             print("[FAILED] Could not install web dependencies. Please run 'npm install' in 'web/' manually.")
             # We don't exit, might still want to try running API
     
-    # Build if missing
+    # Build if missing or stale
+    should_build = False
+    
     if not dist_dir.exists():
-        print("Web build not found. Running 'npm run build'...")
+        should_build = True
+        print("Web build not found.")
+    else:
+        # Check if source is newer than build
+        src_dir = web_dir / "src"
+        index_html = dist_dir / "index.html"
+        
+        if index_html.exists():
+            last_build_time = index_html.stat().st_mtime
+            
+            # Find newest source file
+            last_src_time = 0
+            for root, _, files in os.walk(src_dir):
+                for file in files:
+                    file_path = Path(root) / file
+                    mtime = file_path.stat().st_mtime
+                    if mtime > last_src_time:
+                        last_src_time = mtime
+            
+            if last_src_time > last_build_time:
+                should_build = True
+                print("Web build is stale (source changed).")
+        else:
+             should_build = True
+    
+    if should_build:
+        print("Running 'npm run build'...")
         try:
-            subprocess.check_call("npm run build", shell=True, cwd=web_dir)
+            # Safer npm execution for Windows to avoid PowerShell execution policy issues
+            cmd = "npm run build"
+            if os.name == 'nt':
+                # Try to use npm.cmd explicitly which usually bypasses the .ps1 script restriction in PS
+                cmd = "npm.cmd run build"
+            
+            subprocess.check_call(cmd, shell=True, cwd=web_dir)
             print("[OK] Web application built.")
         except subprocess.CalledProcessError:
             print("[FAILED] Could not build web application. Please run 'npm run build' in 'web/' manually.")

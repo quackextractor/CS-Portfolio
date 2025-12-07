@@ -19,7 +19,8 @@ GO
 
 CREATE PROCEDURE [dbo].[sp_GetTimelinePage]
     @PageNumber INT = 1,
-    @EntriesPerPage INT = 30
+    @EntriesPerPage INT = 30,
+    @EventType NVARCHAR(50) = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -32,8 +33,10 @@ BEGIN
     DECLARE @Offset INT = (@PageNumber - 1) * @EntriesPerPage;
     DECLARE @TotalCount BIGINT;
     
-    -- Get total count (cached for performance)
-    SELECT @TotalCount = COUNT(*) FROM [dbo].[TimelineEvents];
+    -- Get total count (filtered)
+    SELECT @TotalCount = COUNT(*) 
+    FROM [dbo].[TimelineEvents] WITH (NOLOCK)
+    WHERE (@EventType IS NULL OR [EventType] = @EventType);
     
     -- Return paginated results with message templates
     SELECT 
@@ -47,6 +50,7 @@ BEGIN
         @TotalCount as [TotalCount]
     FROM [dbo].[TimelineEvents] te WITH (NOLOCK)
     LEFT JOIN [dbo].[Messages] m WITH (NOLOCK) ON te.[MessageId] = m.[MessageId]
+    WHERE (@EventType IS NULL OR te.[EventType] = @EventType)
     ORDER BY te.[EventId] DESC
     OFFSET @Offset ROWS
     FETCH NEXT @EntriesPerPage ROWS ONLY;
