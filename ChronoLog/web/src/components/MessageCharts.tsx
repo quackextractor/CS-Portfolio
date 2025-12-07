@@ -44,34 +44,36 @@ export function MessageMetrics({ templates }: MessageMetricsProps) {
             <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {charts.map(chart => (
-                        <Card key={chart.id} className="bg-muted/20 border-none shadow-none">
+                        <Card key={chart.id} className="bg-muted/20 border-none shadow-none min-w-0">
                             <div className="px-3 pt-3 text-xs text-muted-foreground h-8 overflow-hidden text-ellipsis line-clamp-1" title={templates[chart.id]}>
                                 {humanizeTemplate(templates[chart.id])}
                             </div>
                             <div className="h-[120px] w-full px-2 pb-2">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <LineChart data={chart.data}>
-                                        <XAxis
-                                            dataKey="time"
-                                            tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
-                                            tickFormatter={(val: string) => val.split(' ')[1] || val}
-                                            minTickGap={30}
-                                        />
-                                        <YAxis width={30} tick={{ fontSize: 10 }} domain={['auto', 'auto']} />
-                                        <Tooltip
-                                            contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', fontSize: '12px' }}
-                                            labelStyle={{ display: 'none' }}
-                                        />
-                                        <Line
-                                            type="step"
-                                            dataKey="value"
-                                            stroke="hsl(var(--primary))"
-                                            strokeWidth={1.5}
-                                            dot={false}
-                                            isAnimationActive={false}
-                                        />
-                                    </LineChart>
-                                </ResponsiveContainer>
+                                <div className="w-full h-full min-w-0" style={{ minHeight: '100%' }}>
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <LineChart data={chart.data}>
+                                            <XAxis
+                                                dataKey="time"
+                                                tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+                                                tickFormatter={(val: string) => val.split(' ')[1] || val}
+                                                minTickGap={30}
+                                            />
+                                            <YAxis width={30} tick={{ fontSize: 10 }} domain={['auto', 'auto']} />
+                                            <Tooltip
+                                                contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', fontSize: '12px' }}
+                                                labelStyle={{ display: 'none' }}
+                                            />
+                                            <Line
+                                                type="step"
+                                                dataKey="value"
+                                                stroke="hsl(var(--primary))"
+                                                strokeWidth={1.5}
+                                                dot={false}
+                                                isAnimationActive={false}
+                                            />
+                                        </LineChart>
+                                    </ResponsiveContainer>
+                                </div>
                             </div>
                         </Card>
                     ))}

@@ -6,7 +6,7 @@ from db import DatabaseConnectionError
 import logging
 import sys
 
-app = Flask(__name__, static_folder='../web/dist/assets', static_url_path='/assets')
+app = Flask(__name__, static_folder='../web/dist', static_url_path='')
 
 # Add a simple request logger for visibility that prints to stdout
 print("API MODULE LOADED", flush=True)
@@ -159,7 +159,7 @@ def get_timeseries():
         
     data = facade.get_timeseries(metric, limit)
     if not data:
-        return jsonify({"error": f"No data found for metric: {metric}"}), 404
+        return jsonify([])
     return jsonify(data)
 
 @app.route('/api/messages', methods=['GET'])

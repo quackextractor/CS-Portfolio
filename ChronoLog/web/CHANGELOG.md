@@ -1,5 +1,12 @@
 # Changelog - Frontend Modernization
 
+## [0.1.1] - 2025-12-07
+
+### Fixed
+- **Console Errors**: Eliminated CSS parsing errors by implementing PostCSS and Stylelint with standard configuration.
+- **Chart Resizing**: Resolved Recharts generic width/height warnings by enforcing `min-width: 0` on chart containers.
+- **Font Permissions**: Fixed "Liberation Mono" visibility errors by using a system-native monospace font stack.
+
 ## [0.1.0] - 2025-12-07
 
 ### Added

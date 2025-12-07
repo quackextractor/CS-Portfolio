@@ -30,61 +30,65 @@ export function DashboardCharts({ summary }: DashboardChartsProps) {
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Card>
+            <Card className="min-w-0">
                 <CardHeader className="pb-2">
                     <CardTitle className="text-sm font-medium">Latency (Last 500)</CardTitle>
                 </CardHeader>
-                <CardContent className="h-[250px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={latencyData}>
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
-                            <XAxis
-                                dataKey="time"
-                                tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
-                                tickFormatter={(val: string) => val.split(' ')[1] || val}
-                                minTickGap={30}
-                            />
-                            <YAxis
-                                tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
-                                width={40}
-                            />
-                            <Tooltip
-                                contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', borderRadius: '6px' }}
-                            />
-                            <Line
-                                type="monotone"
-                                dataKey="value"
-                                stroke="hsl(var(--primary))"
-                                strokeWidth={2}
-                                dot={false}
-                            />
-                        </LineChart>
-                    </ResponsiveContainer>
+                <CardContent className="h-[250px] p-0 pb-2">
+                    <div className="w-full h-full min-w-0" style={{ minHeight: '100%' }}>
+                        <ResponsiveContainer width="100%" height="100%">
+                            <LineChart data={latencyData}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+                                <XAxis
+                                    dataKey="time"
+                                    tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+                                    tickFormatter={(val: string) => val.split(' ')[1] || val}
+                                    minTickGap={30}
+                                />
+                                <YAxis
+                                    tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+                                    width={40}
+                                />
+                                <Tooltip
+                                    contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', borderRadius: '6px' }}
+                                />
+                                <Line
+                                    type="monotone"
+                                    dataKey="value"
+                                    stroke="hsl(var(--primary))"
+                                    strokeWidth={2}
+                                    dot={false}
+                                />
+                            </LineChart>
+                        </ResponsiveContainer>
+                    </div>
                 </CardContent>
             </Card>
 
-            <Card>
+            <Card className="min-w-0">
                 <CardHeader className="pb-2">
                     <CardTitle className="text-sm font-medium">Event Counts</CardTitle>
                 </CardHeader>
-                <CardContent className="h-[250px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={countData} layout="vertical" margin={{ left: 20 }}>
-                            <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="hsl(var(--border))" />
-                            <XAxis type="number" tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} />
-                            <YAxis
-                                dataKey="name"
-                                type="category"
-                                width={60}
-                                tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
-                            />
-                            <Tooltip
-                                contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', borderRadius: '6px' }}
-                                cursor={{ fill: 'hsl(var(--muted)/0.2)' }}
-                            />
-                            <Bar dataKey="count" radius={[0, 4, 4, 0]} barSize={32} />
-                        </BarChart>
-                    </ResponsiveContainer>
+                <CardContent className="h-[250px] p-0 pb-2">
+                    <div className="w-full h-full min-w-0" style={{ minHeight: '100%' }}>
+                        <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={countData} layout="vertical" margin={{ left: 20 }}>
+                                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="hsl(var(--border))" />
+                                <XAxis type="number" tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} />
+                                <YAxis
+                                    dataKey="name"
+                                    type="category"
+                                    width={60}
+                                    tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
+                                />
+                                <Tooltip
+                                    contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', borderRadius: '6px' }}
+                                    cursor={{ fill: 'hsl(var(--muted)/0.2)' }}
+                                />
+                                <Bar dataKey="count" radius={[0, 4, 4, 0]} barSize={32} />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </div>
                 </CardContent>
             </Card>
         </div>
