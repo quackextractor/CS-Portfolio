@@ -1,5 +1,16 @@
 # Changelog
 
+## [V3] - 2025-12-07
+Next review: 2025-12-09
+
+### Added
+- **Responsive TS React FE**: Implemented a modern, responsive frontend using React and TypeScript to visualize logs, metrics, and timelines.
+- **Event Filtering**: Added functionality to filter events by type (e.g., Error, Warning) in both the API and Frontend.
+
+### Improved
+- **DB Connection Logic**: Enhanced the robustness and efficiency of database connections.
+- **CLI**: Improved the Command Line Interface for better usability and functionality.
+
 ## [V2] - 2025-12-01
 Next review: 2025-12-02
 

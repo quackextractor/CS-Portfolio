@@ -10,7 +10,7 @@
 
 ## Overview
 
-ChronoLog is a high-performance parallel log analyzer designed to process large log files efficiently. It supports both live (real-time) and batch processing modes, automatically detecting errors, warnings, and custom metrics while producing structured outputs suitable for downstream visualization tools.
+ChronoLog is a high-performance parallel log analyzer designed to process large log files efficiently. It supports both live (real-time) and batch processing modes, automatically detecting errors, warnings, and custom metrics while producing structured outputs and offering a modern React-based web dashboard for visualization.
 
 ## Business Requirements
 
@@ -78,7 +78,7 @@ flowchart TD
   B --> B1["JSON Format"]
   B --> B2["Timeline Events"]
 
-  C --> C1["Charts (generated files)"]
+  C --> C1["Interactive Web Dashboard"]
   C --> C2["CSV/JSON for external tools"]
 
   D --> D1["Error Counts"]
@@ -183,7 +183,7 @@ python-dotenv>=0.20.0
 pytest>=7.0
 ```
 
-(Flask / web dashboard is **not** part of the core project. Visualization is produced as files to be consumed by external tools.)
+(The project includes a dedicated React + TypeScript web dashboard in the `web/` directory for data visualization.)
 
 ### External Services
 
@@ -507,14 +507,15 @@ python tests/run_all_tests.py
 
 ### Version History
 
-* Current: Initial release
-* Features: Batch/live processing, file-based visualization outputs
+* Current: V3
+* Features: Batch/live processing, SQL Backend, API, React Web Dashboard
 
 ### Known Limitations
 
 * Log format assumes specific timestamp pattern
 * Memory usage scales with queue size
-* Visualization is produced as files for external tools (no built-in web UI)
+* Log format assumes specific timestamp pattern
+* Memory usage scales with queue size
 
 ## Data Schema
 
@@ -599,6 +600,7 @@ python bin/util_clear_dirs.py
 
 * Allow for keeping track of custom variables which change on triggers (defined by patterns) and change depending on set ACTION - DONE
 * Live tail version - DONE
+* Connect a proper React TypeScript frontend - DONE
 * Add proper logging using a logging library
 * Test the entire app using better tests, not just the methods. Same input = same output
 * Better runtime stats, maybe a simple analytics efficiency suite to ID bottlenecks
@@ -613,8 +615,8 @@ python bin/util_clear_dirs.py
 
 | **Strengths** | **Weaknesses** |
 | :--- | :--- |
-| **Performance:** Parallel processing handles GB-scale logs efficiently.<br>**Scalability:** SQL Server backend supports massive datasets.<br>**Flexibility:** Supports both batch and live tailing modes.<br>**Modularity:** Clean architecture allows easy extension. | **Complexity:** Requires SQL Server infrastructure.<br>**UI:** No built-in web dashboard (relies on API/external tools).<br>**Dependencies:** Heavier setup compared to simple grep/awk scripts. |
+| **Performance:** Parallel processing handles GB-scale logs efficiently.<br>**Scalability:** SQL Server backend supports massive datasets.<br>**Flexibility:** Supports both batch and live tailing modes.<br>**Modularity:** Clean architecture allows easy extension.<br>**Usability:** Modern Web UI for easy data exploration. | **Complexity:** Requires SQL Server infrastructure.<br>**Dependencies:** Heavier setup compared to simple grep/awk scripts. |
 
 | **Opportunities** | **Threats** |
 | :--- | :--- |
-| **Cloud Integration:** Deploy as a serverless function or container.<br>**AI/ML:** Add predictive anomaly detection.<br>**Visualization:** Build a dedicated React/Next.js frontend.<br>**Ecosystem:** Create plugins for common log formats (Nginx, Apache). | **Competition:** Established enterprise tools (Splunk, ELK, Datadog).<br>**Adoption:** Users may prefer "all-in-one" SaaS solutions.<br>**Resource Intensity:** High CPU usage during peak processing. |
+| **Cloud Integration:** Deploy as a serverless function or container.<br>**AI/ML:** Add predictive anomaly detection.<br>**Ecosystem:** Create plugins for common log formats (Nginx, Apache). | **Competition:** Established enterprise tools (Splunk, ELK, Datadog).<br>**Adoption:** Users may prefer "all-in-one" SaaS solutions.<br>**Resource Intensity:** High CPU usage during peak processing. |

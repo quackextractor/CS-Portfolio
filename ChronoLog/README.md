@@ -21,6 +21,7 @@ A lightweight frontend dashboard allows visual exploration of logs and metrics.
 - Incremental (live) or batch processing modes
 - Automatic detection of key-value metrics in logs
 - Aggregated outputs: timeline, summary, and message templates
+- Modern Web Interface (React + TypeScript) for real-time visualization
 
 ## Docs
 Recommended programs for markdown:
@@ -129,6 +130,20 @@ python src/api.py
 
 The API will be available at [http://127.0.0.1:5000](http://127.0.0.1:5000).
 Swagger documentation is available at [http://127.0.0.1:5000/apidocs](http://127.0.0.1:5000/apidocs).
+
+### 4. Running the Web Interface
+
+The project includes a modern React-based frontend in the `web/` directory.
+
+To start the development server:
+
+```bash
+cd web
+npm install
+npm run dev
+```
+
+The web interface will typically be available at [http://localhost:5173](http://localhost:5173) (check console output).
 
 ## Data Storage
 
