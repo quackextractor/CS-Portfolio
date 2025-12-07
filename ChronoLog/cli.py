@@ -295,6 +295,60 @@ def cmd_auto(args):
     print("\n[OK] Setup complete. Launching Log Processor...")
     cmd_run_processor(None)
 
+
+
+def interactive_mode():
+    """Run CLI in interactive mode."""
+    options = [
+        ("check", "Run system checks", cmd_check),
+        ("setup", "Run database setup", cmd_setup),
+        ("generate-logs", "Generate sample logs", cmd_generate_logs),
+        ("run-processor", "Run the log processor", cmd_run_processor),
+        ("run-api", "Run the API server", cmd_run_api),
+        ("kill-port", "Kill process on port 5000", cmd_kill_port),
+        ("test", "Run all tests", cmd_test),
+        ("auto", "Automate setup and run processor", cmd_auto)
+    ]
+
+    print("\n========================================")
+    print("      ChronoLog Management CLI")
+    print("========================================")
+    print("Tip: You can also run commands directly:")
+    for cmd, desc, _ in options:
+        print(f"     python cli.py {cmd:<15} - {desc}")
+    
+    while True:
+        print("\nPlease select an option:")
+        for i, (cmd, desc, _) in enumerate(options, 1):
+            print(f" {i}. {desc}")
+        print(" 0. Exit")
+        
+        try:
+            choice = input("\nEnter choice [0-8]: ").strip()
+            
+            if choice == "0":
+                print("Goodbye!")
+                sys.exit(0)
+            
+            try:
+                idx = int(choice) - 1
+                if 0 <= idx < len(options):
+                    cmd_name, desc, func = options[idx]
+                    print(f"\n[Running Command]: {cmd_name}")
+                    print("-" * 40)
+                    func(None)
+                    print("-" * 40)
+                    print(f"[Finished] {cmd_name}")
+                    input("Press Enter to continue...")
+                else:
+                    print("Invalid selection. Please try again.")
+            except ValueError:
+                print("Invalid input. Please enter a number.")
+                
+        except KeyboardInterrupt:
+            print("\nGoodbye!")
+            sys.exit(0)
+
 def main():
     parser = argparse.ArgumentParser(description="ChronoLog Management CLI")
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
@@ -343,8 +397,9 @@ def main():
         cmd_test(args)
     elif args.command == "auto":
         cmd_auto(args)
+
     else:
-        parser.print_help()
+        interactive_mode()
 
 if __name__ == "__main__":
     main()
