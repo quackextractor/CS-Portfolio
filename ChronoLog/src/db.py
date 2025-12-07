@@ -1,6 +1,5 @@
 import pyodbc
 import os
-import threading
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -9,29 +8,12 @@ class DatabaseConnectionError(Exception):
     pass
 
 class SQLConnection:
-    _instance = None
-    _lock = threading.Lock()
-
-    def __new__(cls):
-        if cls._instance is None:
-            with cls._lock:
-                if cls._instance is None:
-                    cls._instance = super(SQLConnection, cls).__new__(cls)
-                    cls._instance._initialized = False
-        return cls._instance
-
     def __init__(self):
-        if self._initialized:
-            return
-        
         self.connection_string = os.getenv("DB_CONNECTION_STRING")
         if not self.connection_string:
             raise ValueError("DB_CONNECTION_STRING environment variable not set")
         
         self._ensure_database_exists()
-        
-        self._conn = None
-        self._initialized = True
 
     def _ensure_database_exists(self):
         """
@@ -39,67 +21,36 @@ class SQLConnection:
         connects to 'master', checks if the target database exists,
         and creates it if it doesn't.
         """
-        # Simple parsing to find DATABASE=... or Database=...
-        # This assumes the connection string format is standard ODBC
         import re
         match = re.search(r"(?i)(?:DATABASE|Initial Catalog)\s*=\s*([^;]+)", self.connection_string)
         if not match:
-            # If no database specified, nothing to create
             return
         
         target_db = match.group(1).strip()
-        
-        # Create a connection string for master
-        # We replace the database part with 'master' or remove it and rely on default
-        # Ideally, we explicitly connect to master.
-        
-        # Regex to replace the database part with 'master'
         master_conn_str = re.sub(r"(?i)(?:DATABASE|Initial Catalog)\s*=\s*[^;]+", "DATABASE=master", self.connection_string)
         
-
-        
         try:
-            # Connect to master
-            # We use a fresh connection here, not self.get_connection() because self._conn isn't ready
-            with pyodbc.connect(master_conn_str, autocommit=True) as conn:
-                cursor = conn.cursor()
-                
-                # Check if DB exists
-                # SQL Server specific check
+            conn = pyodbc.connect(master_conn_str, autocommit=True)
+            cursor = conn.cursor()
+            try:
                 check_query = "SELECT name FROM sys.databases WHERE name = ?"
                 cursor.execute(check_query, (target_db,))
                 if not cursor.fetchone():
                     print(f"Database '{target_db}' does not exist. Creating...")
-
                     cursor.execute(f"CREATE DATABASE [{target_db}]")
                     print(f"Database '{target_db}' created successfully.")
-                else:
-                    pass
-                    # print(f"Database '{target_db}' already exists.")
-                    
+            finally:
+                cursor.close()
+                conn.close()
         except Exception as e:
             print(f"Warning: Could not ensure database '{target_db}' exists. Error: {e}")
-            # We don't raise here because maybe the user doesn't have permissions 
-            # but the DB exists, or some other issue. We let the main connection try.
 
     def get_connection(self):
         """
-        Returns a connection. Reuses the existing connection if it's open.
-        Raises DatabaseConnectionError if connection fails.
+        Returns a new connection.
         """
-        if self._conn:
-            try:
-                # Check if connection is still alive
-
-                self._conn.cursor().execute("SELECT 1")
-                return self._conn
-            except Exception:
-                # Connection might be closed or broken
-                self._conn = None
-
         try:
-            self._conn = pyodbc.connect(self.connection_string)
-            return self._conn
+            return pyodbc.connect(self.connection_string)
         except pyodbc.Error as e:
             raise DatabaseConnectionError(f"Failed to connect to database: {e}")
 
@@ -114,7 +65,7 @@ class SQLConnection:
             return cursor.fetchall()
         finally:
             cursor.close()
-            # Do not close conn here as we are reusing it
+            conn.close()
 
     def execute_non_query(self, query, params=None):
         conn = self.get_connection()
@@ -127,17 +78,15 @@ class SQLConnection:
             conn.commit()
         finally:
             cursor.close()
+            conn.close()
 
     def execute_sp(self, sp_name, params=None):
         """
         Executes a stored procedure.
-        params: list or tuple of parameters
         """
         conn = self.get_connection()
         cursor = conn.cursor()
         try:
-            # Construct the SQL for SP call
-            # Example: EXEC sp_name ?, ?
             if params:
                 placeholders = ",".join(["?"] * len(params))
                 sql = f"{{CALL {sp_name} ({placeholders})}}"
@@ -146,7 +95,6 @@ class SQLConnection:
                 sql = f"{{CALL {sp_name}}}"
                 cursor.execute(sql)
             
-            # Check if it returns rows
             if cursor.description:
                 result = cursor.fetchall()
                 conn.commit()
@@ -156,3 +104,4 @@ class SQLConnection:
             return None
         finally:
             cursor.close()
+            conn.close()
