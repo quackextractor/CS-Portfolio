@@ -317,7 +317,7 @@ def main():
 
     # Kill port command
     kp_parser = subparsers.add_parser("kill-port", help="Kill process on a specific port")
-    kp_parser.add_argument("--port", default="5000", help="Port to check (default: 5000)")
+    kp_parser.add_argument("port", nargs="?", default="5000", help="Port to check (default: 5000)")
 
     # Test command
     subparsers.add_parser("test", help="Run all tests")
