@@ -222,42 +222,19 @@ def check_web_dependencies():
             print("[FAILED] Could not build web application. Please run 'npm run build' in 'web/' manually.")
 
 
-def kill_port_process(port):
-    """Find and kill process listening on a specific port (Windows only for now)."""
-    print(f"Checking for process on port {port}...")
-    try:
-        # Run netstat to find process using the port
-        # -a: Display all connections and listening ports.
-        # -n: Displays addresses and port numbers in numerical form.
-        # -o: Displays the owning process ID associated with each connection.
-        output = subprocess.check_output(f"netstat -ano | findstr :{port}", shell=True).decode()
-        
-        if not output:
-             return
 
-        # Parse lines to find the PID
-        # Output format: TCP    127.0.0.1:5000         0.0.0.0:0              LISTENING       1234
-        for line in output.splitlines():
-            parts = line.split()
-            if len(parts) >= 5 and f":{port}" in parts[1]:
-                pid = parts[-1]
-                print(f"Found process {pid} listening on port {port}. Killing it...")
-                try:
-                    subprocess.check_call(f"taskkill /F /PID {pid}", shell=True)
-                    print(f"[OK] Process {pid} terminated.")
-                except subprocess.CalledProcessError:
-                    print(f"[FAILED] Could not kill process {pid}.")
-                return # Only kill one, usually enough
-    except subprocess.CalledProcessError:
-        # netstat returns error if no match found (grep/findstr behavior)
-        pass 
-    except Exception as e:
-        print(f"[WARNING] Error checking port {port}: {e}")
+def cmd_kill_port(args):
+    """Kill process on a specific port."""
+    port = args.port if args and hasattr(args, 'port') else "5000"
+    script = Path("bin/util_kill_port.py")
+    run_script(script, ["--port", str(port)])
 
 def cmd_run_api(args):
     """Run the API server."""
     # Ensure auto-cleanup of port 5000
-    kill_port_process(5000)
+    print("Ensuring port 5000 is free...")
+    script_kill = Path("bin/util_kill_port.py")
+    run_script(script_kill, ["--port", "5000"])
 
     # Ensure web dependencies are ready before starting API
     check_web_dependencies()
@@ -338,6 +315,10 @@ def main():
     # Run API command
     subparsers.add_parser("run-api", help="Run the API server")
 
+    # Kill port command
+    kp_parser = subparsers.add_parser("kill-port", help="Kill process on a specific port")
+    kp_parser.add_argument("--port", default="5000", help="Port to check (default: 5000)")
+
     # Test command
     subparsers.add_parser("test", help="Run all tests")
     
@@ -356,6 +337,8 @@ def main():
         cmd_run_processor(args)
     elif args.command == "run-api":
         cmd_run_api(args)
+    elif args.command == "kill-port":
+        cmd_kill_port(args)
     elif args.command == "test":
         cmd_test(args)
     elif args.command == "auto":
