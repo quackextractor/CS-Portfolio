@@ -3,7 +3,7 @@ from flasgger import Swagger
 from facade import ChronoLogFacade
 from db import DatabaseConnectionError
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='../web/dist/assets', static_url_path='/assets')
 swagger = Swagger(app)
 facade = ChronoLogFacade()
 
@@ -166,7 +166,7 @@ def get_messages():
 
 @app.route('/')
 def index():
-    return send_from_directory('../vendor/frontend_demo/public', 'index.html')
+    return send_from_directory('../web/dist', 'index.html')
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
