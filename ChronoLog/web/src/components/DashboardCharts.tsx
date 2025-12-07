@@ -3,6 +3,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import type { Summary, TimeseriesPoint } from "@/types";
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface DashboardChartsProps {
     summary: Summary | null;
@@ -10,16 +11,17 @@ interface DashboardChartsProps {
 
 export function DashboardCharts({ summary }: DashboardChartsProps) {
     const [latencyData, setLatencyData] = useState<TimeseriesPoint[]>([]);
+    const [latencyLimit, setLatencyLimit] = useState<number>(500);
 
     useEffect(() => {
         const load = async () => {
             try {
-                const data = await api.getTimeseries('latency', 500);
+                const data = await api.getTimeseries('latency', latencyLimit);
                 setLatencyData(data);
             } catch (e) { console.error(e); }
         };
         load();
-    }, []);
+    }, [latencyLimit]);
 
     const errorCount = summary?.error_count || 0;
     const warningCount = summary?.warning_count || 0;
@@ -31,8 +33,19 @@ export function DashboardCharts({ summary }: DashboardChartsProps) {
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Card className="min-w-0">
-                <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium">Latency (Last 500)</CardTitle>
+                <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
+                    <CardTitle className="text-sm font-medium">Latency (Last {latencyLimit})</CardTitle>
+                    <Select value={String(latencyLimit)} onValueChange={(v) => setLatencyLimit(Number(v))}>
+                        <SelectTrigger className="w-[100px] h-8 text-xs">
+                            <SelectValue placeholder="Limit" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="100">100</SelectItem>
+                            <SelectItem value="500">500</SelectItem>
+                            <SelectItem value="1000">1000</SelectItem>
+                            <SelectItem value="2000">2000</SelectItem>
+                        </SelectContent>
+                    </Select>
                 </CardHeader>
                 <CardContent className="h-[250px] p-0 relative min-w-0">
                     <div className="absolute inset-0 w-full h-full">
