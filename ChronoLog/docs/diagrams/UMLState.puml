@@ -1,0 +1,69 @@
+@startuml
+scale 600 width
+
+[*] --> Initialized
+
+state Initialized {
+}
+
+Initialized --> Starting : start(live=True/False)
+
+state Starting {
+    state "Spawn Writer Processes" as SpawnWriters
+    state "Create Process Pool" as CreatePool
+    state "Initialize FileChunkReader" as InitReader
+    
+    [*] --> SpawnWriters
+    SpawnWriters --> CreatePool
+    CreatePool --> InitReader
+}
+
+Starting --> Processing : Setup Complete
+
+state Processing {
+    state "Reading Chunks" as Reading
+    state "Parsing (Workers)" as Parsing
+    state "Queuing Results" as Queuing
+    
+    [*] --> Reading
+    Reading --> Parsing : Chunk read
+    Parsing --> Queuing : Result ready
+    Queuing --> Reading : Next chunk
+}
+
+Processing --> ShuttingDown : EOF (Batch Mode)
+Processing --> ShuttingDown : KeyboardInterrupt
+Processing --> ShuttingDown : Error
+
+state Writing {
+    state "Wait for Queue Item" as WaitQueue
+    state "Process Queue Item" as ProcessItem
+    state "Bulk Insert to DB" as BulkInsert
+    
+    [*] --> WaitQueue
+    WaitQueue --> ProcessItem
+    ProcessItem --> BulkInsert
+    BulkInsert --> WaitQueue
+}
+
+Processing -right-> Writing : Data via Queue
+
+state ShuttingDown {
+    state "Set Stop Flag" as SetStop
+    state "Close/Terminate Pool" as ClosePool
+    state "Wait for Writers to Drain Queue" as DrainQueue
+    state "Join Writers" as JoinWriters
+    
+    [*] --> SetStop
+    SetStop --> ClosePool
+    ClosePool --> DrainQueue
+    DrainQueue --> JoinWriters
+}
+
+ShuttingDown --> Stopped
+
+state Stopped {
+}
+
+Stopped --> [*]
+@enduml

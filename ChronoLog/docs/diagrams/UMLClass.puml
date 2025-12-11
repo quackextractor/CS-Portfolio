@@ -1,0 +1,85 @@
+@startuml
+skinparam classAttributeIconSize 0
+skinparam monochrome true
+skinparam packageStyle rectangle
+
+package "ChronoLog Backend" {
+
+    class SQLConnection {
+        - connection_string : str
+        + __init__()
+        + get_connection() : pyodbc.Connection
+        + execute_query(query, params) : list
+        + execute_non_query(query, params)
+        + execute_sp(sp_name, params) : list
+        - _ensure_database_exists()
+    }
+
+    class ChronoLogFacade {
+        - db : SQLConnection
+        + __init__()
+        + get_messages() : dict
+        + get_or_create_message_id(template) : int
+        + insert_timeline_event(event_time, event_type, message_id, message_values, value)
+        + bulk_insert_timeline_events(events)
+        + get_timeline_page(page, per_page, event_type) : list
+        + get_summary() : dict
+        + get_timeseries(metric, limit) : list
+    }
+
+    class LogParser {
+        - var_regex : dict
+        - key_val_re : Pattern
+        + __init__(var_regex)
+        + parse_lines(lines) : tuple
+        + extract_timestamp(line) : str
+        - parse_errors_warnings(line, timestamp, events, timeline)
+        - parse_variables(line, timestamp, events, timeline)
+        - _add_event(key, line, event_name, timestamp, events, timeline, value)
+    }
+
+    class FileChunkReader {
+        - file_path : Path
+        - chunk_size : int
+        - poll_interval : float
+        - eof_reached : bool
+        - live : bool
+        + __init__(file_path, chunk_size, poll_interval, live)
+        + __iter__()
+        - _read_chunk(file_obj) : list
+    }
+
+    class LogProcessor {
+        - input_file : str
+        - num_processes : int
+        - num_writers : int
+        - parser : LogParser
+        - queue : multiprocessing.Queue
+        - stop_flag : multiprocessing.Event
+        + __init__(input_file, num_processes, num_writers)
+        + start(live)
+        - _on_result(result)
+        - _safe_queue_put(item)
+        - _on_error(exc)
+        - _handle_interrupt(pool)
+        - _shutdown(pool, writers)
+    }
+
+    class WriterProcess {
+        - flush_interval : float
+        - facade : ChronoLogFacade
+        - msg_cache : dict
+        + __init__(flush_interval)
+        + run(queue, stop_flag)
+        - _process_queue(queue_obj)
+        - _prepare_entry(entry) : dict
+    }
+}
+
+ChronoLogFacade --> SQLConnection : uses
+LogProcessor --> LogParser : uses
+LogProcessor --> FileChunkReader : uses
+LogProcessor --> WriterProcess : spawns
+WriterProcess --> ChronoLogFacade : uses
+
+@enduml
