@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { Guest, Room, Booking, CreateBookingRequest, Service } from './types';
+import type { Guest, Room, Booking, CreateBookingRequest, Service } from './types';
 
 const API_URL = 'http://localhost:5106/api';
 

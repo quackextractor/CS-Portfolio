@@ -9,6 +9,7 @@ export function Layout() {
                     <nav className="flex gap-4 text-sm font-medium text-muted-foreground">
                         <Link to="/guests" className="hover:text-primary transition-colors">Guests</Link>
                         <Link to="/bookings/new" className="hover:text-primary transition-colors">Book Room</Link>
+                        <Link to="/reports" className="hover:text-primary transition-colors">Reports</Link>
                     </nav>
                 </div>
             </header>
