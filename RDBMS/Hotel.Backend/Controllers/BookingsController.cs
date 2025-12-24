@@ -21,8 +21,11 @@ public class BookingsController : ControllerBase
     [HttpPost]
     public IActionResult Create([FromBody] CreateBookingRequest request)
     {
+        // Logic
+        var logic = new Services.BookingLogic();
+
         // Validation
-        if (request.CheckIn >= request.CheckOut)
+        if (!logic.ValidateDates(request.CheckIn, request.CheckOut))
             return BadRequest("Check-out must be after check-in.");
 
         var room = Room.Find(request.RoomId);
@@ -47,15 +50,12 @@ public class BookingsController : ControllerBase
             };
 
             // Calculate base price
-            var roomType = RoomType.Find(room.RoomTypeId, transaction); // Needs Tx support in Find? 
-            // Wait, Find(id, tx) I implemented.
-            // But RoomType.Find is static T? Find(int id, SqlTransaction? tx = null)
+            var roomType = RoomType.Find(room.RoomTypeId, transaction);
             
             decimal roomPrice = 0;
             if (roomType != null)
             {
-                var nights = (request.CheckOut - request.CheckIn).Days;
-                roomPrice = roomType.BasePrice * nights;
+                roomPrice = logic.CalculateRoomPrice(roomType.BasePrice, request.CheckIn, request.CheckOut);
             }
             booking.TotalPrice += roomPrice;
             
