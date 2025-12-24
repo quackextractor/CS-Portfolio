@@ -1,9 +1,11 @@
 // Append to existing types.ts or overwrite if simpler. I'll append/overwrite.
-export enum GuestType {
-    Regular = 0,
-    VIP = 1,
-    Corporate = 2
-}
+export const GuestType = {
+    Regular: 0,
+    VIP: 1,
+    Corporate: 2
+} as const;
+
+export type GuestType = typeof GuestType[keyof typeof GuestType];
 
 export interface Guest {
     id: number;
@@ -74,4 +76,10 @@ export interface RoomAvailabilityReport {
     roomNumber: string;
     roomType: string;
     basePrice: number;
+}
+
+export interface ServiceUsageStatsReport {
+    serviceName: string;
+    usageCount: number;
+    totalRevenue: number;
 }

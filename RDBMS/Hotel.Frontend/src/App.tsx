@@ -3,6 +3,7 @@ import { Layout } from "./Layout";
 import { GuestList } from "./pages/GuestList";
 import { CreateBooking } from "./pages/CreateBooking";
 import { Reports } from "./pages/Reports";
+import { Import } from "./pages/Import";
 
 
 function App() {
@@ -14,6 +15,7 @@ function App() {
           <Route path="/guests" element={<GuestList />} />
           <Route path="/bookings/new" element={<CreateBooking />} />
           <Route path="/reports" element={<Reports />} />
+          <Route path="/import" element={<Import />} />
 
         </Route>
       </Routes>

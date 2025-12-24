@@ -10,6 +10,7 @@ export function Layout() {
                         <Link to="/guests" className="hover:text-primary transition-colors">Guests</Link>
                         <Link to="/bookings/new" className="hover:text-primary transition-colors">Book Room</Link>
                         <Link to="/reports" className="hover:text-primary transition-colors">Reports</Link>
+                        <Link to="/import" className="hover:text-primary transition-colors">Import</Link>
                     </nav>
                 </div>
             </header>

@@ -1,16 +1,18 @@
 import { useEffect, useState } from "react";
 import { api } from "../api";
-import type { GuestBookingReport, RoomAvailabilityReport } from "../types";
+import type { GuestBookingReport, RoomAvailabilityReport, ServiceUsageStatsReport } from "../types";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export function Reports() {
     const [bookings, setBookings] = useState<GuestBookingReport[]>([]);
     const [availability, setAvailability] = useState<RoomAvailabilityReport[]>([]);
+    const [serviceStats, setServiceStats] = useState<ServiceUsageStatsReport[]>([]);
 
     useEffect(() => {
         api.reports.guestBookings().then(setBookings).catch(console.error);
         api.reports.availability().then(setAvailability).catch(console.error);
+        api.reports.serviceStats().then(setServiceStats).catch(console.error);
     }, []);
 
     return (
@@ -76,6 +78,33 @@ export function Reports() {
                     </Table>
                 </CardContent>
             </Card>
-        </div>
+            </Card>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle>Service Usage Statistics (Aggregated)</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Service Name</TableHead>
+                                <TableHead>Times Used</TableHead>
+                                <TableHead>Total Revenue</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {serviceStats.map((s) => (
+                                <TableRow key={s.serviceName}>
+                                    <TableCell>{s.serviceName}</TableCell>
+                                    <TableCell>{s.usageCount}</TableCell>
+                                    <TableCell>${s.totalRevenue}</TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </CardContent>
+            </Card>
+        </div >
     );
 }

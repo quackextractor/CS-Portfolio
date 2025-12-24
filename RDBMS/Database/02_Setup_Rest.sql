@@ -95,6 +95,16 @@ JOIN RoomTypes rt ON r.RoomTypeId = rt.Id
 WHERE r.IsClean = 1; -- Simplified availability logic for view
 GO
 
+CREATE OR ALTER VIEW v_ServiceUsageStats AS
+SELECT 
+    s.Name AS ServiceName,
+    COUNT(bs.Id) AS UsageCount,
+    SUM(bs.SubTotal) AS TotalRevenue
+FROM Services s
+LEFT JOIN BookingServices bs ON s.Id = bs.ServiceId
+GROUP BY s.Name;
+GO
+
 -- Seed Data
 IF NOT EXISTS (SELECT * FROM RoomTypes)
 BEGIN

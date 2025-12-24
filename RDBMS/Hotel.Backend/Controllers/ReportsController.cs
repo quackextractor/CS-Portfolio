@@ -14,8 +14,12 @@ public class ReportsController : ControllerBase
     }
 
     [HttpGet("availability")]
-    public IEnumerable<RoomAvailabilityReport> GetAvailability()
-    {
         return RoomAvailabilityReport.All();
+    }
+
+    [HttpGet("service-stats")]
+    public IEnumerable<ServiceUsageStatsReport> GetServiceStats()
+    {
+        return ServiceUsageStatsReport.All();
     }
 }

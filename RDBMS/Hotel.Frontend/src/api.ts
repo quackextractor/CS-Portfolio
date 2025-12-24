@@ -22,6 +22,12 @@ export const api = {
     reports: {
         guestBookings: () => axios.get<any[]>(`${API_URL}/reports/guest-bookings`).then(r => r.data),
         availability: () => axios.get<any[]>(`${API_URL}/reports/availability`).then(r => r.data),
+        serviceStats: () => axios.get<any[]>(`${API_URL}/reports/service-stats`).then(r => r.data),
+    },
+    import: {
+        guests: (formData: FormData) => axios.post(`${API_URL}/import/guests`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        }).then(r => r.data),
     }
 };
 

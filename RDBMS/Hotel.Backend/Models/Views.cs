@@ -25,3 +25,11 @@ public class RoomAvailabilityReport : ActiveRecordBase<RoomAvailabilityReport>
     public string RoomType { get; set; } = string.Empty;
     public decimal BasePrice { get; set; }
 }
+
+[Table("v_ServiceUsageStats")]
+public class ServiceUsageStatsReport : ActiveRecordBase<ServiceUsageStatsReport>
+{
+    public string ServiceName { get; set; } = string.Empty;
+    public int UsageCount { get; set; }
+    public decimal TotalRevenue { get; set; }
+}
