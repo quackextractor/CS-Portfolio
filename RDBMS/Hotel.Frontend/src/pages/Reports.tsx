@@ -80,7 +80,7 @@ export function Reports() {
                     </Table>
                 </CardContent>
             </Card>
-            </Card>
+
 
             <Card>
                 <CardHeader>

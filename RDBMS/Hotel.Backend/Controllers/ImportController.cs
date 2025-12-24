@@ -47,6 +47,9 @@ public class ImportController : ControllerBase
             {
                 foreach (var g in guests)
                 {
+                    if (string.IsNullOrWhiteSpace(g.FirstName) || string.IsNullOrWhiteSpace(g.LastName))
+                        throw new Exception("Invalid guest data: FirstName and LastName are required.");
+
                     var guest = new Guest
                     {
                         FirstName = g.FirstName,
@@ -62,10 +65,10 @@ public class ImportController : ControllerBase
                 transaction.Commit();
                 return Ok(new { Count = guests.Count, Message = "Import successful" });
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 transaction.Rollback();
-                throw;
+                return BadRequest(ex.Message);
             }
         }
         catch (JsonException ex)
@@ -100,6 +103,9 @@ public class ImportController : ControllerBase
             {
                 foreach (var s in services)
                 {
+                    if (string.IsNullOrWhiteSpace(s.Name))
+                         throw new Exception("Invalid service data: Name is required.");
+
                     var service = new Service
                     {
                         Name = s.Name,
@@ -111,10 +117,10 @@ public class ImportController : ControllerBase
                 transaction.Commit();
                 return Ok(new { Count = services.Count, Message = "Import successful" });
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 transaction.Rollback();
-                throw;
+                return BadRequest(ex.Message);
             }
         }
         catch (JsonException ex)

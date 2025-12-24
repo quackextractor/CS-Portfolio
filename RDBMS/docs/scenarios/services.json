@@ -1,0 +1,12 @@
+[
+    {
+        "Name": "Continental Breakfast",
+        "Price": 15.00,
+        "IsActive": true
+    },
+    {
+        "Name": "Airport Shuttle",
+        "Price": 45.00,
+        "IsActive": true
+    }
+]

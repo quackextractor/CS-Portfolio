@@ -1,0 +1,22 @@
+[
+    {
+        "FirstName": "John",
+        "LastName": "Doe",
+        "Email": "john.doe@test.com",
+        "Phone": "555-0101",
+        "DateOfBirth": "1980-05-15T00:00:00",
+        "IsActive": true,
+        "Type": 0,
+        "LoyaltyPoints": 0
+    },
+    {
+        "FirstName": "Jane",
+        "LastName": "Smith",
+        "Email": "jane.smith@test.com",
+        "Phone": "555-0102",
+        "DateOfBirth": "1992-10-20T00:00:00",
+        "IsActive": true,
+        "Type": 1,
+        "LoyaltyPoints": 100
+    }
+]

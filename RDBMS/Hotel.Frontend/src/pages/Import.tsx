@@ -37,7 +37,7 @@ export function Import() {
             } else {
                 res = await api.import.services(formData);
             }
-            setMessage(`${res.Message} (${res.Count} records)`);
+            setMessage(`${res.message} (${res.count} records)`);
         } catch (err: any) {
             console.error(err);
             setError(err.response?.data || "Upload failed.");
