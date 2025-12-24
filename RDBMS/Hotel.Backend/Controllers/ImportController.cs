@@ -15,6 +15,12 @@ public class GuestImportDto
     public DateTime DateOfBirth { get; set; }
 }
 
+public class ServiceImportDto
+{
+    public string Name { get; set; } = string.Empty;
+    public decimal Price { get; set; }
+}
+
 [ApiController]
 [Route("api/[controller]")]
 public class ImportController : ControllerBase
@@ -55,6 +61,55 @@ public class ImportController : ControllerBase
                 }
                 transaction.Commit();
                 return Ok(new { Count = guests.Count, Message = "Import successful" });
+            }
+            catch (Exception)
+            {
+                transaction.Rollback();
+                throw;
+            }
+        }
+        catch (JsonException ex)
+        {
+            return BadRequest($"Invalid JSON: {ex.Message}");
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, ex.Message);
+        }
+    }
+
+    [HttpPost("services")]
+    public async Task<IActionResult> ImportServices([FromForm] IFormFile file)
+    {
+        if (file == null || file.Length == 0)
+            return BadRequest("File is empty.");
+
+        try
+        {
+            using var stream = file.OpenReadStream();
+            var services = await JsonSerializer.DeserializeAsync<List<ServiceImportDto>>(stream, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+            if (services == null || !services.Any())
+                return BadRequest("No services found in JSON.");
+
+            using var conn = new SqlConnection(DbConfig.ConnectionString);
+            conn.Open();
+            using var transaction = conn.BeginTransaction();
+
+            try
+            {
+                foreach (var s in services)
+                {
+                    var service = new Service
+                    {
+                        Name = s.Name,
+                        Price = s.Price,
+                        IsActive = true
+                    };
+                    service.Save(transaction);
+                }
+                transaction.Commit();
+                return Ok(new { Count = services.Count, Message = "Import successful" });
             }
             catch (Exception)
             {

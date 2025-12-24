@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "../api";
-import type { GuestBookingReport, RoomAvailabilityReport, ServiceUsageStatsReport } from "../types";
+import type { GuestBookingReport, RoomAvailabilityReport, ServiceUsageStatsReport, RevenueByRoomTypeReport } from "../types";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -8,11 +8,13 @@ export function Reports() {
     const [bookings, setBookings] = useState<GuestBookingReport[]>([]);
     const [availability, setAvailability] = useState<RoomAvailabilityReport[]>([]);
     const [serviceStats, setServiceStats] = useState<ServiceUsageStatsReport[]>([]);
+    const [revenueStats, setRevenueStats] = useState<RevenueByRoomTypeReport[]>([]);
 
     useEffect(() => {
         api.reports.guestBookings().then(setBookings).catch(console.error);
         api.reports.availability().then(setAvailability).catch(console.error);
         api.reports.serviceStats().then(setServiceStats).catch(console.error);
+        api.reports.revenueByRoomType().then(setRevenueStats).catch(console.error);
     }, []);
 
     return (
@@ -99,6 +101,32 @@ export function Reports() {
                                     <TableCell>{s.serviceName}</TableCell>
                                     <TableCell>{s.usageCount}</TableCell>
                                     <TableCell>${s.totalRevenue}</TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </CardContent>
+            </Card>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle>Revenue by Room Type (Aggregated from 3 tables)</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Room Type</TableHead>
+                                <TableHead>Total Bookings</TableHead>
+                                <TableHead>Total Revenue</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {revenueStats.map((r) => (
+                                <TableRow key={r.roomTypeName}>
+                                    <TableCell>{r.roomTypeName}</TableCell>
+                                    <TableCell>{r.totalBookings}</TableCell>
+                                    <TableCell>${r.totalRevenue}</TableCell>
                                 </TableRow>
                             ))}
                         </TableBody>

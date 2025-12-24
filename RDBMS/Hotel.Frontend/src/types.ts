@@ -83,3 +83,9 @@ export interface ServiceUsageStatsReport {
     usageCount: number;
     totalRevenue: number;
 }
+
+export interface RevenueByRoomTypeReport {
+    roomTypeName: string;
+    totalBookings: number;
+    totalRevenue: number;
+}

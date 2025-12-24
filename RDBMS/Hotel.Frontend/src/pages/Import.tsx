@@ -17,7 +17,7 @@ export function Import() {
         }
     };
 
-    const handleUpload = async () => {
+    const handleUpload = async (type: 'guests' | 'services') => {
         if (!file) {
             setError("Please select a file first.");
             return;
@@ -31,7 +31,12 @@ export function Import() {
         formData.append("file", file);
 
         try {
-            const res = await api.import.guests(formData);
+            let res;
+            if (type === 'guests') {
+                res = await api.import.guests(formData);
+            } else {
+                res = await api.import.services(formData);
+            }
             setMessage(`${res.Message} (${res.Count} records)`);
         } catch (err: any) {
             console.error(err);
@@ -47,24 +52,29 @@ export function Import() {
 
             <Card>
                 <CardHeader>
-                    <CardTitle>Import Guests (JSON)</CardTitle>
+                    <CardTitle>Import Files (JSON)</CardTitle>
                     <CardDescription>
-                        Upload a JSON file containing a list of guests.
-                        Format: [{"{ \"firstName\": \"...\", ... }"}]
+                        Import Guests: [{"{ \"firstName\": \"...\", ... }"}] <br />
+                        Import Services: [{"{ \"name\": \"...\", \"price\": 10.0 }"}]
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <div className="grid w-full items-center gap-1.5">
-                        <Label htmlFor="guest-file">Guest JSON File</Label>
-                        <Input id="guest-file" type="file" accept=".json" onChange={handleFileChange} />
+                        <Label htmlFor="import-file">JSON File</Label>
+                        <Input id="import-file" type="file" accept=".json" onChange={handleFileChange} />
+                    </div>
+
+                    <div className="flex gap-4">
+                        <Button onClick={() => handleUpload('guests')} disabled={loading || !file} variant="outline">
+                            Import Guests
+                        </Button>
+                        <Button onClick={() => handleUpload('services')} disabled={loading || !file}>
+                            Import Services
+                        </Button>
                     </div>
 
                     {error && <p className="text-sm text-red-500">{error}</p>}
                     {message && <p className="text-sm text-green-500">{message}</p>}
-
-                    <Button onClick={handleUpload} disabled={loading || !file}>
-                        {loading ? "Importing..." : "Import Guests"}
-                    </Button>
                 </CardContent>
             </Card>
         </div>

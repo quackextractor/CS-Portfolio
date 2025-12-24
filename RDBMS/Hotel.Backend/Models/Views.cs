@@ -33,3 +33,11 @@ public class ServiceUsageStatsReport : ActiveRecordBase<ServiceUsageStatsReport>
     public int UsageCount { get; set; }
     public decimal TotalRevenue { get; set; }
 }
+
+[Table("v_RevenueByRoomType")]
+public class RevenueByRoomTypeReport : ActiveRecordBase<RevenueByRoomTypeReport>
+{
+    public string RoomTypeName { get; set; } = string.Empty;
+    public int TotalBookings { get; set; }
+    public decimal TotalRevenue { get; set; }
+}

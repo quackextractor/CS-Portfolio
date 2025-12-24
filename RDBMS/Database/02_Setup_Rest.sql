@@ -105,6 +105,17 @@ LEFT JOIN BookingServices bs ON s.Id = bs.ServiceId
 GROUP BY s.Name;
 GO
 
+CREATE OR ALTER VIEW v_RevenueByRoomType AS
+SELECT 
+    rt.Name AS RoomTypeName,
+    COUNT(b.Id) AS TotalBookings,
+    ISNULL(SUM(b.TotalPrice), 0) AS TotalRevenue
+FROM RoomTypes rt
+JOIN Rooms r ON rt.Id = r.RoomTypeId
+LEFT JOIN Bookings b ON r.Id = b.RoomId
+GROUP BY rt.Name;
+GO
+
 -- Seed Data
 IF NOT EXISTS (SELECT * FROM RoomTypes)
 BEGIN
