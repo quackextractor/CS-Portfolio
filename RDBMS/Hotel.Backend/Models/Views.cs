@@ -1,0 +1,27 @@
+using Hotel.Backend.Data;
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace Hotel.Backend.Models;
+
+[Table("v_GuestBookings")]
+public class GuestBookingReport : ActiveRecordBase<GuestBookingReport>
+{
+    // Id in View might not be unique if not careful, but usually is BookingId
+    public int BookingId { get; set; }
+    public string FirstName { get; set; } = string.Empty;
+    public string LastName { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+    public string RoomNumber { get; set; } = string.Empty;
+    public DateTime CheckIn { get; set; }
+    public DateTime CheckOut { get; set; }
+    public BookingStatus Status { get; set; }
+}
+
+[Table("v_RoomAvailability")]
+public class RoomAvailabilityReport : ActiveRecordBase<RoomAvailabilityReport>
+{
+    public int RoomId { get; set; }
+    public string RoomNumber { get; set; } = string.Empty;
+    public string RoomType { get; set; } = string.Empty;
+    public decimal BasePrice { get; set; }
+}
