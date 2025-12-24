@@ -56,8 +56,44 @@ public abstract class ActiveRecordBase<T> where T : ActiveRecordBase<T>, new()
         }
     }
 
-    // Where method similar update... omitting for brevity if not strictly needed for transaction right now, but good practice.
-    // For now I'll focus on Save/Delete which are critical for Writes.
+    public static List<T> Where(string condition, Dictionary<string, object>? parameters = null, SqlTransaction? transaction = null)
+    {
+        var conn = GetConnection(transaction);
+        if (transaction == null) conn.Open();
+        
+        try
+        {
+            var cmd = conn.CreateCommand();
+            cmd.Transaction = transaction;
+            cmd.CommandText = $"SELECT * FROM {TableName} WHERE {condition}";
+            
+            if (parameters != null)
+            {
+                foreach (var p in parameters)
+                {
+                    cmd.Parameters.AddWithValue(p.Key, p.Value ?? DBNull.Value);
+                }
+            }
+
+            var list = new List<T>();
+            using var reader = cmd.ExecuteReader();
+            while (reader.Read())
+            {
+                list.Add(MapFromReader(reader));
+            }
+            return list;
+        }
+        finally
+        {
+            if (transaction == null) conn.Dispose();
+        }
+    }
+
+    public static List<T> All(SqlTransaction? transaction = null)
+    {
+        return Where("1=1", null, transaction);
+    }
+
 
     public void Save(SqlTransaction? transaction = null)
     {

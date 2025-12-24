@@ -224,4 +224,6 @@ Thumbs.db
 
 
 !ChronoLog/web/src/lib/
+!RDBMS/Hotel.Frontend/src/lib/
+!RDBMS/Hotel.Frontend/components.json
 Debug
