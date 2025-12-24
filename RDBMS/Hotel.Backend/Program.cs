@@ -4,13 +4,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-
-var app = builder.Build();
-
-// Configure the database
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
-    ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
-Hotel.Backend.Data.DbConfig.Initialize(connectionString);
+builder.Services.AddControllers();
 
 builder.Services.AddCors(options =>
 {
@@ -21,6 +15,17 @@ builder.Services.AddCors(options =>
               .AllowAnyMethod();
     });
 });
+
+
+
+var app = builder.Build();
+
+// Configure the database
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
+    ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+Hotel.Backend.Data.DbConfig.Initialize(connectionString);
+
+
 
 
 
@@ -35,30 +40,7 @@ app.UseHttpsRedirection();
 
 app.UseCors();
 
-var summaries = new[]
-
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
-
-app.MapGet("/weatherforecast", () =>
-{
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast")
-.WithOpenApi();
+app.MapControllers();
 
 app.Run();
 
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
