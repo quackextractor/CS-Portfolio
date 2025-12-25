@@ -114,7 +114,7 @@ export function GuestList() {
     }
 
     return (
-        <div className="space-y-8">
+        <div className="space-y-8 max-w-4xl mx-auto">
             <div className="flex justify-between items-center">
                 <h2 className="text-3xl font-bold tracking-tight">Guests</h2>
             </div>
@@ -170,47 +170,49 @@ export function GuestList() {
                 </Card>
             </div>
 
-            <div className="rounded-md border">
-                {isLoading && guests.length === 0 ? (
-                    <div className="flex justify-center items-center p-8 text-muted-foreground">
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Loading guests...
-                    </div>
-                ) : (
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>ID</TableHead>
-                                <TableHead>Name</TableHead>
-                                <TableHead>Email</TableHead>
-                                <TableHead>DOB</TableHead>
-                                <TableHead>Actions</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {guests.map((guest) => (
-                                <TableRow key={guest.id}>
-                                    <TableCell>{guest.id}</TableCell>
-                                    <TableCell>{guest.firstName} {guest.lastName}</TableCell>
-                                    <TableCell>{guest.email}</TableCell>
-                                    <TableCell>{new Date(guest.dateOfBirth).toLocaleDateString()}</TableCell>
-                                    <TableCell>
-                                        <Button variant="destructive" size="sm" onClick={() => confirmDelete(guest)} disabled={deletingId === guest.id}>
-                                            {deletingId === guest.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash className="h-4 w-4" />}
-                                        </Button>
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                            {guests.length === 0 && (
+            <Card className="">
+                <CardContent className="p-0">
+                    {isLoading && guests.length === 0 ? (
+                        <div className="flex justify-center items-center p-8 text-muted-foreground">
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Loading guests...
+                        </div>
+                    ) : (
+                        <Table>
+                            <TableHeader>
                                 <TableRow>
-                                    <TableCell colSpan={5} className="text-center h-24 text-muted-foreground">
-                                        No guests found.
-                                    </TableCell>
+                                    <TableHead>ID</TableHead>
+                                    <TableHead>Name</TableHead>
+                                    <TableHead>Email</TableHead>
+                                    <TableHead>DOB</TableHead>
+                                    <TableHead>Actions</TableHead>
                                 </TableRow>
-                            )}
-                        </TableBody>
-                    </Table>
-                )}
-            </div>
+                            </TableHeader>
+                            <TableBody>
+                                {guests.map((guest) => (
+                                    <TableRow key={guest.id}>
+                                        <TableCell>{guest.id}</TableCell>
+                                        <TableCell>{guest.firstName} {guest.lastName}</TableCell>
+                                        <TableCell>{guest.email}</TableCell>
+                                        <TableCell>{new Date(guest.dateOfBirth).toLocaleDateString()}</TableCell>
+                                        <TableCell>
+                                            <Button variant="destructive" size="sm" onClick={() => confirmDelete(guest)} disabled={deletingId === guest.id}>
+                                                {deletingId === guest.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash className="h-4 w-4" />}
+                                            </Button>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                                {guests.length === 0 && (
+                                    <TableRow>
+                                        <TableCell colSpan={5} className="text-center h-24 text-muted-foreground">
+                                            No guests found.
+                                        </TableCell>
+                                    </TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
+                    )}
+                </CardContent>
+            </Card>
 
             {/* Delete Confirmation Dialog */}
             <AlertDialog open={!!guestToDelete} onOpenChange={(open) => !open && setGuestToDelete(null)}>

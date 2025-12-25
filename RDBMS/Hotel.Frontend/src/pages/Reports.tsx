@@ -18,7 +18,7 @@ export function Reports() {
     }, []);
 
     return (
-        <div className="space-y-8">
+        <div className="space-y-8 max-w-4xl mx-auto">
             <h2 className="text-3xl font-bold tracking-tight">Reports</h2>
 
             <Card>
