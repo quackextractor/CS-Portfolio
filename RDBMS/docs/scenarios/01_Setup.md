@@ -33,6 +33,8 @@ The system includes a setup tool that initializes the database and installs fron
 
 ## 4. Running the System
 
+### Option A: Automated Script (Recommended)
+
 To start the full system (Backend + Frontend), simply run the helper script from the `RDBMS/` root:
 
 ```powershell
@@ -42,6 +44,27 @@ To start the full system (Backend + Frontend), simply run the helper script from
 This will open two new terminal windows:
 1.  **Backend**: Listens on `http://localhost:5106`.
 2.  **Frontend**: Listens on `http://localhost:5173`.
+
+### Option B: Manual Execution
+
+If you prefer running components separately:
+
+#### Backend
+1. Open a terminal and navigate to `RDBMS/Hotel.Backend`.
+2. Start the API:
+   ```powershell
+   dotnet run
+   ```
+3. The API will listen on `http://localhost:5106`.
+
+#### Frontend
+1. Open a **new terminal**.
+2. Navigate to `RDBMS/Hotel.Frontend`.
+3. Start the development server:
+   ```powershell
+   npm run dev
+   ```
+4. Open your browser to `http://localhost:5173`.
 
 Once started, open your browser to [http://localhost:5173](http://localhost:5173).
 
