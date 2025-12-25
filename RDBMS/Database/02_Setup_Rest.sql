@@ -1,5 +1,4 @@
-USE HotelManagement;
-GO
+
 
 -- RoomTypes
 IF OBJECT_ID('RoomTypes', 'U') IS NULL

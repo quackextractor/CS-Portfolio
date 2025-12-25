@@ -44,30 +44,43 @@ namespace Hotel.Backend.Setup
             var builder = new SqlConnectionStringBuilder(connStr);
             var targetDb = builder.InitialCatalog;
 
-            // 1. Ensure DB Exists
-            try
+            // 1. Ensure DB Exists (Local Only)
+            var isLocal = builder.DataSource.Contains("(localdb)", StringComparison.OrdinalIgnoreCase) || 
+                          builder.DataSource.Contains("localhost", StringComparison.OrdinalIgnoreCase) ||
+                          builder.DataSource == "." ||
+                          builder.DataSource.Contains("127.0.0.1");
+
+            if (isLocal)
             {
-                // Connect to master
-                builder.InitialCatalog = "master";
-                using (var conn = new SqlConnection(builder.ConnectionString))
+                try
                 {
-                    conn.Open();
-                    var cmdToCheck = new SqlCommand($"SELECT database_id FROM sys.databases WHERE Name = '{targetDb}'", conn);
-                    var output = cmdToCheck.ExecuteScalar();
-                    
-                    if (output == null)
+                    // Connect to master
+                    builder.InitialCatalog = "master";
+                    using (var conn = new SqlConnection(builder.ConnectionString))
                     {
-                        Console.WriteLine($"Database '{targetDb}' does not exist. Creating...");
-                        var cmdCreate = new SqlCommand($"CREATE DATABASE [{targetDb}]", conn);
-                        cmdCreate.ExecuteNonQuery();
-                        Console.WriteLine($"Database '{targetDb}' created.");
+                        conn.Open();
+                        var cmdToCheck = new SqlCommand($"SELECT database_id FROM sys.databases WHERE Name = '{targetDb}'", conn);
+                        var output = cmdToCheck.ExecuteScalar();
+                        
+                        if (output == null)
+                        {
+                            Console.WriteLine($"Database '{targetDb}' does not exist. Creating...");
+                            var cmdCreate = new SqlCommand($"CREATE DATABASE [{targetDb}]", conn);
+                            cmdCreate.ExecuteNonQuery();
+                            Console.WriteLine($"Database '{targetDb}' created.");
+                        }
                     }
                 }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[WARNING] Could not check/create database: {ex.Message}. Attempting to proceed with default connection...");
+                }
             }
-            catch (Exception ex)
+            else
             {
-                Console.WriteLine($"[WARNING] Could not check/create database: {ex.Message}. Attempting to proceed with default connection...");
+                Console.WriteLine($"[INFO] Remote server detected ('{builder.DataSource}'). Skipping automatic database creation. Using existing database '{targetDb}'.");
             }
+
 
             // 2. Run Scripts
             if (Directory.Exists(dbPath))
@@ -130,7 +143,8 @@ namespace Hotel.Backend.Setup
             // Windows npm fix
             if (fileName == "npm" && System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
             {
-                fileName = "npm.cmd";
+                fileName = "cmd";
+                args = $"/c npm {args}";
             }
 
             var pi = new ProcessStartInfo

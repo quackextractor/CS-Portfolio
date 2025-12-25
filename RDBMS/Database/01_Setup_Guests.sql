@@ -1,10 +1,4 @@
-IF NOT EXISTS(SELECT * FROM sys.databases WHERE name = 'HotelManagement')
-BEGIN
-    CREATE DATABASE HotelManagement;
-END
-GO
-USE HotelManagement;
-GO
+
 
 IF OBJECT_ID('Guests', 'U') IS NULL
 BEGIN
