@@ -33,22 +33,17 @@ The system includes a setup tool that initializes the database and installs fron
 
 ## 4. Running the System
 
-### Backend
-1. Ensure you are in `RDBMS/Hotel.Backend`.
-2. Start the API:
-   ```powershell
-   dotnet run
-   ```
-3. The API should be listening on `http://localhost:5106` (or similar).
+To start the full system (Backend + Frontend), simply run the helper script from the `RDBMS/` root:
 
-### Frontend
-1. Open a **new terminal**.
-2. Navigate to `RDBMS/Hotel.Frontend`.
-3. Start the development server:
-   ```powershell
-   npm run dev
-   ```
-4. Open your browser to `http://localhost:5173`.
+```powershell
+.\run.ps1
+```
+
+This will open two new terminal windows:
+1.  **Backend**: Listens on `http://localhost:5106`.
+2.  **Frontend**: Listens on `http://localhost:5173`.
+
+Once started, open your browser to [http://localhost:5173](http://localhost:5173).
 
 ## 5. Verification
 - You should see the "Hotel Manager" application.

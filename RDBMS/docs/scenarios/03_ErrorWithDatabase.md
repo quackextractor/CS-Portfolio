@@ -2,6 +2,10 @@
 
 **Goal**: Verify system resilience against invalid inputs and failures (Transaction rollback).
 
+**Prerequisites**: 
+- System must be running with valid database connection. (REFER TO 01_Setup.md)
+- Database must be in a clean state (no bookings, no guests, no rooms).
+
 ## 1. Invalid Input (Frontend Validation)
 1. Navigate to "Book Room".
 2. Leave all fields empty.
