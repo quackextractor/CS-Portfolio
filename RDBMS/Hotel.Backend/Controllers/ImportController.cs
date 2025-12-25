@@ -15,10 +15,10 @@ public class GuestImportDto
     public DateTime DateOfBirth { get; set; }
 }
 
-public class ServiceImportDto
+public class RoomImportDto
 {
-    public string Name { get; set; } = string.Empty;
-    public decimal Price { get; set; }
+    public string RoomNumber { get; set; } = string.Empty;
+    public int RoomTypeId { get; set; }
 }
 
 [ApiController]
@@ -63,6 +63,60 @@ public class ImportController : ControllerBase
                 }
                 transaction.Commit();
                 return Ok(new { Count = guests.Count, Message = "Import successful" });
+            }
+            catch (Exception ex)
+            {
+                transaction.Rollback();
+                return BadRequest(ex.Message);
+            }
+        }
+        catch (JsonException ex)
+        {
+            return BadRequest($"Invalid JSON: {ex.Message}");
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, ex.Message);
+        }
+    }
+
+    [HttpPost("rooms")]
+    public async Task<IActionResult> ImportRooms([FromForm] IFormFile file)
+    {
+        if (file == null || file.Length == 0)
+            return BadRequest("File is empty.");
+
+        try
+        {
+            using var stream = file.OpenReadStream();
+            var rooms = await JsonSerializer.DeserializeAsync<List<RoomImportDto>>(stream, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+            if (rooms == null || !rooms.Any())
+                return BadRequest("No rooms found in JSON.");
+
+            using var conn = new SqlConnection(DbConfig.ConnectionString);
+            conn.Open();
+            using var transaction = conn.BeginTransaction();
+
+            try
+            {
+                foreach (var r in rooms)
+                {
+                    if (string.IsNullOrWhiteSpace(r.RoomNumber))
+                        throw new Exception("Invalid room data: RoomNumber is required.");
+
+                    if (r.RoomTypeId <= 0)
+                        throw new Exception("Invalid room data: RoomTypeId must be greater than 0.");
+
+                    var room = new Room
+                    {
+                        RoomNumber = r.RoomNumber,
+                        RoomTypeId = r.RoomTypeId
+                    };
+                    room.Save(transaction);
+                }
+                transaction.Commit();
+                return Ok(new { Count = rooms.Count, Message = "Import successful" });
             }
             catch (Exception ex)
             {

@@ -17,7 +17,7 @@ export function Import() {
         }
     };
 
-    const handleUpload = async (type: 'guests' | 'services') => {
+    const handleUpload = async (type: 'guests' | 'rooms') => {
         if (!file) {
             setError("Please select a file first.");
             return;
@@ -35,7 +35,7 @@ export function Import() {
             if (type === 'guests') {
                 res = await api.import.guests(formData);
             } else {
-                res = await api.import.services(formData);
+                res = await api.import.rooms(formData);
             }
             setMessage(`${res.message} (${res.count} records)`);
         } catch (err: any) {
@@ -55,7 +55,7 @@ export function Import() {
                     <CardTitle>Import Files (JSON)</CardTitle>
                     <CardDescription>
                         Import Guests: [{"{ \"firstName\": \"...\", ... }"}] <br />
-                        Import Services: [{"{ \"name\": \"...\", \"price\": 10.0 }"}]
+                        Import Rooms: [{"{ \"roomNumber\": \"...\", \"roomTypeId\": 1 }"}]
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -68,8 +68,8 @@ export function Import() {
                         <Button onClick={() => handleUpload('guests')} disabled={loading || !file} variant="outline">
                             Import Guests
                         </Button>
-                        <Button onClick={() => handleUpload('services')} disabled={loading || !file}>
-                            Import Services
+                        <Button onClick={() => handleUpload('rooms')} disabled={loading || !file}>
+                            Import Rooms
                         </Button>
                     </div>
 

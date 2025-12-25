@@ -1,0 +1,34 @@
+[
+    {
+        "roomNumber": "103",
+        "roomTypeId": 1
+    },
+    {
+        "roomNumber": "104",
+        "roomTypeId": 1
+    },
+    {
+        "roomNumber": "105",
+        "roomTypeId": 1
+    },
+    {
+        "roomNumber": "203",
+        "roomTypeId": 2
+    },
+    {
+        "roomNumber": "204",
+        "roomTypeId": 2
+    },
+    {
+        "roomNumber": "205",
+        "roomTypeId": 2
+    },
+    {
+        "roomNumber": "206",
+        "roomTypeId": 2
+    },
+    {
+        "roomNumber": "302",
+        "roomTypeId": 3
+    }
+]

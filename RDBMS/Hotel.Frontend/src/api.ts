@@ -32,7 +32,7 @@ export const api = {
         guests: (formData: FormData) => axios.post(`${API_URL}/import/guests`, formData, {
             headers: { 'Content-Type': 'multipart/form-data' }
         }).then(r => r.data),
-        services: (formData: FormData) => axios.post(`${API_URL}/import/services`, formData, {
+        rooms: (formData: FormData) => axios.post(`${API_URL}/import/rooms`, formData, {
             headers: { 'Content-Type': 'multipart/form-data' }
         }).then(r => r.data),
     }
