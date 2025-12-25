@@ -19,51 +19,27 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-// Define RoomType if not already imported or available
-// Since RoomType interface is in types.ts but we might not have a way to fetch room types dynamically yet?
-// Wait, the backend usually provides room types or they are hardcoded?
-// In the Reports page, there was RevenueByRoomTypeReport.
-// Let's assume there's an API for room types or we hardcode them for now if the API doesn't support them fully yet.
-// However, the api.ts doesn't show a room types endpoint.
-// I'll check types.ts again. It has RoomType interface.
-// If there is no endpoint for room types, I might need to mock them or just input ID?
-// "Implement form with error handling (similar to booking creation)"
-// Ideally we select a room type from a dropdown.
-// I will assume for now I can map generic room types or I'll check if I can fetch them.
-// Looking at `api.Rooms.getAll`, it returns `Room[]`.
-// `Room` has `roomTypeId`.
-// I will add a hardcoded list of room types for the UI if I can't fetch them,
-// or I will try to fetch them if I add an endpoint.
-// For now, let's hardcode a few common types or just use an input for ID if strictly needed,
-// but dropdown is better.
-// Actually, I'll start with just ID input if I must, but name mapping is better.
-// Let's look at `Rooms` page requirements: "Create, Edit, Delete".
-// I'll create the structure first.
-
 export function Rooms() {
     const [rooms, setRooms] = useState<Room[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     // Form state
+    // Form state
     const [newRoom, setNewRoom] = useState({
         roomNumber: "",
-        roomTypeId: "1", // Default to 1
-        basePrice: "100",
-        isClean: true
+        roomTypeId: "1" // Default to 1
     });
 
     const [deletingId, setDeletingId] = useState<number | null>(null);
     const [roomToDelete, setRoomToDelete] = useState<Room | null>(null);
-    const [dialogOpen, setDialogOpen] = useState(false);
-    const [dialogContent, setDialogContent] = useState({ title: "", description: "" });
+    const [dialogOpen, setDialogContent] = useState<any>({ open: false, title: "", description: "" });
 
     // Mock room types for dropdown if API is missing
     const roomTypes = [
-        { id: 1, name: "Single" },
-        { id: 2, name: "Double" },
-        { id: 3, name: "Suite" },
-        { id: 4, name: "Deluxe" },
+        { id: 1, name: "Single", price: 100 },
+        { id: 2, name: "Double", price: 150 },
+        { id: 3, name: "Suite", price: 300 },
     ];
 
     useEffect(() => {
@@ -82,8 +58,7 @@ export function Rooms() {
     };
 
     const showDialog = (title: string, description: string) => {
-        setDialogContent({ title, description });
-        setDialogOpen(true);
+        setDialogContent({ open: true, title, description });
     };
 
     const handleCreate = async () => {
@@ -91,37 +66,24 @@ export function Rooms() {
             showDialog("Validation Error", "Please enter a Room Number.");
             return;
         }
-        if (isNaN(parseFloat(newRoom.basePrice)) || parseFloat(newRoom.basePrice) <= 0) {
-            showDialog("Validation Error", "Please enter a valid Base Price.");
-            return;
-        }
 
         setIsSubmitting(true);
         try {
-            // Check if api.rooms.create exists, if not need to add it to api.ts
-            // Assuming we will add it.
-            // For now using `any` cast if typescript complains until I update api.ts
-            // But I am writing this file first.
             await (api.rooms as any).create({
                 roomNumber: newRoom.roomNumber,
                 roomTypeId: parseInt(newRoom.roomTypeId),
-                basePrice: parseFloat(newRoom.basePrice),
-                isClean: newRoom.isClean,
                 lastMaintenance: null
             });
 
             showDialog("Success", "Room created successfully!");
-            setNewRoom({ roomNumber: "", roomTypeId: "1", basePrice: "100", isClean: true });
+            setNewRoom({ roomNumber: "", roomTypeId: "1" });
             loadRooms();
         } catch (e: any) {
             console.error(e);
-            // Check if it's a duplicate room number error (backend dependent)
-            // If backend returns 409 or specific message, show it.
-            // Currently backend might return 500 on uniqueness constraint violation if not handled explicitly.
-            // We can pre-check or just handle the error.
-            const errorMsg = e.response?.data || e.message || "Unknown error";
-            if (errorMsg.includes("Room number") || errorMsg.includes("unique") || e.response?.status === 409) {
-                showDialog("Error", "Room number already exists.");
+            const errorMsg = e.response?.data || e.message; // e.message is usually vague for axios, but let's see.
+            // Backend returns Conflict text directly.
+            if (e.response?.status === 409) {
+                showDialog("Error", e.response.data || "Room number already exists.");
             } else {
                 showDialog("Error", "Failed to create room. " + errorMsg);
             }
@@ -138,24 +100,16 @@ export function Rooms() {
         if (!roomToDelete) return;
         setDeletingId(roomToDelete.id);
         try {
-            // Assuming api.rooms.delete exists
             await (api.rooms as any).delete(roomToDelete.id);
             loadRooms();
             setRoomToDelete(null);
         } catch (e: any) {
             console.error(e);
-            // Handle "on delete cascade" / foreign key constraint errors
-            // If backend throws 500 or 400 due to FK.
-            // The prompt said: "Implement 'on delete cascade' logic (frontend or backend confirmation?)"
-            // "Also allow for removing bookings, similairly like as in the /guests. Also change the path from /bookings/new to /bookings/, as it would be inaccurate, since you can both create and remove bookings there."
-            // For Rooms, if it fails, we inform user. 
-            let msg = "Failed to delete room.";
-            if (e.response && e.response.status === 409) { // Conflict
-                msg += " It might have active bookings.";
-            } else if (e.message) {
-                msg += " " + e.message;
+            if (e.response && e.response.status === 409) {
+                showDialog("Error", e.response.data || "Failed to delete room (Conflict).");
+            } else {
+                showDialog("Error", "Failed to delete room.");
             }
-            showDialog("Error", msg);
         } finally {
             setDeletingId(null);
         }
@@ -194,34 +148,15 @@ export function Rooms() {
                                 </SelectTrigger>
                                 <SelectContent>
                                     {roomTypes.map(rt => (
-                                        <SelectItem key={rt.id} value={rt.id.toString()}>{rt.name}</SelectItem>
+                                        <SelectItem key={rt.id} value={rt.id.toString()}>
+                                            {rt.name} (${rt.price})
+                                        </SelectItem>
                                     ))}
                                 </SelectContent>
                             </Select>
                         </div>
-                        <div className="space-y-2">
-                            <Label>Base Price ($)</Label>
-                            <Input
-                                type="number"
-                                value={newRoom.basePrice}
-                                onChange={e => setNewRoom({ ...newRoom, basePrice: e.target.value })}
-                                disabled={isSubmitting}
-                                placeholder="100.00"
-                            />
-                        </div>
-                        <div className="flex items-center space-x-2 pt-8">
-                            <input
-                                type="checkbox"
-                                id="isClean"
-                                checked={newRoom.isClean}
-                                onChange={(e) => setNewRoom({ ...newRoom, isClean: e.target.checked })}
-                                disabled={isSubmitting}
-                                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-                            />
-                            <Label htmlFor="isClean">Is Clean?</Label>
-                        </div>
                     </div>
-                    <Button onClick={handleCreate} className="w-full" disabled={isSubmitting}>
+                    <Button onClick={handleCreate} className="w-full mt-4" disabled={isSubmitting}>
                         {isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Creating...</> : <><Plus className="mr-2 h-4 w-4" /> Create Room</>}
                     </Button>
                 </CardContent>
@@ -245,19 +180,22 @@ export function Rooms() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {rooms.map((room) => (
-                                    <TableRow key={room.id}>
-                                        <TableCell>{room.id}</TableCell>
-                                        <TableCell>{room.roomNumber}</TableCell>
-                                        <TableCell>{roomTypes.find(t => t.id === room.roomTypeId)?.name || room.roomTypeId}</TableCell>
-                                        <TableCell>${room.basePrice?.toFixed(2) || 'N/A'}</TableCell>
-                                        <TableCell>
-                                            <Button variant="destructive" size="sm" onClick={() => confirmDelete(room)} disabled={deletingId === room.id}>
-                                                {deletingId === room.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash className="h-4 w-4" />}
-                                            </Button>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
+                                {rooms.map((room) => {
+                                    const rType = roomTypes.find(t => t.id === room.roomTypeId);
+                                    return (
+                                        <TableRow key={room.id}>
+                                            <TableCell>{room.id}</TableCell>
+                                            <TableCell>{room.roomNumber}</TableCell>
+                                            <TableCell>{rType?.name || room.roomTypeId}</TableCell>
+                                            <TableCell>${rType?.price.toFixed(2) || 'N/A'}</TableCell>
+                                            <TableCell>
+                                                <Button variant="destructive" size="sm" onClick={() => confirmDelete(room)} disabled={deletingId === room.id}>
+                                                    {deletingId === room.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash className="h-4 w-4" />}
+                                                </Button>
+                                            </TableCell>
+                                        </TableRow>
+                                    );
+                                })}
                                 {rooms.length === 0 && (
                                     <TableRow>
                                         <TableCell colSpan={5} className="text-center h-24 text-muted-foreground">
@@ -287,16 +225,16 @@ export function Rooms() {
                 </AlertDialogContent>
             </AlertDialog>
 
-            <AlertDialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <AlertDialog open={dialogOpen.open} onOpenChange={(open) => setDialogContent({ ...dialogOpen, open })}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>{dialogContent.title}</AlertDialogTitle>
+                        <AlertDialogTitle>{dialogOpen.title}</AlertDialogTitle>
                         <AlertDialogDescription>
-                            {dialogContent.description}
+                            {dialogOpen.description}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogAction onClick={() => setDialogOpen(false)}>OK</AlertDialogAction>
+                        <AlertDialogAction onClick={() => setDialogContent({ ...dialogOpen, open: false })}>OK</AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>

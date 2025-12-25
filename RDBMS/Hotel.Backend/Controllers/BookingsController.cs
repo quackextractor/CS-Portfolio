@@ -101,10 +101,32 @@ public class BookingsController : ControllerBase
     [HttpDelete("{id}")]
     public IActionResult Delete(int id)
     {
-        var booking = Booking.Find(id);
-        if (booking == null) return NotFound();
+        using var conn = new SqlConnection(DbConfig.ConnectionString);
+        conn.Open();
+        using var transaction = conn.BeginTransaction();
 
-        booking.Delete();
-        return NoContent();
+        try
+        {
+            var booking = Booking.Find(id, transaction);
+            if (booking == null) return NotFound();
+
+            // Manual Cascade Delete: Remove BookingServices first
+            var services = BookingService.Where("BookingId = @bid", new Dictionary<string, object> { { "@bid", id } }, transaction);
+            foreach (var s in services)
+            {
+                s.Delete(transaction);
+            }
+
+            // Remove Booking
+            booking.Delete(transaction);
+            
+            transaction.Commit();
+            return NoContent();
+        }
+        catch (Exception ex)
+        {
+            transaction.Rollback();
+            return StatusCode(500, ex.Message);
+        }
     }
 }

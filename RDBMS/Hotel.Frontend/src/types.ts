@@ -19,12 +19,10 @@ export interface Guest {
     loyaltyPoints: number;
 }
 
-export interface Room {
-    id: number;
-    roomNumber: string;
-    roomTypeId: number;
-    isClean: boolean;
-    lastMaintenance: string | null;
+id: number;
+roomNumber: string;
+roomTypeId: number;
+lastMaintenance: string | null;
 }
 
 export interface RoomType {

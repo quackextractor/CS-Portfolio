@@ -19,7 +19,6 @@ BEGIN
         Id INT IDENTITY(1,1) PRIMARY KEY,
         RoomNumber NVARCHAR(20) NOT NULL UNIQUE,
         RoomTypeId INT NOT NULL FOREIGN KEY REFERENCES RoomTypes(Id),
-        IsClean BIT NOT NULL DEFAULT 1,
         LastMaintenance DATE
     );
 END
@@ -90,8 +89,7 @@ SELECT
     rt.Name AS RoomType,
     rt.BasePrice
 FROM Rooms r
-JOIN RoomTypes rt ON r.RoomTypeId = rt.Id
-WHERE r.IsClean = 1; -- Simplified availability logic for view
+JOIN RoomTypes rt ON r.RoomTypeId = rt.Id;
 GO
 
 CREATE OR ALTER VIEW v_ServiceUsageStats AS

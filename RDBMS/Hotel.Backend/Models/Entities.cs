@@ -16,7 +16,6 @@ public class Room : ActiveRecordBase<Room>
 {
     public string RoomNumber { get; set; } = string.Empty;
     public int RoomTypeId { get; set; }
-    public bool IsClean { get; set; } = true;
     public DateTime? LastMaintenance { get; set; }
 }
 

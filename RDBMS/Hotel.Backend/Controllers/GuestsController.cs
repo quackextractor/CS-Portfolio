@@ -1,6 +1,7 @@
 using Hotel.Backend.Data;
 using Hotel.Backend.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
 
 namespace Hotel.Backend.Controllers;
 
@@ -53,13 +54,41 @@ public class GuestsController : ControllerBase
     [HttpDelete("{id}")]
     public IActionResult Delete(int id)
     {
-        var guest = Guest.Find(id);
-        if (guest == null)
-        {
-            return NotFound();
-        }
+        using var conn = new SqlConnection(DbConfig.ConnectionString);
+        conn.Open();
+        using var transaction = conn.BeginTransaction();
 
-        guest.Delete();
-        return NoContent();
+        try
+        {
+            var guest = Guest.Find(id, transaction);
+            if (guest == null) return NotFound();
+
+            // Cascade: Find all bookings for this guest
+            var bookings = Booking.Where("GuestId = @gid", new Dictionary<string, object> { { "@gid", id } }, transaction);
+            
+            foreach (var booking in bookings)
+            {
+                // Cascade: Delete BookingServices for each booking
+                var services = BookingService.Where("BookingId = @bid", new Dictionary<string, object> { { "@bid", booking.Id } }, transaction);
+                foreach (var s in services)
+                {
+                    s.Delete(transaction);
+                }
+                
+                // Delete Booking
+                booking.Delete(transaction);
+            }
+
+            // Finally delete the guest
+            guest.Delete(transaction);
+
+            transaction.Commit();
+            return NoContent();
+        }
+        catch (Exception ex)
+        {
+            transaction.Rollback();
+            return StatusCode(500, ex.Message);
+        }
     }
 }
