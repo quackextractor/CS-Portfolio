@@ -6,43 +6,50 @@
 - **Backend SDK**: .NET 8.0 SDK
 - **Frontend Runtime**: Node.js (v18+)
 
-## 2. Database Setup
+## 2. Configuration
 
-1. Open a terminal in `RDBMS/` directory.
-2. Run the SQL setup scripts using `sqlcmd` (assuming LocalDB):
+1. Open a terminal in the `RDBMS/` root directory.
+2. Search for `config.json`. If it doesn't exist, copy `config.json.example` to `config.json`.
+3. Open `config.json` and ensure the `DefaultConnection` string matches your SQL Server instance.
+   *   **LocalDB Example**: `"Server=(localdb)\\mssqllocaldb;Database=HotelManagement;Trusted_Connection=True;MultipleActiveResultSets=true"`
+   *   **Remote/Auth Example**: `"Server=YOUR_SERVER_IP;Database=YOUR_DB;User Id=YOUR_USER;Password=YOUR_PASSWORD;TrustServerCertificate=True"`
+
+## 3. Automated Setup
+
+The system includes a setup tool that initializes the database and installs frontend dependencies.
+
+1. Navigate to the Backend directory:
    ```powershell
-   sqlcmd -S "(localdb)\MSSQLLocalDB" -i Database\01_Setup_Guests.sql
-   sqlcmd -S "(localdb)\MSSQLLocalDB" -i Database\02_Setup_Rest.sql
+   cd Hotel.Backend
    ```
-   *Note: If using a different SQL Server instance, replace `(localdb)\MSSQLLocalDB` with your server address.*
+2. Run the setup command:
+   ```powershell
+   dotnet run -- --setup
+   ```
+   *   This will:
+        *   Create the database if it doesn't exist.
+        *   Execute all SQL scripts found in `RDBMS/Database`.
+        *   Run `npm install` in `RDBMS/Hotel.Frontend`.
 
-3. Verify database `HotelManagement` is created.
+## 4. Running the System
 
-## 3. Backend Setup
-
-1. Navigate to `RDBMS/Hotel.Backend`.
-2. check `appsettings.json` to ensure `ConnectionStrings:DefaultConnection` matches your SQL Server instance.
-   Default is: `Server=(localdb)\\MSSQLLocalDB;Database=HotelManagement;Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=True`
-3. Run the backend:
+### Backend
+1. Ensure you are in `RDBMS/Hotel.Backend`.
+2. Start the API:
    ```powershell
    dotnet run
    ```
-4. The API should be listening on `http://localhost:5106`.
+3. The API should be listening on `http://localhost:5106` (or similar).
 
-## 4. Frontend Setup
-
-1. Open a new terminal.
+### Frontend
+1. Open a **new terminal**.
 2. Navigate to `RDBMS/Hotel.Frontend`.
-3. Install dependencies:
-   ```powershell
-   npm install
-   ```
-4. Start the development server:
+3. Start the development server:
    ```powershell
    npm run dev
    ```
-5. Open your browser to `http://localhost:5173`.
+4. Open your browser to `http://localhost:5173`.
 
 ## 5. Verification
 - You should see the "Hotel Manager" application.
-- Navigate to "Guests", "Book Room", "Reports" using the top navigation bar.
+- Navigate to "Guests", "Book Room", "Reports" using the top navigation bar to ensure data is accessible (database connection works).
