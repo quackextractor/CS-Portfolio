@@ -11,6 +11,8 @@ import { Plus, Trash } from "lucide-react";
 export function GuestList() {
     const [guests, setGuests] = useState<Guest[]>([]);
     const [newGuest, setNewGuest] = useState({ firstName: "", lastName: "", email: "", dateOfBirth: "" });
+    const [isCreating, setIsCreating] = useState(false);
+    const [deletingId, setDeletingId] = useState<number | null>(null);
 
     useEffect(() => {
         loadGuests();
@@ -22,6 +24,7 @@ export function GuestList() {
 
     const handleCreate = async () => {
         if (!newGuest.firstName || !newGuest.lastName) return;
+        setIsCreating(true);
         try {
             await api.guests.create({
                 ...newGuest,
@@ -35,17 +38,22 @@ export function GuestList() {
         } catch (e) {
             console.error(e);
             alert("Failed to create guest");
+        } finally {
+            setIsCreating(false);
         }
     };
 
     const handleDelete = async (id: number) => {
         if (!confirm("Are you sure?")) return;
+        setDeletingId(id);
         try {
             await api.guests.delete(id);
             loadGuests();
         } catch (e) {
             console.error(e);
             alert("Failed to delete guest");
+        } finally {
+            setDeletingId(null);
         }
     }
 
@@ -63,21 +71,21 @@ export function GuestList() {
                     <CardContent className="space-y-4">
                         <div className="space-y-2">
                             <Label>First Name</Label>
-                            <Input value={newGuest.firstName} onChange={e => setNewGuest({ ...newGuest, firstName: e.target.value })} />
+                            <Input value={newGuest.firstName} onChange={e => setNewGuest({ ...newGuest, firstName: e.target.value })} disabled={isCreating} />
                         </div>
                         <div className="space-y-2">
                             <Label>Last Name</Label>
-                            <Input value={newGuest.lastName} onChange={e => setNewGuest({ ...newGuest, lastName: e.target.value })} />
+                            <Input value={newGuest.lastName} onChange={e => setNewGuest({ ...newGuest, lastName: e.target.value })} disabled={isCreating} />
                         </div>
                         <div className="space-y-2">
                             <Label>Email</Label>
-                            <Input value={newGuest.email} onChange={e => setNewGuest({ ...newGuest, email: e.target.value })} />
+                            <Input value={newGuest.email} onChange={e => setNewGuest({ ...newGuest, email: e.target.value })} disabled={isCreating} />
                         </div>
                         <div className="space-y-2">
                             <Label>Date of Birth</Label>
-                            <Input type="date" value={newGuest.dateOfBirth} onChange={e => setNewGuest({ ...newGuest, dateOfBirth: e.target.value })} />
+                            <Input type="date" value={newGuest.dateOfBirth} onChange={e => setNewGuest({ ...newGuest, dateOfBirth: e.target.value })} disabled={isCreating} />
                         </div>
-                        <Button onClick={handleCreate} className="w-full"><Plus className="mr-2 h-4 w-4" /> Create Guest</Button>
+                        <Button onClick={handleCreate} className="w-full" disabled={isCreating}>{isCreating ? "Creating..." : <><Plus className="mr-2 h-4 w-4" /> Create Guest</>}</Button>
                     </CardContent>
                 </Card>
             </div>
@@ -101,8 +109,8 @@ export function GuestList() {
                                 <TableCell>{guest.email}</TableCell>
                                 <TableCell>{new Date(guest.dateOfBirth).toLocaleDateString()}</TableCell>
                                 <TableCell>
-                                    <Button variant="destructive" size="sm" onClick={() => handleDelete(guest.id)}>
-                                        <Trash className="h-4 w-4" />
+                                    <Button variant="destructive" size="sm" onClick={() => handleDelete(guest.id)} disabled={deletingId === guest.id}>
+                                        {deletingId === guest.id ? "..." : <Trash className="h-4 w-4" />}
                                     </Button>
                                 </TableCell>
                             </TableRow>
