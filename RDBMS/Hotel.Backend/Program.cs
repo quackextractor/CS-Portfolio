@@ -6,6 +6,17 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddControllers();
 
+// Load centralized config
+var configPath = Path.Combine(Directory.GetCurrentDirectory(), "..", "config.json");
+builder.Configuration.AddJsonFile(configPath, optional: true, reloadOnChange: true);
+
+if (args.Contains("--setup"))
+{
+    var config = builder.Configuration;
+    Hotel.Backend.Setup.SetupService.RunSetup(config);
+    return;
+}
+
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
