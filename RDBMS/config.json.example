@@ -1,0 +1,10 @@
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "Server=193.85.203.188;Database=schoolusername;User Id=schoolusername;Password=password;TrustServerCertificate=True"
+  }
+}
+// Alternative: LocalDB
+// "DefaultConnection": "Server=(localdb)\\mssqllocaldb;Database=HotelManagement;Trusted_Connection=True;MultipleActiveResultSets=true"
+// Alternative: local instance
+// "DefaultConnection": "DRIVER={ODBC Driver 17 for SQL Server};SERVER=(localdb)\localDB1;Trusted_Connection=yes;TrustServerCertificate=yes"
+// "DefaultConnection": "DRIVER={ODBC Driver 17 for SQL Server};SERVER=PCXXXX;DATABASE=ChronoLog;UID=schoolusername;PWD=schoolpassword;TrustServerCertificate=yes"

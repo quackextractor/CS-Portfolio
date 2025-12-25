@@ -5,51 +5,42 @@
 ### Requirements
 - .NET 8 SDK
 - Node.js (LTS version)
-- Microsoft SQL Server (LocalDB or User instance)
+- Microsoft SQL Server
 
 ### Steps
 1.  Clone the repository.
 2.  Navigate to `RDBMS` directory.
-3.  Restore Backend dependencies:
-    ```bash
-    cd Hotel.Backend
-    dotnet restore
+3.  **Configuration**: 
+    - Copy `config.json.example` to `config.json`.
+    - Edit `config.json` and update the `DefaultConnection` string with your SQL Server details.
+    
+    *Example `config.json`:*
+    ```json
+    {
+      "ConnectionStrings": {
+        "DefaultConnection": "Server=(localdb)\\MSSQLLocalDB;Database=HotelManagement;..."
+      },
+      ...
+    }
     ```
-4.  Restore Frontend dependencies:
+
+4.  **Automated Setup**:
     ```bash
-    cd ../Hotel.Frontend
-    npm install
+    dotnet run --project Hotel.Setup setup
     ```
-
-## 2. Configuration
-
-1.  Open `RDBMS/Hotel.Backend/appsettings.json`.
-2.  Update the `DefaultConnection` string to point to your SQL Server instance.
-    *   Example for LocalDB:
-        `"Server=(localdb)\\mssqllocaldb;Database=HotelManagement;Trusted_Connection=True;MultipleActiveResultSets=true"`
-    *   Example for School Server:
-        `"DRIVER={ODBC Driver 17 for SQL Server};SERVER=193.85.203.188;DATABASE=schoolusername;UID=schoolusername;PWD=password;TrustServerCertificate=yes"`
-
-## 3. Database Setup
-
-1.  Open your SQL Management tool (SSMS or Azure Data Studio).
-2.  Connect to the target server.
-3.  Run `RDBMS/Database/01_Setup_Guests.sql` first.
-4.  Run `RDBMS/Database/02_Setup_Rest.sql` second.
-    *   This will create the database `HotelManagement`, all tables, views, and seed initial data.
+    This command will:
+    - Update the Backend configuration from `config.json`.
+    - Create the database (if missing) and run initialization scripts.
+    - Install Frontend dependencies.
 
 ## 4. Launching
 
 1.  Start Backend:
     ```bash
-    cd Hotel.Backend
-    dotnet run
+    dotnet run --project Hotel.Setup run-backend
     ```
-    *   Verify API is running at `http://localhost:5106/swagger`.
 
 2.  Start Frontend:
     ```bash
-    cd Hotel.Frontend
-    npm run dev
+    dotnet run --project Hotel.Setup run-frontend
     ```
-    *   Open `http://localhost:5173` in your browser.
