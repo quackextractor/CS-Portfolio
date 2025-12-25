@@ -7,6 +7,15 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export function CreateBooking() {
     const [guests, setGuests] = useState<Guest[]>([]);
@@ -22,6 +31,8 @@ export function CreateBooking() {
     const [checkIn, setCheckIn] = useState("");
     const [checkOut, setCheckOut] = useState("");
     const [selectedServices, setSelectedServices] = useState<string[]>([]);
+    const [dialogOpen, setDialogOpen] = useState(false);
+    const [dialogContent, setDialogContent] = useState({ title: "", description: "" });
 
     useEffect(() => {
         const loadData = async () => {
@@ -48,9 +59,14 @@ export function CreateBooking() {
         loadData();
     }, []);
 
+    const showDialog = (title: string, description: string) => {
+        setDialogContent({ title, description });
+        setDialogOpen(true);
+    };
+
     const handleSubmit = async () => {
         if (!selectedGuest || !selectedRoom || !checkIn || !checkOut) {
-            alert("Please fill all fields");
+            showDialog("Validation Error", "Please fill all fields");
             return;
         }
 
@@ -63,7 +79,7 @@ export function CreateBooking() {
                 checkOut,
                 serviceIds: selectedServices.map(id => parseInt(id))
             });
-            alert("Booking Created Successfully!");
+            showDialog("Success", "Booking Created Successfully!");
             // Reset form or redirect
             setSelectedGuest("");
             setSelectedRoom("");
@@ -72,7 +88,7 @@ export function CreateBooking() {
             setSelectedServices([]);
         } catch (e: any) {
             console.error(e);
-            alert("Error creating booking: " + (e.response?.data || e.message));
+            showDialog("Error", "Error creating booking: " + (e.response?.data || e.message));
         } finally {
             setIsSubmitting(false);
         }
@@ -156,6 +172,20 @@ export function CreateBooking() {
                     </>
                 )}
             </CardContent>
+
+            <AlertDialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>{dialogContent.title}</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            {dialogContent.description}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogAction onClick={() => setDialogOpen(false)}>OK</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </Card>
     );
 }

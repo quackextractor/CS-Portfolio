@@ -7,12 +7,23 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Plus, Trash } from "lucide-react";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export function GuestList() {
     const [guests, setGuests] = useState<Guest[]>([]);
     const [newGuest, setNewGuest] = useState({ firstName: "", lastName: "", email: "", dateOfBirth: "" });
     const [isCreating, setIsCreating] = useState(false);
     const [deletingId, setDeletingId] = useState<number | null>(null);
+    const [guestToDelete, setGuestToDelete] = useState<Guest | null>(null);
 
     useEffect(() => {
         loadGuests();
@@ -43,17 +54,22 @@ export function GuestList() {
         }
     };
 
-    const handleDelete = async (id: number) => {
-        if (!confirm("Are you sure?")) return;
-        setDeletingId(id);
+    const confirmDelete = (guest: Guest) => {
+        setGuestToDelete(guest);
+    };
+
+    const handleDelete = async () => {
+        if (!guestToDelete) return;
+        setDeletingId(guestToDelete.id);
         try {
-            await api.guests.delete(id);
+            await api.guests.delete(guestToDelete.id);
             loadGuests();
         } catch (e) {
             console.error(e);
             alert("Failed to delete guest");
         } finally {
             setDeletingId(null);
+            setGuestToDelete(null);
         }
     }
 
@@ -109,7 +125,7 @@ export function GuestList() {
                                 <TableCell>{guest.email}</TableCell>
                                 <TableCell>{new Date(guest.dateOfBirth).toLocaleDateString()}</TableCell>
                                 <TableCell>
-                                    <Button variant="destructive" size="sm" onClick={() => handleDelete(guest.id)} disabled={deletingId === guest.id}>
+                                    <Button variant="destructive" size="sm" onClick={() => confirmDelete(guest)} disabled={deletingId === guest.id}>
                                         {deletingId === guest.id ? "..." : <Trash className="h-4 w-4" />}
                                     </Button>
                                 </TableCell>
@@ -118,6 +134,22 @@ export function GuestList() {
                     </TableBody>
                 </Table>
             </div>
+
+            <AlertDialog open={!!guestToDelete} onOpenChange={(open) => !open && setGuestToDelete(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This action cannot be undone. This will permanently delete the guest
+                            {guestToDelete && <b> {guestToDelete.firstName} {guestToDelete.lastName}</b>}.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }
