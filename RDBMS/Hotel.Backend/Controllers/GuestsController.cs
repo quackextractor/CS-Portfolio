@@ -68,13 +68,6 @@ public class GuestsController : ControllerBase
             
             foreach (var booking in bookings)
             {
-                // Cascade: Delete BookingServices for each booking
-                var services = BookingService.Where("BookingId = @bid", new Dictionary<string, object> { { "@bid", booking.Id } }, transaction);
-                foreach (var s in services)
-                {
-                    s.Delete(transaction);
-                }
-                
                 // Delete Booking
                 booking.Delete(transaction);
             }

@@ -6,8 +6,7 @@ BEGIN
     CREATE TABLE RoomTypes (
         Id INT IDENTITY(1,1) PRIMARY KEY,
         Name NVARCHAR(50) NOT NULL,
-        BasePrice DECIMAL(18,2) NOT NULL,
-        Description NVARCHAR(200)
+        BasePrice DECIMAL(18,2) NOT NULL
     );
 END
 GO
@@ -18,20 +17,7 @@ BEGIN
     CREATE TABLE Rooms (
         Id INT IDENTITY(1,1) PRIMARY KEY,
         RoomNumber NVARCHAR(20) NOT NULL UNIQUE,
-        RoomTypeId INT NOT NULL FOREIGN KEY REFERENCES RoomTypes(Id),
-        LastMaintenance DATE
-    );
-END
-GO
-
--- Services
-IF OBJECT_ID('Services', 'U') IS NULL
-BEGIN
-    CREATE TABLE Services (
-        Id INT IDENTITY(1,1) PRIMARY KEY,
-        Name NVARCHAR(100) NOT NULL,
-        Price DECIMAL(18,2) NOT NULL,
-        IsActive BIT NOT NULL DEFAULT 1
+        RoomTypeId INT NOT NULL FOREIGN KEY REFERENCES RoomTypes(Id)
     );
 END
 GO
@@ -45,22 +31,7 @@ BEGIN
         RoomId INT NOT NULL FOREIGN KEY REFERENCES Rooms(Id),
         CheckIn DATE NOT NULL,
         CheckOut DATE NOT NULL,
-        TotalPrice DECIMAL(18,2) NOT NULL DEFAULT 0,
-        Status INT NOT NULL DEFAULT 0, -- 0: Pending, 1: Confirmed, 2: Cancelled, 3: Completed
-        CreatedAt DATETIME NOT NULL DEFAULT GETDATE()
-    );
-END
-GO
-
--- BookingServices (M:N)
-IF OBJECT_ID('BookingServices', 'U') IS NULL
-BEGIN
-    CREATE TABLE BookingServices (
-        Id INT IDENTITY(1,1) PRIMARY KEY,
-        BookingId INT NOT NULL FOREIGN KEY REFERENCES Bookings(Id),
-        ServiceId INT NOT NULL FOREIGN KEY REFERENCES Services(Id),
-        SubTotal DECIMAL(18,2) NOT NULL,
-        ServiceDate DATE NOT NULL
+        TotalPrice DECIMAL(18,2) NOT NULL DEFAULT 0
     );
 END
 GO
@@ -75,8 +46,7 @@ SELECT
     g.Email,
     r.RoomNumber,
     b.CheckIn,
-    b.CheckOut,
-    b.Status
+    b.CheckOut
 FROM Bookings b
 JOIN Guests g ON b.GuestId = g.Id
 JOIN Rooms r ON b.RoomId = r.Id;
@@ -90,16 +60,6 @@ SELECT
     rt.BasePrice
 FROM Rooms r
 JOIN RoomTypes rt ON r.RoomTypeId = rt.Id;
-GO
-
-CREATE OR ALTER VIEW v_ServiceUsageStats AS
-SELECT 
-    s.Name AS ServiceName,
-    COUNT(bs.Id) AS UsageCount,
-    SUM(bs.SubTotal) AS TotalRevenue
-FROM Services s
-LEFT JOIN BookingServices bs ON s.Id = bs.ServiceId
-GROUP BY s.Name;
 GO
 
 CREATE OR ALTER VIEW v_RevenueByRoomType AS
@@ -116,10 +76,10 @@ GO
 -- Seed Data
 IF NOT EXISTS (SELECT * FROM RoomTypes)
 BEGIN
-    INSERT INTO RoomTypes (Name, BasePrice, Description) VALUES 
-    ('Single', 100.00, 'Standard Single Room'),
-    ('Double', 150.00, 'Standard Double Room'),
-    ('Suite', 300.00, 'Luxury Suite');
+    INSERT INTO RoomTypes (Name, BasePrice) VALUES 
+    ('Single', 100.00),
+    ('Double', 150.00),
+    ('Suite', 300.00);
 END
 
 IF NOT EXISTS (SELECT * FROM Rooms)
@@ -129,12 +89,16 @@ BEGIN
     ('201', 2), ('202', 2),
     ('301', 3);
 END
+GO
 
-IF NOT EXISTS (SELECT * FROM Services)
+-- Seed Data: Bookings
+IF NOT EXISTS (SELECT * FROM Bookings)
 BEGIN
-    INSERT INTO Services (Name, Price) VALUES 
-    ('Breakfast', 15.00),
-    ('Airport Shuttle', 50.00),
-    ('Late Check-out', 30.00);
+    -- Linking queries to get IDs ensures robustness, though identity INSERTs are standard 1-based usually.
+    -- Assuming Guest IDs 1, 2 from previous script and Room IDs 1, 3 from this script.
+    
+    INSERT INTO Bookings (GuestId, RoomId, CheckIn, CheckOut, TotalPrice) VALUES 
+    (1, 1, DATEADD(day, 1, GETDATE()), DATEADD(day, 5, GETDATE()), 400.00),  -- John Doe, Room 101 (Single)
+    (2, 5, DATEADD(day, 10, GETDATE()), DATEADD(day, 15, GETDATE()), 1500.00); -- Jane Smith, Room 301 (Suite)
 END
 GO

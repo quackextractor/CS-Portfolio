@@ -13,7 +13,6 @@ public class GuestBookingReport : ActiveRecordBase<GuestBookingReport>
     public string RoomNumber { get; set; } = string.Empty;
     public DateTime CheckIn { get; set; }
     public DateTime CheckOut { get; set; }
-    public BookingStatus Status { get; set; }
 }
 
 [Table("v_RoomAvailability")]

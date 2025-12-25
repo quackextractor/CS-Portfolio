@@ -19,12 +19,6 @@ public class ReportsController : ControllerBase
         return RoomAvailabilityReport.All();
     }
 
-    [HttpGet("service-stats")]
-    public IEnumerable<ServiceUsageStatsReport> GetServiceStats()
-    {
-        return ServiceUsageStatsReport.All();
-    }
-
     [HttpGet("revenue-by-room-type")]
     public IEnumerable<RevenueByRoomTypeReport> GetRevenueByRoomType()
     {

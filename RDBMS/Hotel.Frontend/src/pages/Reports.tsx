@@ -8,7 +8,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 export function Reports() {
     const [bookings, setBookings] = useState<GuestBookingReport[]>([]);
     const [availability, setAvailability] = useState<RoomAvailabilityReport[]>([]);
-    const [serviceStats, setServiceStats] = useState<ServiceUsageStatsReport[]>([]);
     const [revenueStats, setRevenueStats] = useState<RevenueByRoomTypeReport[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -19,7 +18,6 @@ export function Reports() {
                 await Promise.all([
                     api.reports.guestBookings().then(setBookings),
                     api.reports.availability().then(setAvailability),
-                    api.reports.serviceStats().then(setServiceStats),
                     api.reports.revenueByRoomType().then(setRevenueStats)
                 ]);
             } catch (error) {
@@ -58,7 +56,6 @@ export function Reports() {
                                 <TableHead>Room</TableHead>
                                 <TableHead>Check-in</TableHead>
                                 <TableHead>Check-out</TableHead>
-                                <TableHead>Status</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -69,7 +66,6 @@ export function Reports() {
                                     <TableCell>{b.roomNumber}</TableCell>
                                     <TableCell>{new Date(b.checkIn).toLocaleDateString()}</TableCell>
                                     <TableCell>{new Date(b.checkOut).toLocaleDateString()}</TableCell>
-                                    <TableCell>{b.status}</TableCell>
                                 </TableRow>
                             ))}
                         </TableBody>
@@ -110,7 +106,7 @@ export function Reports() {
 
             <Card>
                 <CardHeader>
-                    <CardTitle>Revenue by Room Type (Aggregated from 3 tables)</CardTitle>
+                    <CardTitle>Revenue by Room Type</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <Table>

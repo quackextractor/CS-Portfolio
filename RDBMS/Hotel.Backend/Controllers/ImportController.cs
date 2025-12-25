@@ -57,65 +57,12 @@ public class ImportController : ControllerBase
                         Email = g.Email,
                         Phone = g.Phone,
                         DateOfBirth = g.DateOfBirth,
-                        IsActive = true,
-                        Type = GuestType.Regular
+                        IsActive = true
                     };
                     guest.Save(transaction);
                 }
                 transaction.Commit();
                 return Ok(new { Count = guests.Count, Message = "Import successful" });
-            }
-            catch (Exception ex)
-            {
-                transaction.Rollback();
-                return BadRequest(ex.Message);
-            }
-        }
-        catch (JsonException ex)
-        {
-            return BadRequest($"Invalid JSON: {ex.Message}");
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, ex.Message);
-        }
-    }
-
-    [HttpPost("services")]
-    public async Task<IActionResult> ImportServices([FromForm] IFormFile file)
-    {
-        if (file == null || file.Length == 0)
-            return BadRequest("File is empty.");
-
-        try
-        {
-            using var stream = file.OpenReadStream();
-            var services = await JsonSerializer.DeserializeAsync<List<ServiceImportDto>>(stream, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-
-            if (services == null || !services.Any())
-                return BadRequest("No services found in JSON.");
-
-            using var conn = new SqlConnection(DbConfig.ConnectionString);
-            conn.Open();
-            using var transaction = conn.BeginTransaction();
-
-            try
-            {
-                foreach (var s in services)
-                {
-                    if (string.IsNullOrWhiteSpace(s.Name))
-                         throw new Exception("Invalid service data: Name is required.");
-
-                    var service = new Service
-                    {
-                        Name = s.Name,
-                        Price = s.Price,
-                        IsActive = true
-                    };
-                    service.Save(transaction);
-                }
-                transaction.Commit();
-                return Ok(new { Count = services.Count, Message = "Import successful" });
             }
             catch (Exception ex)
             {

@@ -16,9 +16,4 @@ public class BookingLogic
         
         return basePrice * nights;
     }
-
-    public decimal CalculateTotalPrice(decimal roomTotal, List<decimal> servicePrices)
-    {
-       return roomTotal + servicePrices.Sum();
-    }
 }

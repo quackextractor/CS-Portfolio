@@ -74,9 +74,7 @@ export function CreateBooking() {
                 roomId: parseInt(selectedRoom),
                 checkIn,
                 checkOut,
-                checkIn,
-                checkOut,
-                serviceIds: []
+                checkOut
             });
             showDialog("Success", "Booking Created Successfully!");
             // Reset form or redirect
@@ -84,7 +82,6 @@ export function CreateBooking() {
             setSelectedRoom("");
             setCheckIn("");
             setCheckOut("");
-            setSelectedServices([]);
         } catch (e: any) {
             console.error(e);
             showDialog("Error", "Error creating booking: " + (e.response?.data || e.message));

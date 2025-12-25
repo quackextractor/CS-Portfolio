@@ -1,11 +1,4 @@
 // Append to existing types.ts or overwrite if simpler. I'll append/overwrite.
-export const GuestType = {
-    Regular: 0,
-    VIP: 1,
-    Corporate: 2
-} as const;
-
-export type GuestType = typeof GuestType[keyof typeof GuestType];
 
 export interface Guest {
     id: number;
@@ -15,21 +8,18 @@ export interface Guest {
     phone: string;
     dateOfBirth: string;
     isActive: boolean;
-    type: GuestType;
-    loyaltyPoints: number;
 }
 
-id: number;
-roomNumber: string;
-roomTypeId: number;
-lastMaintenance: string | null;
+export interface Room {
+    id: number;
+    roomNumber: string;
+    roomTypeId: number;
 }
 
 export interface RoomType {
     id: number;
     name: string;
     basePrice: number;
-    description: string;
 }
 
 export interface Booking {
@@ -39,8 +29,6 @@ export interface Booking {
     checkIn: string;
     checkOut: string;
     totalPrice: number;
-    status: number;
-    createdAt: string;
 }
 
 export interface CreateBookingRequest {
@@ -48,14 +36,6 @@ export interface CreateBookingRequest {
     roomId: number;
     checkIn: string;
     checkOut: string;
-    serviceIds: number[];
-}
-
-export interface Service {
-    id: number;
-    name: string;
-    price: number;
-    isActive: boolean;
 }
 
 export interface GuestBookingReport {
@@ -66,7 +46,6 @@ export interface GuestBookingReport {
     roomNumber: string;
     checkIn: string;
     checkOut: string;
-    status: number;
 }
 
 export interface RoomAvailabilityReport {
@@ -74,12 +53,6 @@ export interface RoomAvailabilityReport {
     roomNumber: string;
     roomType: string;
     basePrice: number;
-}
-
-export interface ServiceUsageStatsReport {
-    serviceName: string;
-    usageCount: number;
-    totalRevenue: number;
 }
 
 export interface RevenueByRoomTypeReport {

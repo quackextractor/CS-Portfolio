@@ -11,7 +11,6 @@ public class CreateBookingRequest
     public int RoomId { get; set; }
     public DateTime CheckIn { get; set; }
     public DateTime CheckOut { get; set; }
-    public List<int> ServiceIds { get; set; } = new();
 }
 
 [ApiController]
@@ -45,7 +44,6 @@ public class BookingsController : ControllerBase
                 RoomId = request.RoomId,
                 CheckIn = request.CheckIn,
                 CheckOut = request.CheckOut,
-                Status = BookingStatus.Confirmed,
                 TotalPrice = 0 // Will calculate
             };
 
@@ -57,30 +55,9 @@ public class BookingsController : ControllerBase
             {
                 roomPrice = logic.CalculateRoomPrice(roomType.BasePrice, request.CheckIn, request.CheckOut);
             }
-            booking.TotalPrice += roomPrice;
+            booking.TotalPrice = roomPrice;
             
             booking.Save(transaction); // Insert Booking
-
-            // 2. Add Services
-            foreach (var serviceId in request.ServiceIds)
-            {
-                var service = Service.Find(serviceId, transaction);
-                if (service != null)
-                {
-                    var bookingService = new BookingService
-                    {
-                        BookingId = booking.Id,
-                        ServiceId = service.Id,
-                        SubTotal = service.Price,
-                        ServiceDate = DateTime.Now
-                    };
-                    bookingService.Save(transaction);
-                    booking.TotalPrice += service.Price;
-                }
-            }
-
-            // Update Booking Total Price
-            booking.Save(transaction);
 
             transaction.Commit();
             return Ok(booking);
@@ -109,13 +86,6 @@ public class BookingsController : ControllerBase
         {
             var booking = Booking.Find(id, transaction);
             if (booking == null) return NotFound();
-
-            // Manual Cascade Delete: Remove BookingServices first
-            var services = BookingService.Where("BookingId = @bid", new Dictionary<string, object> { { "@bid", id } }, transaction);
-            foreach (var s in services)
-            {
-                s.Delete(transaction);
-            }
 
             // Remove Booking
             booking.Delete(transaction);

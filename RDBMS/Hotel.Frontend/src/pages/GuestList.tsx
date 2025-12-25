@@ -79,9 +79,7 @@ export function GuestList() {
             await api.guests.create({
                 ...newGuest,
                 phone: "",
-                isActive: true,
-                type: 0,
-                loyaltyPoints: 0
+                isActive: true
             });
             setNewGuest({ firstName: "", lastName: "", email: "", dateOfBirth: "" });
             loadGuests();
