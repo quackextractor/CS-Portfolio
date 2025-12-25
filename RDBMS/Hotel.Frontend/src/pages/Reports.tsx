@@ -82,31 +82,7 @@ export function Reports() {
             </Card>
 
 
-            <Card>
-                <CardHeader>
-                    <CardTitle>Service Usage Statistics (Aggregated)</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Service Name</TableHead>
-                                <TableHead>Times Used</TableHead>
-                                <TableHead>Total Revenue</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {serviceStats.map((s) => (
-                                <TableRow key={s.serviceName}>
-                                    <TableCell>{s.serviceName}</TableCell>
-                                    <TableCell>{s.usageCount}</TableCell>
-                                    <TableCell>${s.totalRevenue}</TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                </CardContent>
-            </Card>
+
 
             <Card>
                 <CardHeader>
