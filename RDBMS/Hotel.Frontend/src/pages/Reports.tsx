@@ -79,7 +79,7 @@ export function Reports() {
 
             <Card>
                 <CardHeader>
-                    <CardTitle>Room Availability (Clean Rooms)</CardTitle>
+                    <CardTitle>Room Availability</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <Table>
