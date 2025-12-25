@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Loader2 } from "lucide-react";
 import { api } from "../api";
 import type { GuestBookingReport, RoomAvailabilityReport, ServiceUsageStatsReport, RevenueByRoomTypeReport } from "../types";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -9,13 +10,36 @@ export function Reports() {
     const [availability, setAvailability] = useState<RoomAvailabilityReport[]>([]);
     const [serviceStats, setServiceStats] = useState<ServiceUsageStatsReport[]>([]);
     const [revenueStats, setRevenueStats] = useState<RevenueByRoomTypeReport[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        api.reports.guestBookings().then(setBookings).catch(console.error);
-        api.reports.availability().then(setAvailability).catch(console.error);
-        api.reports.serviceStats().then(setServiceStats).catch(console.error);
-        api.reports.revenueByRoomType().then(setRevenueStats).catch(console.error);
+        const loadReports = async () => {
+            setIsLoading(true);
+            try {
+                await Promise.all([
+                    api.reports.guestBookings().then(setBookings),
+                    api.reports.availability().then(setAvailability),
+                    api.reports.serviceStats().then(setServiceStats),
+                    api.reports.revenueByRoomType().then(setRevenueStats)
+                ]);
+            } catch (error) {
+                console.error("Failed to load reports", error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        loadReports();
     }, []);
+
+    if (isLoading) {
+        return (
+            <div className="flex justify-center items-center h-64">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <span className="ml-2 text-lg text-muted-foreground">Loading reports...</span>
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-8 max-w-4xl mx-auto">

@@ -11,6 +11,8 @@ export const api = {
     },
     rooms: {
         getAll: () => axios.get<Room[]>(`${API_URL}/rooms`).then(r => r.data),
+        create: (room: Omit<Room, 'id' | 'lastMaintenance'>) => axios.post<Room>(`${API_URL}/rooms`, room).then(r => r.data),
+        delete: (id: number) => axios.delete(`${API_URL}/rooms/${id}`),
     },
     services: {
         getAll: () => axios.get<Service[]>(`${API_URL}/services`).then(r => r.data),
@@ -18,6 +20,7 @@ export const api = {
     bookings: {
         create: (data: CreateBookingRequest) => axios.post<Booking>(`${API_URL}/bookings`, data).then(r => r.data),
         getAll: () => axios.get<Booking[]>(`${API_URL}/bookings`).then(r => r.data),
+        delete: (id: number) => axios.delete(`${API_URL}/bookings/${id}`),
     },
     reports: {
         guestBookings: () => axios.get<any[]>(`${API_URL}/reports/guest-bookings`).then(r => r.data),

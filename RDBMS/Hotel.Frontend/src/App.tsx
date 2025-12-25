@@ -1,8 +1,9 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Layout } from "./Layout";
 import { GuestList } from "./pages/GuestList";
-import { CreateBooking } from "./pages/CreateBooking";
+import { Bookings } from "./pages/Bookings";
 import { Reports } from "./pages/Reports";
+import { Rooms } from "./pages/Rooms";
 import { Import } from "./pages/Import";
 
 
@@ -13,8 +14,9 @@ function App() {
         <Route element={<Layout />}>
           <Route path="/" element={<Navigate to="/guests" replace />} />
           <Route path="/guests" element={<GuestList />} />
-          <Route path="/bookings/new" element={<CreateBooking />} />
+          <Route path="/bookings" element={<Bookings />} />
           <Route path="/reports" element={<Reports />} />
+          <Route path="/rooms" element={<Rooms />} />
           <Route path="/import" element={<Import />} />
 
         </Route>

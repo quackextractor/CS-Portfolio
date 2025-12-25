@@ -97,4 +97,14 @@ public class BookingsController : ControllerBase
     {
         return Booking.All();
     }
+
+    [HttpDelete("{id}")]
+    public IActionResult Delete(int id)
+    {
+        var booking = Booking.Find(id);
+        if (booking == null) return NotFound();
+
+        booking.Delete();
+        return NoContent();
+    }
 }

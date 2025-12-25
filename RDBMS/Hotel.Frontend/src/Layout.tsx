@@ -8,7 +8,8 @@ export function Layout() {
                     <h1 className="font-bold text-xl">Hotel Manager</h1>
                     <nav className="flex gap-4 text-sm font-medium text-muted-foreground">
                         <Link to="/guests" className="hover:text-primary transition-colors">Guests</Link>
-                        <Link to="/bookings/new" className="hover:text-primary transition-colors">Book Room</Link>
+                        <Link to="/rooms" className="hover:text-primary transition-colors">Rooms</Link>
+                        <Link to="/bookings" className="hover:text-primary transition-colors">Bookings</Link>
                         <Link to="/reports" className="hover:text-primary transition-colors">Reports</Link>
                         <Link to="/import" className="hover:text-primary transition-colors">Import</Link>
                     </nav>
