@@ -6,7 +6,6 @@ namespace Hotel.Backend.Models;
 [Table("v_GuestBookings")]
 public class GuestBookingReport : ActiveRecordBase<GuestBookingReport>
 {
-    // Id in View might not be unique if not careful, but usually is BookingId
     public int BookingId { get; set; }
     public string FirstName { get; set; } = string.Empty;
     public string LastName { get; set; } = string.Empty;
