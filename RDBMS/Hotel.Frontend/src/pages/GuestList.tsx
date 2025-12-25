@@ -120,7 +120,7 @@ export function GuestList() {
             </div>
 
             <div className="">
-                <Card>
+                <Card className="max-w-2xl">
                     <CardHeader>
                         <CardTitle>Add New Guest</CardTitle>
                     </CardHeader>
