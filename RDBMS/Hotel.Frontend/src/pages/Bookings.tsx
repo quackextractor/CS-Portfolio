@@ -91,7 +91,7 @@ export function Bookings() {
                 roomId: parseInt(selectedRoom),
                 checkIn,
                 checkOut,
-                serviceIds: []
+
             });
             showDialog("Success", "Booking Created Successfully!");
 

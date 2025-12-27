@@ -73,7 +73,6 @@ export function CreateBooking() {
                 guestId: parseInt(selectedGuest),
                 roomId: parseInt(selectedRoom),
                 checkIn,
-                checkOut,
                 checkOut
             });
             showDialog("Success", "Booking Created Successfully!");

@@ -6,6 +6,26 @@
 - System must be running with valid database connection. (REFER TO 01_Setup.md)
 - Database must be in a clean state (no bookings, no guests, no rooms).
 
+## 4. Database Connection Failure (Simulated)
+1. Stop your SQL Server instance or disable the network adapter used to connect to the DB.
+2. Refresh the application page (e.g., Guests list).
+3. **Expected Result**:
+   - The application should gracefully handle the timeout/connection error.
+   - An error message (e.g., "Failed to load guests", "Database unavailable") should be displayed in the UI (via the Alert Dialog).
+   - The app should NOT crash completely (white screen of death).
+
+## 5. Configuration Error
+1. Stop the Backend.
+2. Open `config.json` and change the `DefaultConnection` string to an invalid server or database name.
+3. Start the Backend.
+4. Attempt to run the application.
+5. **Expected Result**:
+   - The Backend might fail to start or log an error immediately.
+   - If it starts, any DB operation should return a 500 or specific error code.
+   - The Frontend should display an error saying it cannot reach the backend or the backend returned an error.
+
+# 03_ErrorWithDatabase.md
+
 ## 1. Invalid Input (Frontend Validation)
 1. Navigate to "Book Room".
 2. Leave all fields empty.

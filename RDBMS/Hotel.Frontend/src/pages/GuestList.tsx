@@ -21,6 +21,7 @@ import {
 export function GuestList() {
     const [guests, setGuests] = useState<Guest[]>([]);
     const [newGuest, setNewGuest] = useState({ firstName: "", lastName: "", email: "", dateOfBirth: "" });
+    const [editingId, setEditingId] = useState<number | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [deletingId, setDeletingId] = useState<number | null>(null);
@@ -59,7 +60,7 @@ export function GuestList() {
         return !isNaN(date.getTime()) && date < today;
     };
 
-    const handleCreate = async () => {
+    const handleCreateOrUpdate = async () => {
         // Validation
         if (!newGuest.firstName.trim() || !newGuest.lastName.trim()) {
             showDialog("Validation Error", "Please enter both First Name and Last Name.");
@@ -76,20 +77,50 @@ export function GuestList() {
 
         setIsSubmitting(true);
         try {
-            await api.guests.create({
-                ...newGuest,
-                phone: "",
-                isActive: true
-            });
+            if (editingId) {
+                // Update
+                await api.guests.update(editingId, {
+                    ...newGuest,
+                    id: editingId,
+                    phone: "", // Preserve generic fields not in form
+                    isActive: true
+                });
+                showDialog("Success", "Guest updated successfully!");
+            } else {
+                // Create
+                await api.guests.create({
+                    ...newGuest,
+                    phone: "",
+                    isActive: true
+                });
+                showDialog("Success", "Guest created successfully!");
+            }
+
+            // Reset
             setNewGuest({ firstName: "", lastName: "", email: "", dateOfBirth: "" });
+            setEditingId(null);
             loadGuests();
-            showDialog("Success", "Guest created successfully!");
         } catch (e: any) {
             console.error(e);
-            showDialog("Error", "Failed to create guest. " + (e.message || ""));
+            showDialog("Error", `Failed to ${editingId ? 'update' : 'create'} guest. ` + (e.message || ""));
         } finally {
             setIsSubmitting(false);
         }
+    };
+
+    const startEdit = (guest: Guest) => {
+        setNewGuest({
+            firstName: guest.firstName,
+            lastName: guest.lastName,
+            email: guest.email,
+            dateOfBirth: guest.dateOfBirth ? new Date(guest.dateOfBirth).toISOString().split('T')[0] : ""
+        });
+        setEditingId(guest.id);
+    };
+
+    const cancelEdit = () => {
+        setNewGuest({ firstName: "", lastName: "", email: "", dateOfBirth: "" });
+        setEditingId(null);
     };
 
     const confirmDelete = (guest: Guest) => {
@@ -120,7 +151,7 @@ export function GuestList() {
             <div className="">
                 <Card className="max-w-2xl mx-auto">
                     <CardHeader>
-                        <CardTitle>Add New Guest</CardTitle>
+                        <CardTitle>{editingId ? "Edit Guest" : "Add New Guest"}</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -161,9 +192,19 @@ export function GuestList() {
                                 />
                             </div>
                         </div>
-                        <Button onClick={handleCreate} className="w-full" disabled={isSubmitting}>
-                            {isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Creating...</> : <><Plus className="mr-2 h-4 w-4" /> Create Guest</>}
-                        </Button>
+                        <div className="flex gap-2 mt-4">
+                            <Button onClick={handleCreateOrUpdate} className="flex-1" disabled={isSubmitting}>
+                                {isSubmitting ?
+                                    <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> {editingId ? "Updating..." : "Creating..."}</> :
+                                    <>{editingId ? "Update Guest" : <><Plus className="mr-2 h-4 w-4" /> Create Guest</>}</>
+                                }
+                            </Button>
+                            {editingId && (
+                                <Button variant="outline" onClick={cancelEdit} disabled={isSubmitting}>
+                                    Cancel
+                                </Button>
+                            )}
+                        </div>
                     </CardContent>
                 </Card>
             </div>
@@ -192,8 +233,11 @@ export function GuestList() {
                                         <TableCell>{guest.firstName} {guest.lastName}</TableCell>
                                         <TableCell>{guest.email}</TableCell>
                                         <TableCell>{new Date(guest.dateOfBirth).toLocaleDateString()}</TableCell>
-                                        <TableCell>
-                                            <Button variant="destructive" size="sm" onClick={() => confirmDelete(guest)} disabled={deletingId === guest.id}>
+                                        <TableCell className="flex gap-2">
+                                            <Button variant="outline" size="sm" onClick={() => startEdit(guest)} disabled={!!deletingId || !!editingId}>
+                                                Edit
+                                            </Button>
+                                            <Button variant="destructive" size="sm" onClick={() => confirmDelete(guest)} disabled={deletingId === guest.id || !!editingId}>
                                                 {deletingId === guest.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash className="h-4 w-4" />}
                                             </Button>
                                         </TableCell>

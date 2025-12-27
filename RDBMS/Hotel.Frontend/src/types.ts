@@ -1,4 +1,4 @@
-// Append to existing types.ts or overwrite if simpler. I'll append/overwrite.
+// Types definitions
 
 export interface Guest {
     id: number;

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { api } from "../api";
-import type { GuestBookingReport, RoomAvailabilityReport, ServiceUsageStatsReport, RevenueByRoomTypeReport } from "../types";
+import type { GuestBookingReport, RoomAvailabilityReport, RevenueByRoomTypeReport } from "../types";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
