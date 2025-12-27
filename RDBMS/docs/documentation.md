@@ -73,5 +73,5 @@ The application follows a **Two-Tier** architecture (Client-Server) with a separ
 - **Error Handling**: Try-Catch blocks in Controllers with appropriate HTTP status codes.
 
 ## 5. Configuration & Usage
-See `setup_scenario.md` for installation instructions.
-See `happy_path_scenario.md` for usage examples.
+See `scenarios/01_Setup.md` for installation instructions.
+See `scenarios/02_HappyPath.md` for usage examples.

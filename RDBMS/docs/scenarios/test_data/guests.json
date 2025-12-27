@@ -1,0 +1,9 @@
+[
+    {
+        "firstName": "Bob",
+        "lastName": "Builder",
+        "email": "bob@build.com",
+        "phone": "123",
+        "dateOfBirth": "1990-01-01"
+    }
+]
