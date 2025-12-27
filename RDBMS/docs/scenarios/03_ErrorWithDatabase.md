@@ -14,7 +14,23 @@
    - An error message (e.g., "Failed to load guests", "Database unavailable") should be displayed in the UI (via the Alert Dialog).
    - The app should NOT crash completely (white screen of death).
 
-## 5. Configuration Error
+## 4. Import Error (Invalid Data)
+1. Create a `bad_guests.json` file with content: `[{"firstName": "", "lastName": ""}]` (Missing required fields).
+2. Go to "Import" page.
+3. Select this file and click "Import Guests".
+4. **Expected Result**: 
+   - UI displays an error message: "Invalid guest data: FirstName and LastName are required."
+   - No data is added to the database.
+
+## 5. Import Error (Malformed JSON)
+1. Create a `broken.json` file with content: `[{ "firstName": "Broken"`.
+2. Go to "Import" page.
+3. Select this file and click "Import Guests".
+4. **Expected Result**:
+   - UI displays an error message: "Invalid JSON..."
+   - No data is added.
+
+## 6. Configuration Error
 1. Stop the Backend.
 2. Open `config.json` and change the `DefaultConnection` string to an invalid server or database name.
 3. Start the Backend.

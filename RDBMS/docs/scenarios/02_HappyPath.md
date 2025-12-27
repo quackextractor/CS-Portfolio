@@ -18,6 +18,15 @@
    - Click "Create Guest".
    - **Verification**: The new guest should appear in the Guest List table below.
 
+3. **Import Data (Guests & Rooms)**
+   - Click "Import" in the navigation bar (or navigate to `/import` if not in menu).
+   - create a `guests.json` file with content: `[{"firstName": "Bob", "lastName": "Builder", "email": "bob@build.com", "phone": "123", "dateOfBirth": "1990-01-01"}]`.
+   - Select the file under "Import Guests" and click "Import Guests".
+   - **Verification**: Message "Import successful" appears. Bob is listed in "Guests" page.
+   - Create a `rooms.json` file with content: `[{"roomNumber": "999", "roomTypeId": 1}]`.
+   - Select the file under "Import Rooms" and click "Import Rooms".
+   - **Verification**: Message "Import successful" appears. Room 999 is available in "Book Room" selection.
+
 4. **Edit a Guest**
    - In the Guest List table, find "Alice Wonderland".
    - Click the "Edit" button in the Actions column.
@@ -28,28 +37,28 @@
 5. **Check Room Availability**
    - Click "Reports" in the navigation bar.
    - Check "Room Availability" table.
-   - Note down an available Room Number (e.g., "101", "201").
+   - Note down an available Room Number (e.g., "101", "201", or "999").
 
 6. **Create a Booking**
-   - Click "Book Room" in the navigation bar.
+   - Click "Bookings" in the navigation bar.
    - **Form Input**:
-     - **Guest**: Select "Alice Wonderland".
+     - **Guest**: Select "Alice Smith".
      - **Room**: Select Room "101".
      - **Check-in**: Select today's date.
      - **Check-out**: Select tomorrow's date.
-     - **Services**: Check "Breakfast" ($15) and/or "Late Check-out" ($30).
    - Click "Create Booking".
    - **Verification**: An alert "Booking Created Successfully!" should appear.
 
-5. **Verify Reports**
+7. **Verify Reports**
    - Navigate back to "Reports".
    - **Verification**: 
      - "Guest Bookings" table should show a new entry for Alice in Room 101.
      - Status should be "1" (Confirmed).
 
 8. **Delete Booking & Guest**
-   - Go to "Bookings" page (if available) or check if you can delete from Reports (if implemented). 
-   - *If Booking deletion is available via API or UI*: Delete the booking for "Alice Smith".
+   - Go to "Bookings" page.
+   - Find the booking for "Alice Smith" (Room 101).
+   - Click the "Trash/Delete" icon. Confirm deletion.
    - Go to "Guests" page.
    - Click the "Trash/Delete" icon for "Alice Smith".
    - Confirm the deletion.
