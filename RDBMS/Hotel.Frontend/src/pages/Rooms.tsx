@@ -121,7 +121,7 @@ export function Rooms() {
                 <h2 className="text-3xl font-bold tracking-tight">Rooms</h2>
             </div>
 
-            <Card className="max-w-2xl">
+            <Card className="max-w-2xl mx-auto">
                 <CardHeader>
                     <CardTitle>Add New Room</CardTitle>
                 </CardHeader>

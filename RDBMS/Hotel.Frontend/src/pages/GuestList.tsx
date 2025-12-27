@@ -118,7 +118,7 @@ export function GuestList() {
             </div>
 
             <div className="">
-                <Card className="max-w-2xl">
+                <Card className="max-w-2xl mx-auto">
                     <CardHeader>
                         <CardTitle>Add New Guest</CardTitle>
                     </CardHeader>
