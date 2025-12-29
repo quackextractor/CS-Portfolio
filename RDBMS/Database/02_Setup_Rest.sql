@@ -22,6 +22,17 @@ BEGIN
 END
 GO
 
+-- Services
+IF OBJECT_ID('Services', 'U') IS NULL
+BEGIN
+    CREATE TABLE Services (
+        Id INT IDENTITY(1,1) PRIMARY KEY,
+        Name NVARCHAR(100) NOT NULL,
+        Price DECIMAL(18,2) NOT NULL
+    );
+END
+GO
+
 -- Bookings
 IF OBJECT_ID('Bookings', 'U') IS NULL
 BEGIN
@@ -36,6 +47,19 @@ BEGIN
 END
 GO
 
+-- BookingServices
+IF OBJECT_ID('BookingServices', 'U') IS NULL
+BEGIN
+    CREATE TABLE BookingServices (
+        Id INT IDENTITY(1,1) PRIMARY KEY,
+        BookingId INT NOT NULL FOREIGN KEY REFERENCES Bookings(Id) ON DELETE CASCADE,
+        ServiceId INT NOT NULL FOREIGN KEY REFERENCES Services(Id),
+        ServiceDate DATE NOT NULL,
+        SubTotal DECIMAL(18,2) NOT NULL DEFAULT 0
+    );
+END
+GO
+
 -- Views
 GO
 CREATE OR ALTER VIEW v_GuestBookings AS
@@ -46,7 +70,8 @@ SELECT
     g.Email,
     r.RoomNumber,
     b.CheckIn,
-    b.CheckOut
+    b.CheckOut,
+    b.TotalPrice
 FROM Bookings b
 JOIN Guests g ON b.GuestId = g.Id
 JOIN Rooms r ON b.RoomId = r.Id;
@@ -88,6 +113,16 @@ BEGIN
     ('101', 1), ('102', 1),
     ('201', 2), ('202', 2),
     ('301', 3);
+END
+GO
+
+IF NOT EXISTS (SELECT * FROM Services)
+BEGIN
+    INSERT INTO Services (Name, Price) VALUES 
+    ('Breakfast', 15.00),
+    ('Cleaning', 10.00),
+    ('Parking', 5.00),
+    ('Late Check-out', 20.00);
 END
 GO
 

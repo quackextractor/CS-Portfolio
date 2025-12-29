@@ -46,6 +46,7 @@
      - **Room**: Select Room "101".
      - **Check-in**: Select today's date.
      - **Check-out**: Select tomorrow's date.
+     - **Services**: Select "Breakfast" ($15) and "Parking" ($5).
    - Click "Create Booking".
    - **Verification**: An alert "Booking Created Successfully!" should appear.
 

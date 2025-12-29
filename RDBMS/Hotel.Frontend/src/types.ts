@@ -31,11 +31,18 @@ export interface Booking {
     totalPrice: number;
 }
 
+export interface Service {
+    id: number;
+    name: string;
+    price: number;
+}
+
 export interface CreateBookingRequest {
     guestId: number;
     roomId: number;
     checkIn: string;
     checkOut: string;
+    serviceIds: number[];
 }
 
 export interface GuestBookingReport {

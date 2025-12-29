@@ -26,3 +26,19 @@ public class Booking : ActiveRecordBase<Booking>
     public DateTime CheckOut { get; set; }
     public decimal TotalPrice { get; set; }
 }
+
+[Table("Services")]
+public class Service : ActiveRecordBase<Service>
+{
+    public string Name { get; set; } = string.Empty;
+    public decimal Price { get; set; }
+}
+
+[Table("BookingServices")]
+public class BookingService : ActiveRecordBase<BookingService>
+{
+    public int BookingId { get; set; }
+    public int ServiceId { get; set; }
+    public DateTime ServiceDate { get; set; }
+    public decimal SubTotal { get; set; }
+}

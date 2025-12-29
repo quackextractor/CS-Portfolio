@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "../api";
-import type { Guest, Room } from "../types";
+import type { Guest, Room, Service } from "../types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -20,6 +20,7 @@ import {
 export function CreateBooking() {
     const [guests, setGuests] = useState<Guest[]>([]);
     const [rooms, setRooms] = useState<Room[]>([]);
+    const [services, setServices] = useState<Service[]>([]);
 
 
     const [isLoading, setIsLoading] = useState(true);
@@ -30,6 +31,7 @@ export function CreateBooking() {
     const [selectedRoom, setSelectedRoom] = useState("");
     const [checkIn, setCheckIn] = useState("");
     const [checkOut, setCheckOut] = useState("");
+    const [selectedServices, setSelectedServices] = useState<number[]>([]);
     const [dialogOpen, setDialogOpen] = useState(false);
     const [dialogContent, setDialogContent] = useState({ title: "", description: "" });
 
@@ -38,13 +40,15 @@ export function CreateBooking() {
             setIsLoading(true);
             setLoadingProgress(10); // Start progress
             try {
-                const [guestsData, roomsData] = await Promise.all([
+                const [guestsData, roomsData, servicesData] = await Promise.all([
                     api.guests.getAll().then(res => { setLoadingProgress(prev => prev + 30); return res; }),
-                    api.rooms.getAll().then(res => { setLoadingProgress(prev => prev + 30); return res; })
+                    api.rooms.getAll().then(res => { setLoadingProgress(prev => prev + 30); return res; }),
+                    api.services.getAll().then(res => { setLoadingProgress(prev => prev + 20); return res; })
                 ]);
 
                 setGuests(guestsData);
                 setRooms(roomsData);
+                setServices(servicesData);
             } catch (error) {
                 console.error("Failed to load data", error);
             } finally {
@@ -73,7 +77,8 @@ export function CreateBooking() {
                 guestId: parseInt(selectedGuest),
                 roomId: parseInt(selectedRoom),
                 checkIn,
-                checkOut
+                checkOut,
+                serviceIds: selectedServices
             });
             showDialog("Success", "Booking Created Successfully!");
             // Reset form or redirect
@@ -81,6 +86,7 @@ export function CreateBooking() {
             setSelectedRoom("");
             setCheckIn("");
             setCheckOut("");
+            setSelectedServices([]);
         } catch (e: any) {
             console.error(e);
             showDialog("Error", "Error creating booking: " + (e.response?.data || e.message));
@@ -138,6 +144,36 @@ export function CreateBooking() {
                             <div className="space-y-2">
                                 <Label>Check-out</Label>
                                 <Input type="date" value={checkOut} onChange={e => setCheckOut(e.target.value)} disabled={isLoading || isSubmitting} />
+                            </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label>Extra Services</Label>
+                            <div className="grid grid-cols-2 gap-2 border p-4 rounded-md">
+                                {services.map(service => (
+                                    <div key={service.id} className="flex items-center space-x-2">
+                                        <input
+                                            type="checkbox"
+                                            id={`service-${service.id}`}
+                                            className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                                            checked={selectedServices.includes(service.id)}
+                                            onChange={(e) => {
+                                                if (e.target.checked) {
+                                                    setSelectedServices(prev => [...prev, service.id]);
+                                                } else {
+                                                    setSelectedServices(prev => prev.filter(id => id !== service.id));
+                                                }
+                                            }}
+                                            disabled={isLoading || isSubmitting}
+                                        />
+                                        <label
+                                            htmlFor={`service-${service.id}`}
+                                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                        >
+                                            {service.name} (${service.price})
+                                        </label>
+                                    </div>
+                                ))}
                             </div>
                         </div>
 

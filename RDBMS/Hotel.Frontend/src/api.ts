@@ -21,6 +21,9 @@ export const api = {
         getAll: () => axios.get<Booking[]>(`${API_URL}/bookings`).then(r => r.data),
         delete: (id: number) => axios.delete(`${API_URL}/bookings/${id}`),
     },
+    services: {
+        getAll: () => axios.get<{ id: number; name: string; price: number }[]>(`${API_URL}/services`).then(r => r.data),
+    },
     reports: {
         guestBookings: () => axios.get<any[]>(`${API_URL}/reports/guest-bookings`).then(r => r.data),
         availability: () => axios.get<any[]>(`${API_URL}/reports/availability`).then(r => r.data),
