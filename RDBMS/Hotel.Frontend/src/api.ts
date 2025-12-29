@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { Guest, Room, Booking, CreateBookingRequest } from './types';
+import type { Guest, Room, Booking, CreateBookingRequest, BookingService } from './types';
 
 const API_URL = 'http://localhost:5106/api';
 
@@ -19,6 +19,7 @@ export const api = {
     bookings: {
         create: (data: CreateBookingRequest) => axios.post<Booking>(`${API_URL}/bookings`, data).then(r => r.data),
         getAll: () => axios.get<Booking[]>(`${API_URL}/bookings`).then(r => r.data),
+        get: (id: number) => axios.get<{ booking: Booking; services: BookingService[] }>(`${API_URL}/bookings/${id}`).then(r => r.data),
         delete: (id: number) => axios.delete(`${API_URL}/bookings/${id}`),
     },
     services: {

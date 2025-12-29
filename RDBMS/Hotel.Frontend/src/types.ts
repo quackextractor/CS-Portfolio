@@ -37,6 +37,14 @@ export interface Service {
     price: number;
 }
 
+export interface BookingService {
+    id: number;
+    bookingId: number;
+    serviceId: number;
+    serviceDate: string;
+    subTotal: number;
+}
+
 export interface CreateBookingRequest {
     guestId: number;
     roomId: number;

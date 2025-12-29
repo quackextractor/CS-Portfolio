@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "../api";
-import type { Guest, Room, Booking, Service } from "../types";
+import type { Guest, Room, Booking, Service, BookingService } from "../types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -42,6 +42,10 @@ export function Bookings() {
     const [dialogContent, setDialogContent] = useState({ title: "", description: "" });
     const [deletingId, setDeletingId] = useState<number | null>(null);
     const [bookingToDelete, setBookingToDelete] = useState<Booking | null>(null);
+
+    // Details View
+    const [selectedDetails, setSelectedDetails] = useState<{ booking: Booking, services: BookingService[] } | null>(null);
+    const [detailsLoading, setDetailsLoading] = useState(false);
 
     useEffect(() => {
         loadData();
@@ -116,7 +120,8 @@ export function Bookings() {
         }
     };
 
-    const confirmDelete = (booking: Booking) => {
+    const confirmDelete = (e: React.MouseEvent, booking: Booking) => {
+        e.stopPropagation();
         setBookingToDelete(booking);
     }
 
@@ -137,6 +142,19 @@ export function Bookings() {
         }
     }
 
+    const handleViewDetails = async (id: number) => {
+        setDetailsLoading(true);
+        try {
+            const details = await api.bookings.get(id);
+            setSelectedDetails(details);
+        } catch (e) {
+            console.error(e);
+            showDialog("Error", "Failed to load booking details.");
+        } finally {
+            setDetailsLoading(false);
+        }
+    }
+
     // specific helpers for display
     const getGuestName = (id: number) => {
         const g = guests.find(x => x.id === id);
@@ -147,6 +165,11 @@ export function Bookings() {
         const r = rooms.find(x => x.id === id);
         return r ? r.roomNumber : `ID: ${id}`;
     };
+
+    const getServiceName = (id: number) => {
+        const s = services.find(x => x.id === id);
+        return s ? s.name : `ID: ${id}`;
+    }
 
     return (
         <div className="space-y-8 max-w-4xl mx-auto">
@@ -266,7 +289,11 @@ export function Bookings() {
                             </TableHeader>
                             <TableBody>
                                 {bookings.map((b) => (
-                                    <TableRow key={b.id}>
+                                    <TableRow
+                                        key={b.id}
+                                        className="cursor-pointer hover:bg-muted/50"
+                                        onClick={() => handleViewDetails(b.id)}
+                                    >
                                         <TableCell>{b.id}</TableCell>
                                         <TableCell>{getGuestName(b.guestId)}</TableCell>
                                         <TableCell>{getRoomNumber(b.roomId)}</TableCell>
@@ -275,7 +302,7 @@ export function Bookings() {
                                         </TableCell>
                                         <TableCell>${b.totalPrice?.toFixed(2)}</TableCell>
                                         <TableCell>
-                                            <Button variant="destructive" size="sm" onClick={() => confirmDelete(b)} disabled={deletingId === b.id}>
+                                            <Button variant="destructive" size="sm" onClick={(e) => confirmDelete(e, b)} disabled={deletingId === b.id}>
                                                 {deletingId === b.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash className="h-4 w-4" />}
                                             </Button>
                                         </TableCell>
@@ -306,6 +333,69 @@ export function Bookings() {
                         <AlertDialogCancel>Cancel</AlertDialogCancel>
                         <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
                     </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            <AlertDialog open={!!selectedDetails || detailsLoading} onOpenChange={(open) => !open && !detailsLoading && setSelectedDetails(null)}>
+                <AlertDialogContent className="max-w-xl">
+                    {detailsLoading ? (
+                        <div className="flex flex-col justify-center items-center p-8 space-y-4">
+                            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                            <p>Loading details...</p>
+                        </div>
+                    ) : selectedDetails ? (
+                        <>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>Booking Details #{selectedDetails.booking.id}</AlertDialogTitle>
+                            </AlertDialogHeader>
+
+                            <div className="space-y-4 py-4">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <Label className="text-muted-foreground">Guest</Label>
+                                        <div className="font-medium">{getGuestName(selectedDetails.booking.guestId)}</div>
+                                    </div>
+                                    <div>
+                                        <Label className="text-muted-foreground">Room</Label>
+                                        <div className="font-medium">{getRoomNumber(selectedDetails.booking.roomId)}</div>
+                                    </div>
+                                    <div>
+                                        <Label className="text-muted-foreground">Check-in</Label>
+                                        <div className="font-medium">{new Date(selectedDetails.booking.checkIn).toLocaleDateString()}</div>
+                                    </div>
+                                    <div>
+                                        <Label className="text-muted-foreground">Check-out</Label>
+                                        <div className="font-medium">{new Date(selectedDetails.booking.checkOut).toLocaleDateString()}</div>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <Label className="text-muted-foreground mb-2 block">Services</Label>
+                                    {selectedDetails.services.length > 0 ? (
+                                        <div className="border rounded-md divide-y">
+                                            {selectedDetails.services.map(s => (
+                                                <div key={s.id} className="p-2 flex justify-between text-sm">
+                                                    <span>{getServiceName(s.serviceId)}</span>
+                                                    <span>${s.subTotal?.toFixed(2)}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="text-sm text-muted-foreground">No services for this booking.</div>
+                                    )}
+                                </div>
+
+                                <div className="flex justify-between items-center border-t pt-4">
+                                    <span className="font-bold text-lg">Total Price</span>
+                                    <span className="font-bold text-lg">${selectedDetails.booking.totalPrice?.toFixed(2)}</span>
+                                </div>
+                            </div>
+
+                            <AlertDialogFooter>
+                                <AlertDialogCancel onClick={() => setSelectedDetails(null)}>Close</AlertDialogCancel>
+                            </AlertDialogFooter>
+                        </>
+                    ) : null}
                 </AlertDialogContent>
             </AlertDialog>
 

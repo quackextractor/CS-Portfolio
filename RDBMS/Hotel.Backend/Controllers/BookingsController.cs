@@ -100,6 +100,24 @@ public class BookingsController : ControllerBase
         return Booking.All();
     }
 
+    [HttpGet("{id}")]
+    public IActionResult Get(int id)
+    {
+        using var conn = new SqlConnection(DbConfig.ConnectionString);
+        conn.Open();
+        
+        var booking = Booking.Find(id);
+        if (booking == null) return NotFound();
+
+        var services = BookingService.Where("BookingId = @bid", new Dictionary<string, object> { { "@bid", id } });
+        
+        return Ok(new 
+        {
+            Booking = booking,
+            Services = services
+        });
+    }
+
     [HttpDelete("{id}")]
     public IActionResult Delete(int id)
     {
