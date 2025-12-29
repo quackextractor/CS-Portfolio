@@ -51,3 +51,9 @@ dotnet run --project Hotel.Setup run-frontend
 - `Hotel.Frontend`: React + Vite + TypeScript application with Tailwind CSS & shadcn/ui.
 - `Database`: SQL scripts for database schema initialization.
 - `docs`: Documentation and test scenarios.
+
+## API Documentation
+
+The backend API documentation is available via Swagger UI:
+- **URL**: `http://localhost:5173/docs`
+- **Note**: Ensure both backend and frontend are running. The frontend proxies requests to the backend.

@@ -71,3 +71,4 @@ Once started, open your browser to [http://localhost:5173](http://localhost:5173
 ## 5. Verification
 - You should see the "Hotel Manager" application.
 - Navigate to "Guests", "Book Room", "Reports" using the top navigation bar to ensure data is accessible (database connection works).
+- **API Documentation**: Access the Swagger UI at [http://localhost:5173/docs](http://localhost:5173/docs) to explore the backend endpoints.
