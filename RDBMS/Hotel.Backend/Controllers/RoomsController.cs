@@ -32,6 +32,39 @@ public class RoomsController : ControllerBase
         }
     }
 
+    [HttpPut("{id}")]
+    public IActionResult Put(int id, [FromBody] Room room)
+    {
+        if (id != room.Id)
+        {
+            return BadRequest("ID mismatch");
+        }
+
+        var existing = Room.Find(id);
+        if (existing == null)
+        {
+            return NotFound();
+        }
+
+        try
+        {
+            // Check for room number conflict if changed
+            if (existing.RoomNumber != room.RoomNumber)
+            {
+                var conflict = Room.All().FirstOrDefault(r => r.RoomNumber == room.RoomNumber);
+                if (conflict != null)
+                    return Conflict("Room number already exists.");
+            }
+
+            room.Save();
+            return NoContent();
+        }
+        catch (Microsoft.Data.SqlClient.SqlException ex) when (ex.Number == 2627 || ex.Number == 2601)
+        {
+            return Conflict("Room number already exists.");
+        }
+    }
+
     [HttpDelete("{id}")]
     public IActionResult Delete(int id)
     {

@@ -23,6 +23,7 @@ export function Rooms() {
     const [rooms, setRooms] = useState<Room[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [editingId, setEditingId] = useState<number | null>(null);
 
     // Form state
     // Form state
@@ -61,7 +62,7 @@ export function Rooms() {
         setDialogContent({ open: true, title, description });
     };
 
-    const handleCreate = async () => {
+    const handleCreateOrUpdate = async () => {
         if (!newRoom.roomNumber.trim()) {
             showDialog("Validation Error", "Please enter a Room Number.");
             return;
@@ -69,27 +70,53 @@ export function Rooms() {
 
         setIsSubmitting(true);
         try {
-            await (api.rooms as any).create({
-                roomNumber: newRoom.roomNumber,
-                roomTypeId: parseInt(newRoom.roomTypeId),
-                lastMaintenance: null
-            });
+            if (editingId) {
+                // Update
+                await api.rooms.update(editingId, {
+                    id: editingId,
+                    roomNumber: newRoom.roomNumber,
+                    roomTypeId: parseInt(newRoom.roomTypeId)
+                });
+                showDialog("Success", "Room updated successfully!");
+            } else {
+                // Create
+                await api.rooms.create({
+                    roomNumber: newRoom.roomNumber,
+                    roomTypeId: parseInt(newRoom.roomTypeId)
+                });
+                showDialog("Success", "Room created successfully!");
+            }
 
-            showDialog("Success", "Room created successfully!");
+            // Reset
             setNewRoom({ roomNumber: "", roomTypeId: "1" });
+            setEditingId(null);
+
             loadRooms();
         } catch (e: any) {
             console.error(e);
-            const errorMsg = e.response?.data || e.message; // e.message is usually vague for axios, but let's see.
-            // Backend returns Conflict text directly.
+
+            const errorMsg = e.response?.data || e.message;
             if (e.response?.status === 409) {
                 showDialog("Error", e.response.data || "Room number already exists.");
             } else {
-                showDialog("Error", "Failed to create room. " + errorMsg);
+                showDialog("Error", `Failed to ${editingId ? "update" : "create"} room. ` + errorMsg);
             }
         } finally {
             setIsSubmitting(false);
         }
+    };
+
+    const startEdit = (room: Room) => {
+        setNewRoom({
+            roomNumber: room.roomNumber,
+            roomTypeId: room.roomTypeId.toString()
+        });
+        setEditingId(room.id);
+    };
+
+    const cancelEdit = () => {
+        setNewRoom({ roomNumber: "", roomTypeId: "1" });
+        setEditingId(null);
     };
 
     const confirmDelete = (room: Room) => {
@@ -123,7 +150,7 @@ export function Rooms() {
 
             <Card className="max-w-2xl mx-auto">
                 <CardHeader>
-                    <CardTitle>Add New Room</CardTitle>
+                    <CardTitle>{editingId ? "Edit Room" : "Add New Room"}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -156,9 +183,19 @@ export function Rooms() {
                             </Select>
                         </div>
                     </div>
-                    <Button onClick={handleCreate} className="w-full mt-4" disabled={isSubmitting}>
-                        {isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Creating...</> : <><Plus className="mr-2 h-4 w-4" /> Create Room</>}
-                    </Button>
+                    <div className="flex gap-2 mt-4">
+                        <Button onClick={handleCreateOrUpdate} className="flex-1" disabled={isSubmitting}>
+                            {isSubmitting ?
+                                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> {editingId ? "Updating..." : "Creating..."}</> :
+                                <>{editingId ? "Update Room" : <><Plus className="mr-2 h-4 w-4" /> Create Room</>}</>
+                            }
+                        </Button>
+                        {editingId && (
+                            <Button variant="outline" onClick={cancelEdit} disabled={isSubmitting}>
+                                Cancel
+                            </Button>
+                        )}
+                    </div>
                 </CardContent>
             </Card>
 
@@ -188,8 +225,11 @@ export function Rooms() {
                                             <TableCell>{room.roomNumber}</TableCell>
                                             <TableCell>{rType?.name || room.roomTypeId}</TableCell>
                                             <TableCell>${rType?.price.toFixed(2) || 'N/A'}</TableCell>
-                                            <TableCell>
-                                                <Button variant="destructive" size="sm" onClick={() => confirmDelete(room)} disabled={deletingId === room.id}>
+                                            <TableCell className="flex gap-2">
+                                                <Button variant="outline" size="sm" onClick={() => startEdit(room)} disabled={!!deletingId || !!editingId}>
+                                                    Edit
+                                                </Button>
+                                                <Button variant="destructive" size="sm" onClick={() => confirmDelete(room)} disabled={deletingId === room.id || !!editingId}>
                                                     {deletingId === room.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash className="h-4 w-4" />}
                                                 </Button>
                                             </TableCell>

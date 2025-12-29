@@ -12,7 +12,8 @@ export const api = {
     },
     rooms: {
         getAll: () => axios.get<Room[]>(`${API_URL}/rooms`).then(r => r.data),
-        create: (room: Omit<Room, 'id' | 'lastMaintenance'>) => axios.post<Room>(`${API_URL}/rooms`, room).then(r => r.data),
+        create: (room: Omit<Room, 'id'>) => axios.post<Room>(`${API_URL}/rooms`, room).then(r => r.data),
+        update: (id: number, room: Room) => axios.put(`${API_URL}/rooms/${id}`, room).then(r => r.data),
         delete: (id: number) => axios.delete(`${API_URL}/rooms/${id}`),
     },
 
