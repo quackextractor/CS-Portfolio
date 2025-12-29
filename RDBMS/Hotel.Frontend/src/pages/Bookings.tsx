@@ -40,6 +40,7 @@ export function Bookings() {
     // Feedback
     const [dialogOpen, setDialogOpen] = useState(false);
     const [dialogContent, setDialogContent] = useState({ title: "", description: "" });
+    const [editingId, setEditingId] = useState<number | null>(null);
     const [deletingId, setDeletingId] = useState<number | null>(null);
     const [bookingToDelete, setBookingToDelete] = useState<Booking | null>(null);
 
@@ -103,21 +104,85 @@ export function Bookings() {
             });
             showDialog("Success", "Booking Created Successfully!");
 
+            // Reload bookings to show new one
+            api.bookings.getAll().then(setBookings);
             // Reset form
             setSelectedGuest("");
             setSelectedRoom("");
             setCheckIn("");
             setCheckOut("");
             setSelectedServices([]);
-
-            // Reload bookings to show new one
-            api.bookings.getAll().then(setBookings);
         } catch (e: any) {
             console.error(e);
             showDialog("Error", "Error creating booking: " + (e.response?.data || e.message));
         } finally {
             setIsSubmitting(false);
         }
+    };
+
+    const handleUpdate = async () => {
+        if (!editingId) return;
+        if (!selectedGuest || !selectedRoom || !checkIn || !checkOut) {
+            showDialog("Validation Error", "Please fill all fields");
+            return;
+        }
+
+        // Basic date validation
+        if (new Date(checkIn) >= new Date(checkOut)) {
+            showDialog("Validation Error", "Check-out date must be after check-in date.");
+            return;
+        }
+
+        setIsSubmitting(true);
+        try {
+            await api.bookings.update(editingId, {
+                guestId: parseInt(selectedGuest),
+                roomId: parseInt(selectedRoom),
+                checkIn,
+                checkOut,
+                serviceIds: selectedServices
+            });
+            showDialog("Success", "Booking Updated Successfully!");
+
+            // Reset form
+            cancelEdit();
+
+            // Reload bookings
+            api.bookings.getAll().then(setBookings);
+        } catch (e: any) {
+            console.error(e);
+            showDialog("Error", "Error updating booking: " + (e.response?.data || e.message));
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const startEdit = async (booking: Booking) => {
+        setIsLoading(true);
+        try {
+            // We need full details including services
+            const details = await api.bookings.get(booking.id);
+            setEditingId(booking.id);
+            setSelectedGuest(details.booking.guestId.toString());
+            setSelectedRoom(details.booking.roomId.toString());
+            setCheckIn(new Date(details.booking.checkIn).toISOString().split('T')[0]);
+            setCheckOut(new Date(details.booking.checkOut).toISOString().split('T')[0]);
+            setSelectedServices(details.services.map(s => s.serviceId));
+        } catch (e) {
+            console.error(e);
+            showDialog("Error", "Failed to load booking details for editing");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const cancelEdit = () => {
+        setEditingId(null);
+        setSelectedGuest("");
+        setSelectedRoom("");
+        setCheckIn("");
+        setCheckOut("");
+        setSelectedServices([]);
     };
 
     const confirmDelete = (e: React.MouseEvent, booking: Booking) => {
@@ -179,7 +244,7 @@ export function Bookings() {
 
             <Card className="max-w-2xl mx-auto">
                 <CardHeader>
-                    <CardTitle>Create New Booking</CardTitle>
+                    <CardTitle>{editingId ? "Edit Booking" : "Create New Booking"}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     {isLoading ? (
@@ -258,9 +323,19 @@ export function Bookings() {
                                 </div>
                             </div>
 
-                            <Button className="w-full" onClick={handleSubmit} disabled={isLoading || isSubmitting}>
-                                {isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Creating...</> : <><Plus className="mr-2 h-4 w-4" /> Create Booking</>}
-                            </Button>
+                            <div className="flex gap-2">
+                                <Button className="flex-1" onClick={editingId ? handleUpdate : handleSubmit} disabled={isLoading || isSubmitting}>
+                                    {isSubmitting ?
+                                        <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> {editingId ? "Updating..." : "Creating..."}</> :
+                                        <>{editingId ? "Update Booking" : <><Plus className="mr-2 h-4 w-4" /> Create Booking</>}</>
+                                    }
+                                </Button>
+                                {editingId && (
+                                    <Button variant="outline" onClick={cancelEdit} disabled={isSubmitting}>
+                                        Cancel
+                                    </Button>
+                                )}
+                            </div>
                         </>
                     )}
                 </CardContent>
@@ -302,9 +377,14 @@ export function Bookings() {
                                         </TableCell>
                                         <TableCell>${b.totalPrice?.toFixed(2)}</TableCell>
                                         <TableCell>
-                                            <Button variant="destructive" size="sm" onClick={(e) => confirmDelete(e, b)} disabled={deletingId === b.id}>
-                                                {deletingId === b.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash className="h-4 w-4" />}
-                                            </Button>
+                                            <div className="flex gap-2">
+                                                <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); startEdit(b); }} disabled={!!deletingId || !!editingId}>
+                                                    Edit
+                                                </Button>
+                                                <Button variant="destructive" size="sm" onClick={(e) => confirmDelete(e, b)} disabled={deletingId === b.id || !!editingId}>
+                                                    {deletingId === b.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash className="h-4 w-4" />}
+                                                </Button>
+                                            </div>
                                         </TableCell>
                                     </TableRow>
                                 ))}

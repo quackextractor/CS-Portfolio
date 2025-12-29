@@ -94,6 +94,86 @@ public class BookingsController : ControllerBase
         }
     }
 
+    [HttpPut("{id}")]
+    public IActionResult Update(int id, [FromBody] CreateBookingRequest request)
+    {
+         // Logic
+        var logic = new Services.BookingLogic();
+
+        // Validation
+        if (!logic.ValidateDates(request.CheckIn, request.CheckOut))
+            return BadRequest("Check-out must be after check-in.");
+
+        var room = Room.Find(request.RoomId);
+        if (room == null) return BadRequest("Room not found.");
+
+        using var conn = new SqlConnection(DbConfig.ConnectionString);
+        conn.Open();
+        using var transaction = conn.BeginTransaction();
+
+        try
+        {
+            var booking = Booking.Find(id, transaction);
+            if (booking == null) return NotFound();
+
+            // 1. Update Booking Details
+            booking.GuestId = request.GuestId;
+            booking.RoomId = request.RoomId;
+            booking.CheckIn = request.CheckIn;
+            booking.CheckOut = request.CheckOut;
+
+            // Recalculate base price
+            var roomType = RoomType.Find(room.RoomTypeId, transaction);
+            decimal roomPrice = 0;
+            if (roomType != null)
+            {
+                 roomPrice = logic.CalculateRoomPrice(roomType.BasePrice, request.CheckIn, request.CheckOut);
+            }
+            booking.TotalPrice = roomPrice;
+
+            // 2. Sync Services
+            // First, remove existing services
+             // Note: In a real app we might want to be smarter here to preserve service dates if they were edited, 
+             // but for this simple assignment, replacing them is acceptable and follows the "Edit" pattern of resetting.
+            var existingServices = BookingService.Where("BookingId = @bid", new Dictionary<string, object> { { "@bid", id } }, transaction);
+            foreach(var s in existingServices)
+            {
+                s.Delete(transaction);
+            }
+
+            // Add new services
+             if (request.ServiceIds != null && request.ServiceIds.Any())
+            {
+                foreach (var serviceId in request.ServiceIds)
+                {
+                    var service = Service.Find(serviceId, transaction);
+                    if (service == null) throw new Exception($"Service {serviceId} not found");
+
+                    var bookingService = new BookingService
+                    {
+                        BookingId = booking.Id,
+                        ServiceId = serviceId,
+                        ServiceDate = booking.CheckIn,
+                        SubTotal = service.Price
+                    };
+                    bookingService.Save(transaction);
+                    
+                    booking.TotalPrice += service.Price;
+                }
+            }
+
+            booking.Save(transaction);
+            
+            transaction.Commit();
+            return Ok(booking);
+        }
+         catch (Exception ex)
+        {
+            transaction.Rollback();
+            return StatusCode(500, ex.Message);
+        }
+    }
+
     [HttpGet]
     public IEnumerable<Booking> Get()
     {
