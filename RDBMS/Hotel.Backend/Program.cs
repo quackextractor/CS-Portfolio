@@ -51,6 +51,7 @@ app.UseHttpsRedirection();
 
 app.UseCors();
 
+app.UseMiddleware<Hotel.Backend.Middleware.RequestLoggingMiddleware>();
 app.UseMiddleware<Hotel.Backend.Middleware.ExceptionMiddleware>();
 
 app.MapControllers();
