@@ -35,7 +35,7 @@ The application follows a **Two-Tier** architecture (Client-Server) with a separ
 ## 3. Database Design
 **RDBMS:** Microsoft SQL Server
 
-![ER Diagram](/docs/er_diagram_placeholder.png)
+![ER Diagram](/docs/er_diagram.png)
 
 ### Tables
 1.  **Guests**: Stores guest info. `(Id, FirstName, LastName, ...)`
@@ -59,8 +59,8 @@ The application follows a **Two-Tier** architecture (Client-Server) with a separ
 
 ## 4. Requirements Coverage
 
-![UI Screenshot - Import](/docs/ui_import_placeholder.png)
-![UI Screenshot - Booking](/docs/ui_booking_placeholder.png)
+![UI Screenshot - Import](/docs/ui_import.png)
+![UI Screenshot - Booking](/docs/ui_booking.png)
 
 - **D2 Active Record**: Implemented in `ActiveRecordBase.cs`. Entities like `Guest`, `Booking` inherit from it.
 - **5 Tables**: 6 Tables implemented.
