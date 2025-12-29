@@ -10,4 +10,21 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  server: {
+    proxy: {
+      '/docs': {
+        target: 'http://localhost:5106/swagger',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/docs/, ''),
+      },
+      '/swagger': {
+        target: 'http://localhost:5106',
+        changeOrigin: true,
+      },
+      '/api': {
+        target: 'http://localhost:5106',
+        changeOrigin: true,
+      }
+    }
+  },
 })
