@@ -22,10 +22,16 @@ A full-stack RDBMS assignment implementing a Hotel Management System using .NET 
 
 ### 2. Automated Setup
 
-Run the setup tool to configure the system:
+Run the setup script:
+
+```batch
+.\setup.bat
+```
+
+Or manually invoke the setup via the backend:
 
 ```bash
-dotnet run --project Hotel.Setup setup
+dotnet run --project Hotel.Backend -- --setup
 ```
 
 This tool will:
@@ -37,12 +43,13 @@ This tool will:
 
 **Run Backend:**
 ```bash
-dotnet run --project Hotel.Setup run-backend
+dotnet run --project Hotel.Backend
 ```
 
 **Run Frontend:**
 ```bash
-dotnet run --project Hotel.Setup run-frontend
+cd Hotel.Frontend
+npm run dev
 ```
 
 ## Project Structure
