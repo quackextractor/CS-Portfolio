@@ -1,77 +1,203 @@
-# Hotel Management System Documentation
+# Hotel Management System - Documentation
 
-**Author:** LostSoul
-**Date:** 2024-05-20
-**School:** SPŠE Ječná
-**Project:** D2 - Active Record Pattern
+## Project Information
+*   **Project Name**: Hotel Management System (RDBMS D2)
+*   **Author**: Miro Slezák
+*   **Date**: 2026-01-03
+*   **Context**: School Project (RDBMS) - Assignment D2 (Active Record)
 
-## 1. Specification
-This application is a Hotel Management System designed to manage guests, rooms, bookings, and services.
-It allows for:
-- Guest management (CRUD)
-- Room management (View)
-- Booking creation with multi-table transaction support (Booking + Services)
-- Data Import (Guests, Services) via JSON
-- Reporting (Bookings, Availability, Service Stats, Revenue)
+## 1. Requirement Specification
+The goal of this project is to build a Hotel Management System that allows hotel staff to manage guests, rooms, bookings, and services. The system is built to meet the **D2** requirement (Custom Active Record Pattern) and demonstrates relational database concepts including multiple tables (5+), Views, M:N relationships, and ACID transactions.
 
-## 2. Architecture
-The application follows a **Two-Tier** architecture (Client-Server) with a separate Database layer.
+**Key Functional Requirements**:
+*   Manage Guests (CRUD).
+*   Manage Rooms and Room Types.
+*   Create Bookings with multiple Services (M:N relationship).
+*   Import Guests and Rooms from JSON files.
+*   Generate Reports (Guest Bookings, Room Availability, Revenue).
+*   Ensure data integrity using Database Transactions.
 
-### Backend
-- **Framework:** ASP.NET Core 8 Web API
-- **Pattern:** Custom **Active Record** implementation (D2).
-- **Data Access:** ADO.NET (`Microsoft.Data.SqlClient`) directly managing Connections and Transactions.
-- **Layers:**
-    - `Controllers`: Handle HTTP requests.
-    - `Models`: Contain Business Logic and Data Access (`Save()`, `Find()`).
-    - `Data`: `ActiveRecordBase` and `DbConfig`.
+## 2. Architecture Description
+The application follows a standard **3-Tier Architecture**:
 
-### Frontend
-- **Framework:** React + Vite
-- **Language:** TypeScript
-- **UI:** TailwindCSS + Shadcn/UI (simulated)
-- **Communication:** Axios for REST API consumption.
+1.  **Presentation Layer (Frontend)**:
+    *   **Technology**: React 18, TypeScript, Vite.
+    *   **UI Library**: shadcn-ui (based on Radix UI) plus Tailwind CSS for styling.
+    *   **Role**: Handles user interaction, form validation, and displays data. Communicates with the Backend via REST API.
 
-## 3. Database Design
-**RDBMS:** Microsoft SQL Server
+2.  **Application Layer (Backend)**:
+    *   **Technology**: ASP.NET Core 8 Web API.
+    *   **Pattern**: RESTful API with thin Controllers and rich Service/Logic layers.
+    *   **Data Access**: Custom **Active Record Pattern** (as per D2 requirement). No external ORM (Entity Framework) is used for core entities.
 
+3.  **Data Layer (Database)**:
+    *   **Technology**: Microsoft SQL Server.
+    *   **Structure**: Relational Schema with Foreign Keys, Constraints, and Views.
+
+### Database Diagram
 ![ER Diagram](/docs/er_diagram.png)
 
-### Tables
-1.  **Guests**: Stores guest info. `(Id, FirstName, LastName, ...)`
-2.  **RoomTypes**: Stores categories. `(Id, Name, BasePrice, ...)`
-3.  **Rooms**: Physical rooms. `(Id, RoomNumber, RoomTypeId, ...)`
-4.  **Services**: Additional services. `(Id, Name, Price)`
-5.  **Bookings**: Transactional table. `(Id, CheckIn, CheckOut, TotalPrice, ...)`
-6.  **BookingServices**: M:N link table. `(Id, BookingId, ServiceId, SubTotal)`
+## 3. Application Flow
+**Typical Booking Flow**:
+1.  User opens "Create Booking" page.
+2.  Frontend fetches lists of Guests, Rooms, and Services via `GET /api/guests`, `GET /api/rooms`, etc.
+3.  User selects a Guest, a Room, Dates, and multiple extra Services.
+4.  User submits the form.
+5.  Frontend sends a `POST /api/bookings` with the payload.
+6.  **Backend Processing**:
+    *   `BookingsController` starts a `SqlTransaction`.
+    *   Validates dates and room availability.
+    *   Calculates room price based on `RoomType`.
+    *   Inserts `Booking` record via `Booking.Save(transaction)`.
+    *   Iterates through selected services and inserts `BookingService` records (M:N) via `BookingService.Save(transaction)`.
+    *   Updates the total price.
+    *   Commits the transaction if all steps succeed. Rolls back on any error.
+7.  Backend returns the created Booking object.
+8.  Frontend displays a success message.
 
-### Views
-1.  `v_GuestBookings`: Joins Bookings, Guests, Rooms.
-2.  `v_RoomAvailability`: Filtered view of Rooms.
-3.  `v_ServiceUsageStats`: Aggregates usage from BookingServices.
-4.  `v_RevenueByRoomType`: **Aggregated report from 3 tables** (RoomTypes, Rooms, Bookings).
-
-### Relationships
-- Guest (1) -> (*) Booking
-- RoomType (1) -> (*) Room
-- Room (1) -> (*) Booking
-- Booking (1) -> (*) BookingServices (*) <- (1) Service
-
-## 4. Requirements Coverage
-
-![UI Screenshot - Import](/docs/ui_import.png)
 ![UI Screenshot - Booking](/docs/ui_booking.png)
 
-- **D2 Active Record**: Implemented in `ActiveRecordBase.cs`. Entities like `Guest`, `Booking` inherit from it.
-- **5 Tables**: 6 Tables implemented.
-- **2 Views**: 4 Views implemented.
-- **M:N**: Implemented via `BookingServices`.
-- **Transaction**: Used in `ImportController` (Import 50 guests) and `BookingsController` (Create Booking + Add Services).
-- **Aggregated Report**: `v_RevenueByRoomType` combines RoomTypes, Rooms, and Bookings.
-- **Import**: JSON Import for Guests and Services (2 tables).
-- **Config**: `appsettings.json` supported.
-- **Error Handling**: Try-Catch blocks in Controllers with appropriate HTTP status codes.
+## 4. Libraries & Dependencies
+**Backend**:
+*   `Microsoft.AspNetCore.OpenApi`: Swagger support.
+*   `Microsoft.Data.SqlClient`: Low-level ADO.NET provider for SQL Server interaction.
+*   `Swashbuckle.AspNetCore`: Swagger UI generation.
 
-## 5. Configuration & Usage
-See `scenarios/01_Setup.md` for installation instructions.
-See `scenarios/02_HappyPath.md` for usage examples.
+**Frontend**:
+*   `react`, `react-dom`: Core UI library.
+*   `axios`: HTTP client.
+*   `tailwindcss`: CSS framework.
+*   `lucide-react`: Icons.
+*   `radix-ui`: Primitives for accessible components (Dialog, Select, etc.).
+
+## 5. Configuration
+The application is configured via `appsettings.json` in the Backend and `api.ts` constants in the Frontend.
+
+**Backend (`appsettings.json`)**:
+```json
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "Server=localhost;Database=HotelDb;Trusted_Connection=True;TrustServerCertificate=True;"
+  }
+}
+```
+*   `ConnectionStrings:DefaultConnection`: The standard SQL Server connection string.
+
+**Frontend**:
+*   API URL is defined in `src/api.ts`. Default: `http://localhost:5106/api`.
+
+## 6. Installation & Execution
+### Prerequisites
+*   .NET 8 SDK
+*   Node.js (v18+)
+*   SQL Server (LocalDB or Standard)
+
+### Step 1: Database Setup
+1.  Ensure SQL Server is running.
+2.  Navigate to `Hotel.Backend`.
+3.  Run the application with the setup argument to seed the DB:
+    ```powershell
+    dotnet run --project Hotel.Backend setup
+    ```
+    *Alternatively, manually execute the SQL scripts generated by the Setup service if provided in a file.*
+
+### Step 2: Run Backend
+1.  Open a terminal in `Hotel.Backend`.
+2.  Run the project:
+    ```powershell
+    dotnet run
+    ```
+    The API will start at `http://localhost:5106`.
+
+### Step 3: Run Frontend
+1.  Open a new terminal in `Hotel.Frontend`.
+2.  Install dependencies:
+    ```powershell
+    npm install
+    ```
+3.  Start the dev server:
+    ```powershell
+    npm run dev
+    ```
+4.  Open the browser at `http://localhost:5173`.
+
+## 7. Error Handling
+*   **Backend**: 
+    *   Reflected in HTTP Status Codes (400 for validation errors, 404 for not found, 500 for server errors).
+    *   Transactions ensure data consistency. If an error occurs during a multi-step operation (like Import or Booking creation), `transaction.Rollback()` is called to revert partial changes.
+*   **Frontend**:
+    *   `try/catch` blocks around `async/await` API calls.
+    *   User-friendly error messages are displayed in Dialogs or Toast notifications.
+    *   Network errors are logged to the console.
+
+## 8. Verification & Testing
+*   **Unit Tests**: Located in `Hotel.Tests`. Run via `dotnet test`. Covers business logic like price calculation and date validation.
+*   **Manual Testing**: 
+    *   **Happy Path**: Create a guest, create a room, create a booking with services. Verify data appears in Reports.
+    *   **Error Path**: Try to create a booking with End Date before Start Date. Try to delete a Room that is in use. Verify appropriate error messages.
+    *   **Import**: Upload the provided sample JSON files and verify records are inserted.
+
+![UI Screenshot - Import](/docs/ui_import.png)
+
+## 9. Known Issues & Limitations
+*   Concurrency control is optimistic; 'Last Write Wins' strategy.
+*   Pagination is not implemented; large datasets might impact performance.
+
+---
+
+# Analysis and Reasoning
+
+## Assignment vs Implementation Comparison
+
+| Requirement | Implementation | Notes |
+| :--- | :--- | :--- |
+| **Backend**: ASP.NET Core 8 Web API | `Hotel.Backend` is an ASP.NET Core Web API project. | Controllers use `[ApiController]`. |
+| **Frontend**: Vite + React + TS + shadcn-ui | `Hotel.Frontend` uses Vite, React, TypeScript, and shadcn-ui components. | verified in `package.json` and component imports. |
+| **Database**: MSSQL | Uses `Microsoft.Data.SqlClient`. | `DbConfig` and `ActiveRecordBase` use `SqlConnection`. |
+| **Pattern**: Custom Active Record (D2) | `ActiveRecordBase<T>` class in `Hotel.Backend.Data`. | Implements `Find`, `Save`, `Delete`, `Where` without EF Core. |
+| **Transactions**: Explicit Support | `BeginTransaction()` used in `BookingsController` and `ImportController`. | Transactions wrap complex operations (e.g., Booking + Services). |
+| **Import**: CSV/JSON/XML | `ImportController` handles JSON import for Guests and Rooms. | Frontend `Import.tsx` provides UI for this. |
+| **Reports**: 3+ tables aggregated | `ReportsController` provides endpoints likely backed by Views. | Endpoints for `guest-bookings`, `availability`, etc. |
+| **Entities**: 5+ tables, M:N | `Guest`, `Room`, `RoomType`, `Service`, `Booking`, `BookingService` (M:N). | M:N relationship handled in `BookingsController`. |
+| **Testing**: xUnit + Moq | `Hotel.Tests` project uses `xUnit`. | `BookingLogicTests` verified. |
+
+## Design Decisions & Patterns
+
+### Backend
+*   **Custom Active Record (`ActiveRecordBase<T>`)**:
+    *   **Reason**: Explicit definition in assignment (D2).
+    *   **Implementation**: A generic abstract base class handles common SQL operations (`INSERT`, `UPDATE`, `DELETE`, `SELECT`). It uses Reflection (`GetProperties`) to map C# properties to SQL columns, adhering to DRY.
+    *   **Transaction Management**: Passed as an optional argument to all data methods (`Save`, `Find`, etc.), allowing controllers to orchestrate atomic operations across multiple entities.
+
+*   **Controllers**:
+    *   **Pattern**: Thin controllers, fat models/services.
+    *   **Logic**: Complex logic (pricing) is delegated to `BookingLogic` service. Data access is direct via Active Record models.
+
+### Frontend
+*   **React Patterns**:
+    *   **Component Composition**: Uses small, reusable UI components from shadcn-ui (Button, Card, Input).
+    *   **Hooks**: Heavy use of `useState` for local state and `useEffect` for data fetching.
+    *   **API Layer**: Centralized `api.ts` object to abstract Axios calls. This keeps components clean and makes API refactoring easier.
+    *   **Controlled Forms**: Input states are managed via React state (`value={state} onChange={...}`), ensuring a "Source of Truth" in the UI.
+
+*   **User Experience (UX)**:
+    *   **Feedback**: Loading states (`isLoading`, `Progress`) and success/error dialogs (`AlertDialog`) provide clear feedback.
+    *   **Modals**: Used for critical confirmations (Delete) and details viewing, keeping the context without navigating away.
+
+
+## Tester FAQ
+
+### Q: Why did you not use Entity Framework (EF) Core?
+**A:** The assignment strictly required **D2 - Custom Active Record Pattern**. Using a full-fledged ORM like EF Core would violate the requirement to demonstrate understanding of low-level data access patterns and object-relational mapping principles manually.
+
+### Q: How are relationships handled without navigation properties?
+**A:** We use explicit Foreign Keys (e.g., `GuestId` in `Booking`). To retrieve related data (like a Guest name for a Booking), we perform separate `Find()` calls or join queries within the specific Service/Controller method, keeping the Active Record models lightweight and focused purely on their own table.
+
+### Q: Where is the Transaction logic?
+**A:** Transactions are managed in the **Controller** layer (e.g., `BookingsController.Create`). We open a connection and start a transaction, then pass this transaction object to the `Save()` methods of the Active Record entities. This adheres to the **Unit of Work** principle where the business operation defines the transaction boundary, not the individual entity save.
+
+### Q: Why did you choose React/Vite for the frontend?
+**A:** React provides a responsive, component-based UI that separates concerns effectively. Vite offers a modern, fast build toolchain. This separation allows the backend to serve purely as an API, making the system more scalable and testable compared to server-side rendering (Razor/MVC) for this specific interactive use window.
+
+### Q: How do you handle imports?
+**A:** We use a JSON upload feature. The specific `ImportController` parses the JSON file, validates the DTOs, and then processes them in a batch transaction. If any record in the batch is invalid, the entire batch is rejected to promote data quality.
