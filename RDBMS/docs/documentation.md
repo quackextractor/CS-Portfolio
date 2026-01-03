@@ -6,6 +6,21 @@
 *   **Date**: 2026-01-03
 *   **Context**: School Project (RDBMS) - Assignment D2 (Active Record)
 
+## Table of Contents
+1. [Requirement Specification](#1-requirement-specification)
+2. [Architecture Description](#2-architecture-description)
+3. [Application Flow](#3-application-flow)
+4. [Libraries & Dependencies](#4-libraries--dependencies)
+5. [Configuration](#5-configuration)
+6. [Installation & Execution](#6-installation--execution)
+7. [Error Handling](#7-error-handling)
+8. [Verification & Testing](#8-verification--testing)
+9. [Known Issues & Limitations](#9-known-issues--limitations)
+10. [Analysis and Reasoning](#analysis-and-reasoning)
+    - [Assignment vs Implementation Comparison](#assignment-vs-implementation-comparison)
+    - [Design Decisions & Patterns](#design-decisions--patterns)
+11. [Tester FAQ](#tester-faq)
+
 ## 1. Requirement Specification
 The goal of this project is to build a Hotel Management System that allows hotel staff to manage guests, rooms, bookings, and services. The system is built to meet the **D2** requirement (Custom Active Record Pattern) and demonstrates relational database concepts including multiple tables (5+), Views, M:N relationships, and ACID transactions.
 
