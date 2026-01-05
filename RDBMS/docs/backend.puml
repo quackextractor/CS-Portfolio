@@ -1,0 +1,163 @@
+@startuml
+class "UseMiddleware`1"<T> {
+}
+class CreateBookingRequest {
+    + GuestId : int <<get>> <<set>>
+    + RoomId : int <<get>> <<set>>
+}
+class BookingsController {
+    + Create(request:CreateBookingRequest) : IActionResult
+    + Update(id:int, request:CreateBookingRequest) : IActionResult
+    + Get() : IEnumerable<Booking>
+    + Get(id:int) : IActionResult
+    + Delete(id:int) : IActionResult
+}
+class "List`1"<T> {
+}
+CreateBookingRequest --> "CheckIn" DateTime
+CreateBookingRequest --> "CheckOut" DateTime
+CreateBookingRequest o-> "ServiceIds<int>" "List`1"
+ControllerBase <|-- BookingsController
+class GuestsController {
+    + Get() : IEnumerable<Guest>
+    + Get(id:int) : ActionResult<Guest>
+    + Post(guest:Guest) : ActionResult<Guest>
+    + Put(id:int, guest:Guest) : IActionResult
+    + Delete(id:int) : IActionResult
+}
+ControllerBase <|-- GuestsController
+class GuestImportDto {
+    + FirstName : string <<get>> <<set>>
+    + LastName : string <<get>> <<set>>
+    + Email : string <<get>> <<set>>
+    + Phone : string <<get>> <<set>>
+}
+class RoomImportDto {
+    + RoomNumber : string <<get>> <<set>>
+    + RoomTypeId : int <<get>> <<set>>
+}
+class ImportController {
+    + <<async>> ImportGuests(file:IFormFile) : Task<IActionResult>
+    + <<async>> ImportRooms(file:IFormFile) : Task<IActionResult>
+}
+GuestImportDto --> "DateOfBirth" DateTime
+ControllerBase <|-- ImportController
+class ReportsController {
+    + GetGuestBookings() : IEnumerable<GuestBookingReport>
+    + GetAvailability() : IEnumerable<RoomAvailabilityReport>
+    + GetRevenueByRoomType() : IEnumerable<RevenueByRoomTypeReport>
+}
+ControllerBase <|-- ReportsController
+class RoomsController {
+    + Get() : IEnumerable<Room>
+    + Post(room:Room) : IActionResult
+    + Put(id:int, room:Room) : IActionResult
+    + Delete(id:int) : IActionResult
+}
+ControllerBase <|-- RoomsController
+class ServicesController {
+    + Get() : IEnumerable<Service>
+}
+ControllerBase <|-- ServicesController
+abstract class "ActiveRecordBase`1"<T> {
+    + Id : int <<get>> <<set>>
+    + {static} Find(id:int, transaction:SqlTransaction?) : T?
+    + {static} Where(condition:string, parameters:Dictionary<string, object>?, transaction:SqlTransaction?) : List<T>
+    + {static} All(transaction:SqlTransaction?) : List<T>
+    + Save(transaction:SqlTransaction?) : void
+    + Delete(transaction:SqlTransaction?) : void
+}
+class DbConfig <<static>> {
+    + {static} ConnectionString : string <<get>>
+    + {static} Initialize(connectionString:string) : void
+}
+class ExceptionMiddleware {
+    + ExceptionMiddleware(next:RequestDelegate, logger:ILogger<ExceptionMiddleware>)
+    + <<async>> InvokeAsync(context:HttpContext) : Task
+}
+class RequestLoggingMiddleware {
+    + RequestLoggingMiddleware(next:RequestDelegate, logger:ILogger<RequestLoggingMiddleware>)
+    + <<async>> InvokeAsync(context:HttpContext) : Task
+}
+class RoomType {
+    + Name : string <<get>> <<set>>
+    + BasePrice : decimal <<get>> <<set>>
+}
+class Room {
+    + RoomNumber : string <<get>> <<set>>
+    + RoomTypeId : int <<get>> <<set>>
+}
+class Booking {
+    + GuestId : int <<get>> <<set>>
+    + RoomId : int <<get>> <<set>>
+    + TotalPrice : decimal <<get>> <<set>>
+}
+class Service {
+    + Name : string <<get>> <<set>>
+    + Price : decimal <<get>> <<set>>
+}
+class BookingService {
+    + BookingId : int <<get>> <<set>>
+    + ServiceId : int <<get>> <<set>>
+    + SubTotal : decimal <<get>> <<set>>
+}
+class "ActiveRecordBase`1"<T> {
+}
+"ActiveRecordBase`1" "<RoomType>" <|-- RoomType
+"ActiveRecordBase`1" "<Room>" <|-- Room
+"ActiveRecordBase`1" "<Booking>" <|-- Booking
+Booking --> "CheckIn" DateTime
+Booking --> "CheckOut" DateTime
+"ActiveRecordBase`1" "<Service>" <|-- Service
+"ActiveRecordBase`1" "<BookingService>" <|-- BookingService
+BookingService --> "ServiceDate" DateTime
+class Guest {
+    + FirstName : string <<get>> <<set>>
+    + LastName : string <<get>> <<set>>
+    + Email : string <<get>> <<set>>
+    + Phone : string <<get>> <<set>>
+    + IsActive : bool <<get>> <<set>> = true
+}
+class "ActiveRecordBase`1"<T> {
+}
+"ActiveRecordBase`1" "<Guest>" <|-- Guest
+Guest --> "DateOfBirth" DateTime
+class GuestBookingReport {
+    + BookingId : int <<get>> <<set>>
+    + FirstName : string <<get>> <<set>>
+    + LastName : string <<get>> <<set>>
+    + Email : string <<get>> <<set>>
+    + RoomNumber : string <<get>> <<set>>
+}
+class RoomAvailabilityReport {
+    + RoomId : int <<get>> <<set>>
+    + RoomNumber : string <<get>> <<set>>
+    + RoomType : string <<get>> <<set>>
+    + BasePrice : decimal <<get>> <<set>>
+}
+class ServiceUsageStatsReport {
+    + ServiceName : string <<get>> <<set>>
+    + UsageCount : int <<get>> <<set>>
+    + TotalRevenue : decimal <<get>> <<set>>
+}
+class RevenueByRoomTypeReport {
+    + RoomTypeName : string <<get>> <<set>>
+    + TotalBookings : int <<get>> <<set>>
+    + TotalRevenue : decimal <<get>> <<set>>
+}
+class "ActiveRecordBase`1"<T> {
+}
+"ActiveRecordBase`1" "<GuestBookingReport>" <|-- GuestBookingReport
+GuestBookingReport --> "CheckIn" DateTime
+GuestBookingReport --> "CheckOut" DateTime
+"ActiveRecordBase`1" "<RoomAvailabilityReport>" <|-- RoomAvailabilityReport
+"ActiveRecordBase`1" "<ServiceUsageStatsReport>" <|-- ServiceUsageStatsReport
+"ActiveRecordBase`1" "<RevenueByRoomTypeReport>" <|-- RevenueByRoomTypeReport
+class BookingLogic {
+    + ValidateDates(checkIn:DateTime, checkOut:DateTime) : bool
+    + CalculateRoomPrice(basePrice:decimal, checkIn:DateTime, checkOut:DateTime) : decimal
+}
+class SetupService <<static>> {
+    + {static} RunSetup(config:IConfiguration) : void
+}
+@enduml
