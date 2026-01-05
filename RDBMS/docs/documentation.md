@@ -50,7 +50,7 @@ The application follows a standard **3-Tier Architecture**:
     *   **Structure**: Relational Schema with Foreign Keys, Constraints, and Views.
 
 ### Database Diagram
-![ER Diagram](/docs/er_diagram.png)
+![ER Diagram](er_diagram.png)
 
 ## 3. Application Flow
 **Typical Booking Flow**:
@@ -70,7 +70,7 @@ The application follows a standard **3-Tier Architecture**:
 7.  Backend returns the created Booking object.
 8.  Frontend displays a success message.
 
-![UI Screenshot - Booking](/docs/ui_booking.png)
+![UI Screenshot - Booking](ui_booking.png)
 
 ## 4. Libraries & Dependencies
 **Backend**:
@@ -152,7 +152,7 @@ The application is configured via `appsettings.json` in the Backend and `api.ts`
     *   **Error Path**: Try to create a booking with End Date before Start Date. Try to delete a Room that is in use. Verify appropriate error messages.
     *   **Import**: Upload the provided sample JSON files and verify records are inserted.
 
-![UI Screenshot - Import](/docs/ui_import.png)
+![UI Screenshot - Import](ui_import.png)
 
 ## 9. Known Issues & Limitations
 *   Concurrency control is optimistic; 'Last Write Wins' strategy.
