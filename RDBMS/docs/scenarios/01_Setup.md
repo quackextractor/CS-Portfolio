@@ -18,18 +18,19 @@
 
 The system includes a setup tool that initializes the database and installs frontend dependencies.
 
-1. Navigate to the Backend directory:
-   ```powershell
-   cd Hotel.Backend
+1. Navigate to the `RDBMS/` root directory.
+   ```cmd
+   cd RDBMS
    ```
+
 2. Run the setup command:
-   ```powershell
-   dotnet run -- --setup
+   ```cmd
+   dotnet run --project Hotel.Backend -- --setup
    ```
-   *   This will:
-        *   Create the database if it doesn't exist.
-        *   Execute all SQL scripts found in `RDBMS/Database`.
-        *   Run `npm install` in `RDBMS/Hotel.Frontend`.
+*   This will:
+      *   Create the database if it doesn't exist.
+      *   Execute all SQL scripts found in `RDBMS/Database`.
+      *   Run `npm install` in `RDBMS/Hotel.Frontend`.
 
 ## 4. Running the System
 
@@ -37,8 +38,8 @@ The system includes a setup tool that initializes the database and installs fron
 
 To start the full system (Backend + Frontend), simply run the helper script from the `RDBMS/` root:
 
-```powershell
-.\run.ps1
+```cmd
+run.bat
 ```
 
 This will open two new terminal windows:
