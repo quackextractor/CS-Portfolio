@@ -18,4 +18,12 @@
     <Using Include="Xunit" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\BankNode.Core\BankNode.Core.csproj" />
+    <ProjectReference Include="..\BankNode.Network\BankNode.Network.csproj" />
+    <ProjectReference Include="..\BankNode.Data\BankNode.Data.csproj" />
+    <ProjectReference Include="..\BankNode.Shared\BankNode.Shared.csproj" />
+    <ProjectReference Include="..\BankNode.App\BankNode.App.csproj" />
+  </ItemGroup>
+
 </Project>

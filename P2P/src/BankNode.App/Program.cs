@@ -1,17 +1,80 @@
 ﻿using System;
+using System.Threading;
+using System.Threading.Tasks;
+using BankNode.Shared;
+using BankNode.Core.Interfaces;
+using BankNode.Core.Services;
+using BankNode.Data.Repositories;
+using BankNode.Network;
+using BankNode.Network.Strategies;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace BankNode.App
 {
     class Program
     {
-        static void Main(string[] args)
+        static async Task Main(string[] args)
         {
-            Console.WriteLine("Bank Node Starting...");
-            // DI Setup
-            // Configuration Load
-            // Server Start
-            Console.WriteLine("Bank Node Running. Press any key to exit.");
-            Console.ReadKey();
+            var services = new ServiceCollection();
+            ConfigureServices(services);
+
+            var serviceProvider = services.BuildServiceProvider();
+
+            // Load Config
+            var config = serviceProvider.GetRequiredService<AppConfig>();
+            config.Load();
+            
+            // Allow override from args: --port 65526
+            if (args.Length > 1 && args[0] == "--port" && int.TryParse(args[1], out int port))
+            {
+                config.Port = port;
+            }
+
+            var logger = serviceProvider.GetRequiredService<ILogger<Program>>();
+            logger.LogInformation($"Bank Node initializing... IP: {config.NodeIp}, Port: {config.Port}");
+
+            var server = serviceProvider.GetRequiredService<TcpServer>();
+            var cancellationTokenSource = new CancellationTokenSource();
+
+            Console.CancelKeyPress += (s, e) =>
+            {
+                e.Cancel = true;
+                cancellationTokenSource.Cancel();
+            };
+
+            await server.StartAsync(cancellationTokenSource.Token);
+        }
+
+        private static void ConfigureServices(IServiceCollection services)
+        {
+            // Config
+            services.AddSingleton<AppConfig>();
+
+            // Logging
+            services.AddLogging(configure =>
+            {
+                configure.AddConsole();
+                configure.SetMinimumLevel(LogLevel.Information);
+            });
+
+            // Core
+            services.AddSingleton<IAccountRepository, FileAccountRepository>();
+            services.AddSingleton<IAccountService, AccountService>();
+
+            // Network
+            services.AddSingleton<TcpServer>(sp => 
+            {
+                var config = sp.GetRequiredService<AppConfig>();
+                return new TcpServer(config.Port, sp.GetRequiredService<CommandParser>(), sp.GetRequiredService<ILogger<TcpServer>>());
+            });
+            services.AddSingleton<NetworkClient>();
+            services.AddSingleton<CommandParser>();
+
+            // Strategies
+            services.AddSingleton<ICommandStrategy, BasicCommandStrategy>();
+            services.AddSingleton<ICommandStrategy, AccountCommandStrategy>();
+            services.AddSingleton<ICommandStrategy, RobberyCommandStrategy>();
         }
     }
 }
