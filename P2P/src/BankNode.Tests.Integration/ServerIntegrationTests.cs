@@ -33,7 +33,7 @@ namespace BankNode.Tests.Integration
             await Task.Delay(500);
 
             // Act (Client)
-            var client = sp.GetRequiredService<NetworkClient>();
+            var client = sp.GetRequiredService<INetworkClient>();
             var response = await client.SendCommandAsync("127.0.0.1", _testPort, "BC");
 
             // Cleanup
@@ -58,7 +58,7 @@ namespace BankNode.Tests.Integration
             await Task.Delay(500);
 
             // Act
-            var client = sp.GetRequiredService<NetworkClient>();
+            var client = sp.GetRequiredService<INetworkClient>();
             var response = await client.SendCommandAsync("127.0.0.1", port, "AC");
 
             // Cleanup
@@ -83,12 +83,16 @@ namespace BankNode.Tests.Integration
             services.AddSingleton<IAccountRepository>(new FileAccountRepository($"test_accounts_{port}.json"));
             services.AddSingleton<IAccountService, AccountService>();
 
-            services.AddSingleton<IAccountRepository>(new FileAccountRepository($"test_accounts_{port}.json"));
-            services.AddSingleton<IAccountService, AccountService>();
+
 
             services.AddSingleton<TcpServer>();
-            services.AddSingleton<NetworkClient>();
+            services.AddSingleton<INetworkClient, NetworkClient>();
             services.AddSingleton<CommandParser>();
+            services.AddSingleton<ICommandProcessor>(p => 
+                new RequestLoggingDecorator(
+                    p.GetRequiredService<CommandParser>(),
+                    p.GetRequiredService<ILogger<RequestLoggingDecorator>>()
+                ));
 
             // Translation
             services.AddSingleton<BankNode.Translation.ITranslationStrategy, BankNode.Translation.Strategies.CzechTranslationStrategy>();

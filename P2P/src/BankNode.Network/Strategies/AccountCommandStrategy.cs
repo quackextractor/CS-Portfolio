@@ -10,10 +10,10 @@ namespace BankNode.Network.Strategies
     {
         private readonly AppConfig _config;
         private readonly IAccountService _accountService;
-        private readonly NetworkClient _networkClient;
+        private readonly INetworkClient _networkClient;
         private readonly BankNode.Translation.ITranslationStrategy _translator;
 
-        public AccountCommandStrategy(AppConfig config, IAccountService accountService, NetworkClient networkClient, BankNode.Translation.ITranslationStrategy translator)
+        public AccountCommandStrategy(AppConfig config, IAccountService accountService, INetworkClient networkClient, BankNode.Translation.ITranslationStrategy translator)
         {
             _config = config;
             _accountService = accountService;

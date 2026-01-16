@@ -49,9 +49,10 @@ namespace BankNode.Tests.Integration
             var clientUtilsSp = new ServiceCollection()
                 .AddLogging()
                 .AddSingleton<AppConfig>()
-                .AddSingleton<NetworkClient>()
+                .AddSingleton<BankNode.Translation.ITranslationStrategy, BankNode.Translation.Strategies.CzechTranslationStrategy>()
+                .AddSingleton<INetworkClient, NetworkClient>()
                 .BuildServiceProvider();
-            var client = clientUtilsSp.GetRequiredService<NetworkClient>();
+            var client = clientUtilsSp.GetRequiredService<INetworkClient>();
 
             // SCENARIO A: Node A Check
             _output.WriteLine("\n[Step 3] Checking Node A Identity (BC)...");
@@ -102,8 +103,14 @@ namespace BankNode.Tests.Integration
             
             // Network
             services.AddSingleton<TcpServer>();
-            services.AddSingleton<NetworkClient>();
+            services.AddSingleton<INetworkClient, NetworkClient>();
             services.AddSingleton<CommandParser>();
+            services.AddSingleton<ICommandProcessor, CommandParser>(); // Use simple parser for walkthrough or decorator? Let's use parser for simplicity as logger might fail complexity test or just copy what works.
+            // Actually ServerIntegrationTests used Decorator. Let's use Decorator to be consistent. 
+            // But wait, the previous code in ServerIntegrationTests used a factory for Decorator.
+            // Let's just alias ICommandProcessor to CommandParser for simplicity in Walkthrough unless we need logging.
+            // The TcpServer needs ICommandProcessor. commandParser implements ICommandProcessor.
+
 
             // Translation
             services.AddSingleton<BankNode.Translation.ITranslationStrategy, BankNode.Translation.Strategies.CzechTranslationStrategy>();

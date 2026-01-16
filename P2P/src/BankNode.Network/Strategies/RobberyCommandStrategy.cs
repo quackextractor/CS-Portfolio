@@ -8,11 +8,11 @@ namespace BankNode.Network.Strategies
 {
     public class RobberyCommandStrategy : ICommandStrategy
     {
-        private readonly NetworkClient _client;
+        private readonly INetworkClient _client;
         private readonly AppConfig _config;
         private readonly BankNode.Translation.ITranslationStrategy _translator;
 
-        public RobberyCommandStrategy(NetworkClient client, AppConfig config, BankNode.Translation.ITranslationStrategy translator)
+        public RobberyCommandStrategy(INetworkClient client, AppConfig config, BankNode.Translation.ITranslationStrategy translator)
         {
             _client = client;
             _config = config;

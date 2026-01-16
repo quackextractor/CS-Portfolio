@@ -69,7 +69,7 @@ namespace BankNode.App
 
             // Network
             services.AddSingleton<TcpServer>();
-            services.AddSingleton<NetworkClient>();
+            services.AddSingleton<INetworkClient, NetworkClient>();
             services.AddSingleton<CommandParser>();
             services.AddSingleton<ICommandProcessor>(p => 
                 new RequestLoggingDecorator(

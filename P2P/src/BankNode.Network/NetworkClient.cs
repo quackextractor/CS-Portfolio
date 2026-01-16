@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 
 namespace BankNode.Network
 {
-    public class NetworkClient
+    public class NetworkClient : INetworkClient
     {
         private readonly AppConfig _config;
         private readonly ILogger<NetworkClient> _logger;
