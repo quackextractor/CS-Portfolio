@@ -142,3 +142,29 @@ To manually interact with a node (e.g., to send commands like `AC`, `BC`, `AD` m
     telnet localhost 65525
     ```
 3.  **Usage**: Once connected, you can type commands like `BC` and press Enter.
+
+---
+
+## Option 3: Testing Localization
+
+To test language switching:
+
+1.  **Stop the Node** if running.
+2.  **Edit `config.json`**: Change `"Language"` to `"cs"` (Czech) or back to `"en"` (English).
+    ```json
+    {
+       ...
+       "Language": "cs"
+    }
+    ```
+3.  **Start the Node**: `dotnet run`
+4.  **Connect and Verify**:
+    -   Connect via Telnet/PuTTY.
+    -   Type `HELP`.
+    -   **Expected Result**:
+        -   If `"en"`, you see "Available Commands".
+        -   If `"cs"`, you see "Dostupné příkazy".
+    -   Type an invalid command (e.g., `XYZ`).
+        -   **Expected Result**:
+            -   If `"en"`, "ER Unknown command."
+            -   If `"cs"`, "ER Neznámý příkaz."

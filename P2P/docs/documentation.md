@@ -56,7 +56,7 @@ The application follows **Clean Architecture** principles to ensure modularity, 
 
 -   **Strategy Pattern**:
     -   Used in **Command Parsing**: Each command (`BC`, `AC`, etc.) is encapsulated in its own strategy class implementing `ICommandStrategy`. This makes adding new commands (like `RP`) easy without modifying the core parser.
-    -   Used in **Translation**: `ITranslationStrategy` allows switching languages (CZ/EN) dynamically.
+    - Used in **Translation**: `ITranslationStrategy` allows generic switching of languages. Implemented by `JsonFileTranslationStrategy`, which loads languages from JSON files.
 -   **Repository Pattern**: `IAccountRepository` abstracts the data storage layer. The core logic doesn't care if data is in a text file or SQLite database.
 -   **Dependency Injection (DI)**: The `Program.cs` builds a `ServiceProvider` to inject repositories, services, and loggers into constructors.
 -   **Singleton Pattern**: Used for the TCP Server instance and Configuration.
@@ -130,9 +130,10 @@ Configuration is managed via the `AppConfig` class.
 
 -   **Port**: Default `65525`. Must be between 65525 and 65535.
 -   **Timeout**: Default `5000` ms. Used for both client inactivity and proxy request timeouts.
+-   **Language**: Default `en`. Loads translation strings from `languages/<language>.json`.
 -   **NodeIp**: The IP address this node advertises. Can be auto-detected or manually set.
 
-*(Future implementation: Load from `appsettings.json`)*
+Configuration is loaded from `config.json` in the application root. Use `config.json.example` as a template.
 
 ---
 
@@ -160,6 +161,18 @@ Navigate to the `src` directory and run:
 
 ```bash
 dotnet build
+```
+
+### Configuration
+Create a `config.json` file in the application directory. You can copy `config.json.example` and rename it.
+
+```json
+{
+  "Port": 65525,
+  "Timeout": 5000,
+  "NodeIp": "127.0.0.1",
+  "Language": "en"
+}
 ```
 
 ### Running
