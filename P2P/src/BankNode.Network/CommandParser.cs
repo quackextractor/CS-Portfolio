@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using BankNode.Network.Strategies;
+using BankNode.Translation;
 using Microsoft.Extensions.Logging;
 
 namespace BankNode.Network
@@ -10,11 +11,13 @@ namespace BankNode.Network
     public class CommandParser
     {
         private readonly IEnumerable<ICommandStrategy> _strategies;
+        private readonly ITranslationStrategy _translator;
         private readonly ILogger<CommandParser> _logger;
 
-        public CommandParser(IEnumerable<ICommandStrategy> strategies, ILogger<CommandParser> logger)
+        public CommandParser(IEnumerable<ICommandStrategy> strategies, ITranslationStrategy translator, ILogger<CommandParser> logger)
         {
             _strategies = strategies;
+            _translator = translator;
             _logger = logger;
         }
 
@@ -35,7 +38,7 @@ namespace BankNode.Network
             if (strategy == null)
             {
                 _logger.LogWarning($"Unknown command: {commandCode}");
-                return "ER Unknown command.";
+                return $"ER {_translator.GetError("UNKNOWN_COMMAND")}";
             }
 
             try

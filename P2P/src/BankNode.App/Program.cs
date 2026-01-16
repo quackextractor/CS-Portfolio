@@ -7,6 +7,8 @@ using BankNode.Core.Services;
 using BankNode.Data.Repositories;
 using BankNode.Network;
 using BankNode.Network.Strategies;
+using BankNode.Translation;
+using BankNode.Translation.Strategies;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -63,14 +65,13 @@ namespace BankNode.App
             services.AddSingleton<IAccountService, AccountService>();
 
             // Network
-            services.AddSingleton<TcpServer>(sp => 
-            {
-                var config = sp.GetRequiredService<AppConfig>();
-                return new TcpServer(config.Port, sp.GetRequiredService<CommandParser>(), sp.GetRequiredService<ILogger<TcpServer>>());
-            });
+            services.AddSingleton<TcpServer>();
             services.AddSingleton<NetworkClient>();
             services.AddSingleton<CommandParser>();
 
+            // Translation
+            services.AddSingleton<ITranslationStrategy, CzechTranslationStrategy>();
+            
             // Strategies
             services.AddSingleton<ICommandStrategy, BasicCommandStrategy>();
             services.AddSingleton<ICommandStrategy, AccountCommandStrategy>();

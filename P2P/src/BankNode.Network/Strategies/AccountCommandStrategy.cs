@@ -11,12 +11,14 @@ namespace BankNode.Network.Strategies
         private readonly AppConfig _config;
         private readonly IAccountService _accountService;
         private readonly NetworkClient _networkClient;
+        private readonly BankNode.Translation.ITranslationStrategy _translator;
 
-        public AccountCommandStrategy(AppConfig config, IAccountService accountService, NetworkClient networkClient)
+        public AccountCommandStrategy(AppConfig config, IAccountService accountService, NetworkClient networkClient, BankNode.Translation.ITranslationStrategy translator)
         {
             _config = config;
             _accountService = accountService;
             _networkClient = networkClient;
+            _translator = translator;
         }
 
         public bool CanHandle(string commandCode)
@@ -43,7 +45,7 @@ namespace BankNode.Network.Strategies
                     case "AR": // AR <acc>/<ip>
                         return await HandleRemove(args);
                     default:
-                        return "ER Unknown command.";
+                        return $"ER {_translator.GetError("UNKNOWN_COMMAND")}";
                 }
             }
             catch (Exception ex)
@@ -60,9 +62,9 @@ namespace BankNode.Network.Strategies
 
         private async Task<string> HandleDeposit(string[] args)
         {
-            if (args.Length < 3) return "ER Invalid format.";
-            if (!ParseAccount(args[1], out var accNum, out var ip)) return "ER Invalid account format.";
-            if (!decimal.TryParse(args[2], out var amount)) return "ER Invalid amount.";
+            if (args.Length < 3) return $"ER {_translator.GetError("INVALID_FORMAT")}";
+            if (!ParseAccount(args[1], out var accNum, out var ip)) return $"ER {_translator.GetError("INVALID_ACCOUNT_FORMAT")}";
+            if (!decimal.TryParse(args[2], out var amount)) return $"ER {_translator.GetError("INVALID_AMOUNT")}";
 
             if (IsRemote(ip))
             {
@@ -76,9 +78,9 @@ namespace BankNode.Network.Strategies
 
         private async Task<string> HandleWithdraw(string[] args)
         {
-            if (args.Length < 3) return "ER Invalid format.";
-            if (!ParseAccount(args[1], out var accNum, out var ip)) return "ER Invalid account format.";
-            if (!decimal.TryParse(args[2], out var amount)) return "ER Invalid amount.";
+            if (args.Length < 3) return $"ER {_translator.GetError("INVALID_FORMAT")}";
+            if (!ParseAccount(args[1], out var accNum, out var ip)) return $"ER {_translator.GetError("INVALID_ACCOUNT_FORMAT")}";
+            if (!decimal.TryParse(args[2], out var amount)) return $"ER {_translator.GetError("INVALID_AMOUNT")}";
 
             if (IsRemote(ip))
             {
@@ -91,8 +93,8 @@ namespace BankNode.Network.Strategies
 
         private async Task<string> HandleBalance(string[] args)
         {
-            if (args.Length < 2) return "ER Invalid format.";
-            if (!ParseAccount(args[1], out var accNum, out var ip)) return "ER Invalid account format.";
+            if (args.Length < 2) return $"ER {_translator.GetError("INVALID_FORMAT")}";
+            if (!ParseAccount(args[1], out var accNum, out var ip)) return $"ER {_translator.GetError("INVALID_ACCOUNT_FORMAT")}";
 
             if (IsRemote(ip))
             {
@@ -105,8 +107,8 @@ namespace BankNode.Network.Strategies
 
         private async Task<string> HandleRemove(string[] args)
         {
-            if (args.Length < 2) return "ER Invalid format.";
-            if (!ParseAccount(args[1], out var accNum, out var ip)) return "ER Invalid account format.";
+            if (args.Length < 2) return $"ER {_translator.GetError("INVALID_FORMAT")}";
+            if (!ParseAccount(args[1], out var accNum, out var ip)) return $"ER {_translator.GetError("INVALID_ACCOUNT_FORMAT")}";
 
             if (IsRemote(ip))
             {
@@ -119,9 +121,6 @@ namespace BankNode.Network.Strategies
 
         private bool IsRemote(string ip)
         {
-            // Simple check. If IP is different from Config IP, treat as remote.
-            // Note: In a real scenario, we might need more robust IP matching (e.g. 127.0.0.1 vs actual IP).
-            // For this assignment, assuming exact string match or if we are proxying, we rely on the IP string.
             return ip != _config.NodeIp;
         }
 

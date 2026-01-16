@@ -46,7 +46,12 @@ namespace BankNode.Tests.Integration
             await Task.Delay(500); // Wait for startups
 
             // 3. Client Interaction
-            var client = new NetworkClient();
+            var clientUtilsSp = new ServiceCollection()
+                .AddLogging()
+                .AddSingleton<AppConfig>()
+                .AddSingleton<NetworkClient>()
+                .BuildServiceProvider();
+            var client = clientUtilsSp.GetRequiredService<NetworkClient>();
 
             // SCENARIO A: Node A Check
             _output.WriteLine("\n[Step 3] Checking Node A Identity (BC)...");
@@ -95,13 +100,13 @@ namespace BankNode.Tests.Integration
             services.AddSingleton<IAccountRepository>(new FileAccountRepository($"accounts_{port}.json"));
             services.AddSingleton<IAccountService, AccountService>();
             
-            services.AddSingleton<TcpServer>(sp => 
-            {
-                var cfg = sp.GetRequiredService<AppConfig>();
-                return new TcpServer(cfg.Port, sp.GetRequiredService<CommandParser>(), sp.GetRequiredService<ILogger<TcpServer>>());
-            });
+            // Network
+            services.AddSingleton<TcpServer>();
             services.AddSingleton<NetworkClient>();
             services.AddSingleton<CommandParser>();
+
+            // Translation
+            services.AddSingleton<BankNode.Translation.ITranslationStrategy, BankNode.Translation.Strategies.CzechTranslationStrategy>();
 
             services.AddSingleton<ICommandStrategy, BasicCommandStrategy>();
             services.AddSingleton<ICommandStrategy, AccountCommandStrategy>();

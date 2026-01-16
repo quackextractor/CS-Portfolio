@@ -5,29 +5,30 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using BankNode.Shared;
 using Microsoft.Extensions.Logging;
 
 namespace BankNode.Network
 {
     public class TcpServer
     {
-        private readonly int _port;
+        private readonly AppConfig _config;
         private readonly CommandParser _commandParser;
         private readonly ILogger<TcpServer> _logger;
         private TcpListener? _listener;
 
-        public TcpServer(int port, CommandParser commandParser, ILogger<TcpServer> logger)
+        public TcpServer(AppConfig config, CommandParser commandParser, ILogger<TcpServer> logger)
         {
-            _port = port;
+            _config = config;
             _commandParser = commandParser;
             _logger = logger;
         }
 
         public async Task StartAsync(CancellationToken cancellationToken)
         {
-            _listener = new TcpListener(IPAddress.Any, _port);
+            _listener = new TcpListener(IPAddress.Any, _config.Port);
             _listener.Start();
-            _logger.LogInformation($"TCP Server started on port {_port}");
+            _logger.LogInformation($"TCP Server started on port {_config.Port}");
 
             try
             {
@@ -53,9 +54,8 @@ namespace BankNode.Network
             using (client)
             {
                 var stream = client.GetStream();
-                // Set timeout (e.g. 5 seconds as per requirements, could be config driven)
-                stream.ReadTimeout = 5000;
-                stream.WriteTimeout = 5000;
+                stream.ReadTimeout = _config.Timeout;
+                stream.WriteTimeout = _config.Timeout;
 
                 try
                 {

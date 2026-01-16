@@ -8,11 +8,13 @@ namespace BankNode.Network.Strategies
     {
         private readonly AppConfig _config;
         private readonly IAccountService _accountService;
+        private readonly BankNode.Translation.ITranslationStrategy _translator;
 
-        public BasicCommandStrategy(AppConfig config, IAccountService accountService)
+        public BasicCommandStrategy(AppConfig config, IAccountService accountService, BankNode.Translation.ITranslationStrategy translator)
         {
             _config = config;
             _accountService = accountService;
+            _translator = translator;
         }
 
         public bool CanHandle(string commandCode)
@@ -35,7 +37,7 @@ namespace BankNode.Network.Strategies
                     var count = _accountService.GetClientCount();
                     return Task.FromResult($"BN {count}");
                 default:
-                    return Task.FromResult("ER Unknown command.");
+                    return Task.FromResult($"ER {_translator.GetError("UNKNOWN_COMMAND")}");
             }
         }
     }

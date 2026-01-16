@@ -10,11 +10,13 @@ namespace BankNode.Network.Strategies
     {
         private readonly NetworkClient _client;
         private readonly AppConfig _config;
+        private readonly BankNode.Translation.ITranslationStrategy _translator;
 
-        public RobberyCommandStrategy(NetworkClient client, AppConfig config)
+        public RobberyCommandStrategy(NetworkClient client, AppConfig config, BankNode.Translation.ITranslationStrategy translator)
         {
             _client = client;
             _config = config;
+            _translator = translator;
         }
 
         public bool CanHandle(string commandCode)
@@ -26,7 +28,7 @@ namespace BankNode.Network.Strategies
         {
             if (args.Length < 2 || !long.TryParse(args[1], out var targetAmount))
             {
-                return "ER Invalid amount.";
+                return $"ER {_translator.GetError("INVALID_AMOUNT")}";
             }
 
             // 1. Scan Network

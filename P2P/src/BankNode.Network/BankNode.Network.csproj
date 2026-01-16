@@ -3,6 +3,7 @@
   <ItemGroup>
     <ProjectReference Include="..\BankNode.Core\BankNode.Core.csproj" />
     <ProjectReference Include="..\BankNode.Shared\BankNode.Shared.csproj" />
+    <ProjectReference Include="..\BankNode.Translation\BankNode.Translation.csproj" />
   </ItemGroup>
 
   <ItemGroup>

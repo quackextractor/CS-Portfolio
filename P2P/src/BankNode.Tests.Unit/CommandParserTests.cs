@@ -16,7 +16,10 @@ namespace BankNode.Tests.Unit
             // Arrange
             var strategies = new List<ICommandStrategy>();
             var logger = new Mock<ILogger<CommandParser>>();
-            var parser = new CommandParser(strategies, logger.Object);
+            var translator = new Mock<BankNode.Translation.ITranslationStrategy>();
+            translator.Setup(t => t.GetError("UNKNOWN_COMMAND")).Returns("Unknown command.");
+            
+            var parser = new CommandParser(strategies, translator.Object, logger.Object);
 
             // Act
             var result = await parser.ProcessCommandAsync("XYZ 123");
@@ -35,7 +38,9 @@ namespace BankNode.Tests.Unit
 
             var strategies = new List<ICommandStrategy> { mockStrategy.Object };
             var logger = new Mock<ILogger<CommandParser>>();
-            var parser = new CommandParser(strategies, logger.Object);
+            var translator = new Mock<BankNode.Translation.ITranslationStrategy>();
+            
+            var parser = new CommandParser(strategies, translator.Object, logger.Object);
 
             // Act
             var result = await parser.ProcessCommandAsync("TEST arg1");
