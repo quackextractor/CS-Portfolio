@@ -230,3 +230,4 @@ Debug
 config.json
 **/obj/
 **/bin/
+**/**.log
