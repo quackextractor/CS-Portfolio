@@ -12,11 +12,13 @@ namespace BankNode.Network
     {
         private readonly AppConfig _config;
         private readonly ILogger<NetworkClient> _logger;
+        private readonly BankNode.Translation.ITranslationStrategy _translator;
 
-        public NetworkClient(AppConfig config, ILogger<NetworkClient> logger)
+        public NetworkClient(AppConfig config, ILogger<NetworkClient> logger, BankNode.Translation.ITranslationStrategy translator)
         {
             _config = config;
             _logger = logger;
+            _translator = translator;
         }
 
         public async Task<string> SendCommandAsync(string ip, int port, string command)
@@ -31,7 +33,7 @@ namespace BankNode.Network
                 if (await Task.WhenAny(connectTask, Task.Delay(_config.Timeout)) != connectTask)
                 {
                     _logger.LogWarning($"Connection timeout to {ip}:{port}");
-                     return "ER Connection timeout.";
+                     return $"ER {_translator.GetError("CONNECTION_TIMEOUT")}";
                 }
                 await connectTask;
 
@@ -48,17 +50,17 @@ namespace BankNode.Network
                 if (await Task.WhenAny(readTask, Task.Delay(_config.Timeout)) != readTask)
                 {
                     _logger.LogWarning($"Response timeout from {ip}:{port}");
-                    return "ER Response timeout.";
+                    return $"ER {_translator.GetError("RESPONSE_TIMEOUT")}";
                 }
                 
                 var response = await readTask;
                 _logger.LogInformation($"Received response from {ip}:{port} <- {response ?? "null"}");
-                return response ?? "ER No response.";
+                return response ?? $"ER {_translator.GetError("NO_RESPONSE")}";
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Connection failed to {ip}:{port}");
-                return $"ER Connection failed: {ex.Message}";
+                return $"ER {_translator.GetError("CONNECTION_FAILED")} {ex.Message}";
             }
         }
     }
