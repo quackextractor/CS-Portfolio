@@ -23,6 +23,7 @@ namespace BankNode.Tests.Integration
         {
             // Arrange (Setup Server)
             var services = new ServiceCollection();
+            TestHelpers.EnsureLanguageFile();
             ConfigureServices(services, _testPort);
             var sp = services.BuildServiceProvider();
             var server = sp.GetRequiredService<TcpServer>();
@@ -72,7 +73,7 @@ namespace BankNode.Tests.Integration
 
         private void ConfigureServices(IServiceCollection services, int port)
         {
-            var config = new AppConfig { Port = port, NodeIp = "127.0.0.1" };
+            var config = new AppConfig { Port = port, NodeIp = "127.0.0.1", Language = "cs" };
             services.AddSingleton(config);
 
             services.AddLogging(configure => configure.AddConsole());
@@ -95,7 +96,7 @@ namespace BankNode.Tests.Integration
                 ));
 
             // Translation
-            services.AddSingleton<BankNode.Translation.ITranslationStrategy, BankNode.Translation.Strategies.CzechTranslationStrategy>();
+            services.AddSingleton<BankNode.Translation.ITranslationStrategy, BankNode.Translation.Strategies.JsonFileTranslationStrategy>();
 
             services.AddSingleton<ICommandStrategy, BasicCommandStrategy>();
             services.AddSingleton<ICommandStrategy, AccountCommandStrategy>();

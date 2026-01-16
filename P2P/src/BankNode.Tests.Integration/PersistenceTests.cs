@@ -23,6 +23,7 @@ namespace BankNode.Tests.Integration
         {
             // Arrange - Files
             var testFile = "persist_test.json";
+            TestHelpers.EnsureLanguageFile();
             if (File.Exists(testFile)) File.Delete(testFile);
 
             // 1. Start Server A, Create Account, Deposit
@@ -80,7 +81,7 @@ namespace BankNode.Tests.Integration
         private IServiceCollection CreateServices(int port, string filePath)
         {
             var services = new ServiceCollection();
-            var config = new AppConfig { Port = port, NodeIp = "127.0.0.1" };
+            var config = new AppConfig { Port = port, NodeIp = "127.0.0.1", Language = "cs" };
             services.AddSingleton(config);
             services.AddLogging(c => c.AddConsole());
 
@@ -99,7 +100,7 @@ namespace BankNode.Tests.Integration
                 ));
 
             // Translation
-            services.AddSingleton<BankNode.Translation.ITranslationStrategy, BankNode.Translation.Strategies.CzechTranslationStrategy>();
+            services.AddSingleton<BankNode.Translation.ITranslationStrategy, BankNode.Translation.Strategies.JsonFileTranslationStrategy>();
 
             services.AddSingleton<ICommandStrategy, BasicCommandStrategy>();
             services.AddSingleton<ICommandStrategy, AccountCommandStrategy>();

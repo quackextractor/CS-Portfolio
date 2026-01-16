@@ -23,7 +23,8 @@ namespace BankNode.Tests.Integration
         {
             // Arrange
             var services = new ServiceCollection();
-            var config = new AppConfig { Port = _port, NodeIp = "127.0.0.1" };
+            TestHelpers.EnsureLanguageFile();
+            var config = new AppConfig { Port = _port, NodeIp = "127.0.0.1", Language = "cs" };
             services.AddSingleton(config);
             services.AddLogging(c => c.AddConsole());
 
@@ -45,7 +46,7 @@ namespace BankNode.Tests.Integration
                     p.GetRequiredService<ILogger<RequestLoggingDecorator>>()
                 ));
 
-            services.AddSingleton<BankNode.Translation.ITranslationStrategy, BankNode.Translation.Strategies.CzechTranslationStrategy>();
+            services.AddSingleton<BankNode.Translation.ITranslationStrategy, BankNode.Translation.Strategies.JsonFileTranslationStrategy>();
 
             services.AddSingleton<ICommandStrategy, BasicCommandStrategy>();
             services.AddSingleton<ICommandStrategy, AccountCommandStrategy>(); // This contains the logic: IsRemote -> SendCommandAsync

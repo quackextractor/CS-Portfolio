@@ -23,6 +23,7 @@ namespace BankNode.Tests.Integration
         public WalkthroughTests(ITestOutputHelper output)
         {
             _output = output;
+            TestHelpers.EnsureLanguageFile();
         }
 
         [Fact]
@@ -48,8 +49,8 @@ namespace BankNode.Tests.Integration
             // 3. Client Interaction
             var clientUtilsSp = new ServiceCollection()
                 .AddLogging()
-                .AddSingleton<AppConfig>()
-                .AddSingleton<BankNode.Translation.ITranslationStrategy, BankNode.Translation.Strategies.CzechTranslationStrategy>()
+                .AddSingleton<AppConfig>(new AppConfig { Language = "cs" })
+                .AddSingleton<BankNode.Translation.ITranslationStrategy, BankNode.Translation.Strategies.JsonFileTranslationStrategy>()
                 .AddSingleton<INetworkClient, NetworkClient>()
                 .BuildServiceProvider();
             var client = clientUtilsSp.GetRequiredService<INetworkClient>();
@@ -93,7 +94,7 @@ namespace BankNode.Tests.Integration
         private ServiceProvider CreateNode(int port)
         {
             var services = new ServiceCollection();
-            var config = new AppConfig { Port = port, NodeIp = "127.0.0.1" };
+            var config = new AppConfig { Port = port, NodeIp = "127.0.0.1", Language = "cs" };
             services.AddSingleton(config);
             services.AddLogging(c => c.AddConsole());
             
@@ -113,7 +114,7 @@ namespace BankNode.Tests.Integration
 
 
             // Translation
-            services.AddSingleton<BankNode.Translation.ITranslationStrategy, BankNode.Translation.Strategies.CzechTranslationStrategy>();
+            services.AddSingleton<BankNode.Translation.ITranslationStrategy, BankNode.Translation.Strategies.JsonFileTranslationStrategy>();
 
             services.AddSingleton<ICommandStrategy, BasicCommandStrategy>();
             services.AddSingleton<ICommandStrategy, AccountCommandStrategy>();
