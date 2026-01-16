@@ -29,7 +29,7 @@ namespace BankNode.Network
             }
 
             var parts = rawCommand.Trim().Split(' ');
-            var commandCode = parts[0];
+            var commandCode = parts[0].ToUpperInvariant();
 
 
 
@@ -38,7 +38,7 @@ namespace BankNode.Network
             if (strategy == null)
             {
                 _logger.LogWarning($"Unknown command: {commandCode}");
-                return $"ER {_translator.GetError("UNKNOWN_COMMAND")}";
+                return $"ER {_translator.GetError("UNKNOWN_COMMAND")}\n{_translator.GetMessage("HELP_HINT")}";
             }
 
             try

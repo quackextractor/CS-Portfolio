@@ -18,7 +18,8 @@ namespace BankNode.Translation.Strategies
             { "RESPONSE_TIMEOUT", "Vypršel časový limit odpovědi." },
             { "NO_RESPONSE", "Žádná odpověď." },
             { "CONNECTION_FAILED", "Připojení selhalo." },
-            { "ROBBERY_PLAN", "Plán loupeže" }
+            { "ROBBERY_PLAN", "Plán loupeže" },
+            { "HELP_HINT", "help" }
         };
 
         public string GetMessage(string key) 
