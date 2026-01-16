@@ -4,7 +4,7 @@ setlocal
 :: Default to net8.0 if no argument is provided
 set "CURRENT_VERSION=net8.0"
 
-echo Current target framework is likely set in src\Directory.Build.props.
+echo Current target framework is set in src\Directory.Build.props.
 echo Enter the new target framework (e.g., net8.0, net9.0).
 echo Press Enter to use default [%CURRENT_VERSION%]: 
 
