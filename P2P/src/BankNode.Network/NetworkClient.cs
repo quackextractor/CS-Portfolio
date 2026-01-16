@@ -44,6 +44,14 @@ namespace BankNode.Network
                 using var writer = new StreamWriter(stream, Encoding.UTF8, leaveOpen: true) { AutoFlush = true };
                 using var reader = new StreamReader(stream, Encoding.UTF8, leaveOpen: true);
 
+                // Consume welcome message
+                var welcomeTask = reader.ReadLineAsync();
+                if (await Task.WhenAny(welcomeTask, Task.Delay(_config.Timeout)) != welcomeTask)
+                {
+                    _logger.LogWarning($"Timeout waiting for welcome message from {ip}:{port}");
+                    return $"ER {_translator.GetError("CONNECTION_TIMEOUT")}";
+                }
+
                 await writer.WriteLineAsync(command);
                 
                 var readTask = reader.ReadLineAsync();
