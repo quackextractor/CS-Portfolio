@@ -21,19 +21,37 @@ namespace BankNode.Shared
             try
             {
                 var host = Dns.GetHostEntry(Dns.GetHostName());
+                string? bestIp = null;
+                int bestScore = 0;
+
                 foreach (var ip in host.AddressList)
                 {
                     if (ip.AddressFamily == AddressFamily.InterNetwork)
                     {
-                        return ip.ToString();
+                        var ipStr = ip.ToString();
+                        int score = 0;
+
+                        if (ipStr.StartsWith("192.168.")) score = 3;
+                        else if (ipStr.StartsWith("10.")) score = 2;
+                        else if (ipStr.StartsWith("172.")) score = 1; // Simplification for 172.16-31 range
+                        
+                        // Ignore link-local
+                        if (ipStr.StartsWith("169.254.")) continue;
+
+                        if (score >= bestScore)
+                        {
+                            bestScore = score;
+                            bestIp = ipStr;
+                        }
                     }
                 }
+
+                return bestIp ?? "127.0.0.1";
             }
             catch
             {
-                // Fallback
+                return "127.0.0.1";
             }
-            return "127.0.0.1";
         }
     }
 }

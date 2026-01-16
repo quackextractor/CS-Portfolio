@@ -13,6 +13,8 @@ using BankNode.Translation;
 using BankNode.Translation.Strategies;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using System.Net.NetworkInformation;
+using System.Net.Sockets;
 
 namespace BankNode.App
 {
@@ -34,9 +36,33 @@ namespace BankNode.App
             {
                 config.Port = port;
             }
+            
+            // Allow manual IP override: --ip 192.168.1.5
+            var ipIndex = Array.IndexOf(args, "--ip");
+            if (ipIndex >= 0 && ipIndex + 1 < args.Length)
+            {
+                config.NodeIp = args[ipIndex + 1];
+            }
 
             var logger = serviceProvider.GetRequiredService<ILogger<Program>>();
-            logger.LogInformation($"Bank Node initializing... IP: {config.NodeIp}, Port: {config.Port}");
+            
+            // List all available IPs for user convenience
+            logger.LogInformation("Available Network Interfaces:");
+            foreach (var ni in NetworkInterface.GetAllNetworkInterfaces())
+            {
+                if (ni.OperationalStatus == OperationalStatus.Up)
+                {
+                    foreach (var ua in ni.GetIPProperties().UnicastAddresses)
+                    {
+                        if (ua.Address.AddressFamily == AddressFamily.InterNetwork)
+                        {
+                            logger.LogInformation($" - {ni.Name}: {ua.Address}");
+                        }
+                    }
+                }
+            }
+
+            logger.LogInformation($"Bank Node initializing... Advertising IP: {config.NodeIp}, Port: {config.Port}");
 
             var server = serviceProvider.GetRequiredService<TcpServer>();
             var cancellationTokenSource = new CancellationTokenSource();
