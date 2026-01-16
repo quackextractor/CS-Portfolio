@@ -138,7 +138,7 @@ Configuration is managed via the `AppConfig` class.
 
 The application is designed to support persistent storage.
 
--   **Data Storage**: Accounts are stored in **File System (JSON)** (`accounts.json`) to survive restarts.
+-   **Data Storage**: Accounts are stored in **File System (NDJSON)** (`accounts.json`) - Line Delimited JSON, to survive restarts.
 -   **Concurrency**: Thread-safe access to data is ensured via locks or DB transaction isolation, allowing parallel client handling.
 -   **Logging**: Logs are written to both **Console** and **node.log** file for persistent tracking of node activity.
 
