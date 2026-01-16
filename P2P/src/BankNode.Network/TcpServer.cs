@@ -14,13 +14,15 @@ namespace BankNode.Network
     {
         private readonly AppConfig _config;
         private readonly ICommandProcessor _commandProcessor;
+        private readonly BankNode.Translation.ITranslationStrategy _translator;
         private readonly ILogger<TcpServer> _logger;
         private TcpListener? _listener;
 
-        public TcpServer(AppConfig config, ICommandProcessor commandProcessor, ILogger<TcpServer> logger)
+        public TcpServer(AppConfig config, ICommandProcessor commandProcessor, BankNode.Translation.ITranslationStrategy translator, ILogger<TcpServer> logger)
         {
             _config = config;
             _commandProcessor = commandProcessor;
+            _translator = translator;
 
             _logger = logger;
         }
@@ -63,6 +65,8 @@ namespace BankNode.Network
                     using (var reader = new StreamReader(stream, Encoding.UTF8, leaveOpen: true))
                     using (var writer = new StreamWriter(stream, Encoding.UTF8, leaveOpen: true) { AutoFlush = true })
                     {
+                        await writer.WriteLineAsync(_translator.GetMessage("WELCOME_MESSAGE"));
+
                         string? command;
                         while ((command = await reader.ReadLineAsync()) != null)
                         {

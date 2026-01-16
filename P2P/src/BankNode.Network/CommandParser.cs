@@ -30,6 +30,7 @@ namespace BankNode.Network
 
             var parts = rawCommand.Trim().Split(' ');
             var commandCode = parts[0].ToUpperInvariant();
+            parts[0] = commandCode; // Ensure strategy receives uppercase command
 
 
 
