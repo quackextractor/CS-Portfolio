@@ -110,6 +110,7 @@ namespace BankNode.App
             services.AddSingleton<ICommandStrategy, BasicCommandStrategy>();
             services.AddSingleton<ICommandStrategy, AccountCommandStrategy>();
             services.AddSingleton<ICommandStrategy, RobberyCommandStrategy>();
+            services.AddSingleton<ICommandStrategy, HelpCommandStrategy>();
         }
     }
 }
