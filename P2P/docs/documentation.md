@@ -1,0 +1,205 @@
+# P2P Bank Node - Hacker Edition Documentation
+
+**Author:** [Your Name]  
+**Date:** 2026-01-16  
+**School:** SPSE Jecna  
+**Project:** P2P Bank Node (Hacker Difficulty)  
+**Status:** Structure Generated / Under Development
+
+---
+
+## 1. Specification & Requirements
+
+### Project Summary
+This project implements a **Peer-to-Peer (P2P) Bank Node** that simulates a banking system. Each node in the network represents a bank capable of managing accounts, transactions, and communicating with other bank nodes via TCP/IP. The goal is to create a decentralized banking network where nodes can query each other and perform cross-bank operations.
+
+This implementation aims for the **Hacker Bank Node** difficulty level, which includes:
+-   Basic banking operations (Create, Deposit, Withdraw, Balance, Remove).
+-   Proxy functionality (Forwarding requests to other nodes).
+-   **Robbery Plan (RP)**: An advanced algorithm to calculate optimal robbery strategies across the P2P network.
+
+### Allowed Commands
+
+All commands are sent as UTF-8 text ending with a newline.
+
+| Command | Syntax | Description | Success Response | Error Response |
+| :--- | :--- | :--- | :--- | :--- |
+| **Bank Code** | `BC` | IP Check. Returns node IP. | `BC <ip>` | `ER <msg>` |
+| **Account Create** | `AC` | Create new account. | `AC <acc>/<ip>` | `ER <msg>` |
+| **Account Deposit** | `AD <acc>/<ip> <amt>` | Deposit money. | `AD` | `ER <msg>` |
+| **Account Withdraw** | `AW <acc>/<ip> <amt>` | Withdraw money. | `AW` | `ER <msg>` |
+| **Account Balance** | `AB <acc>/<ip>` | Get balance. | `AB <amount>` | `ER <msg>` |
+| **Account Remove** | `AR <acc>/<ip>` | Delete account (if 0 balance). | `AR` | `ER <msg>` |
+| **Bank Amount** | `BA` | Total money in bank. | `BA <amount>` | `ER <msg>` |
+| **Bank Number** | `BN` | Number of clients. | `BN <count>` | `ER <msg>` |
+| **Robbery Plan** | `RP <target_amount>` | Calculate robbery plan (Hacker feature). | `RP <strategy_msg>` | `ER <msg>` |
+
+---
+
+## 2. Architecture & Design Patterns
+
+The application follows **Clean Architecture** principles to ensure modularity, testability, and separation of concerns.
+
+### Layered Structure
+
+1.  **BankNode.Core**: The heart of the application. Contains Domain Entities (`Account`, `Transaction`) and Service Interfaces (`IAccountService`). It has no dependencies on external libraries.
+2.  **BankNode.Data**: Implements persistence. Contains `AccountRepository` and manages data storage (File System or SQLite).
+3.  **BankNode.Network**: Handles TCP/IP communication.
+    -   **TcpServer**: Listens for incoming connections.
+    -   **CommandParser**: Identifies commands.
+    -   **Command Strategies**: Executes logic for specific commands.
+4.  **BankNode.Translation**: Handles internationalization (Czech/English output).
+5.  **BankNode.App**: The entry point. Configures Dependency Injection (DI) and starts the server.
+
+### Design Patterns Used
+
+-   **Strategy Pattern**:
+    -   Used in **Command Parsing**: Each command (`BC`, `AC`, etc.) is encapsulated in its own strategy class implementing `ICommandStrategy`. This makes adding new commands (like `RP`) easy without modifying the core parser.
+    -   Used in **Translation**: `ITranslationStrategy` allows switching languages (CZ/EN) dynamically.
+-   **Repository Pattern**: `IAccountRepository` abstracts the data storage layer. The core logic doesn't care if data is in a text file or SQLite database.
+-   **Dependency Injection (DI)**: The `Program.cs` builds a `ServiceProvider` to inject repositories, services, and loggers into constructors.
+-   **Singleton Pattern**: Used for the TCP Server instance and Configuration.
+
+### Component Diagram
+
+```mermaid
+graph TD
+    App[BankNode.App] --> Core[BankNode.Core]
+    App --> Network[BankNode.Network]
+    App --> Data[BankNode.Data]
+    App --> Shared[BankNode.Shared]
+    
+    Network --> Core
+    Data --> Core
+    
+    subgraph Core
+    Services[IAccountService]
+    Models[Account Model]
+    end
+    
+    subgraph Network
+    Tcp[TcpServer]
+    Parser[CommandParser]
+    Strategies[CommandStrategies]
+    end
+    
+    subgraph Data
+    Repo[AccountRepository]
+    Ctx[DatabaseContext]
+    end
+```
+
+---
+
+## 3. Application Flow
+
+### Startup Sequence
+1.  **Load Configuration**: `AppConfig` is loaded (Port: 65525, Timeout: 5s, NodeIP).
+2.  **Setup DI**: Register interfaces and implementations.
+3.  **Start TCP Server**: `TcpServer` starts listening on the configured port.
+
+### Request Handling Flow
+When a client sends a command (e.g., `AB 10001/10.0.0.1`):
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant TcpServer
+    participant Parser
+    participant Strategy
+    participant Service
+    participant Repo
+
+    Client->>TcpServer: "AB 10001/10.0.0.1"
+    TcpServer->>Parser: Parse("AB ...")
+    Parser->>Strategy: Select BasicCommandStrategy
+    Strategy->>Service: GetBalance("10001")
+    Service->>Repo: FindAccount("10001")
+    Repo-->>Service: Account(Balance: 500)
+    Service-->>Strategy: 500
+    Strategy-->>TcpServer: "AB 500"
+    TcpServer-->>Client: "AB 500"
+```
+
+---
+
+## 4. Configuration
+
+Configuration is managed via the `AppConfig` class.
+
+-   **Port**: Default `65525`. Must be between 65525 and 65535.
+-   **Timeout**: Default `5000` ms. Used for both client inactivity and proxy request timeouts.
+-   **NodeIp**: The IP address this node advertises. Can be auto-detected or manually set.
+
+*(Future implementation: Load from `appsettings.json`)*
+
+---
+
+## 5. Persistence
+
+The application is designed to support persistent storage.
+
+-   **Data Storage**: Accounts are stored in [File System / SQLite] to survive restarts.
+-   **Concurrency**: Thread-safe access to data is ensured via locks or DB transaction isolation, allowing parallel client handling.
+
+---
+
+## 6. Installation & Usage
+
+### Prerequisites
+-   .NET 8.0 SDK
+-   Windows OS (for School PC compatibility)
+
+### Building
+Navigate to the `src` directory and run:
+
+```bash
+dotnet build
+```
+
+### Running
+Run the application from the `BankNode.App` folder:
+
+```bash
+cd src/BankNode.App
+dotnet run
+```
+
+### connecting
+Use PuTTY or Telnet to connect to `localhost` on port `65525` (or configured port).
+
+```bash
+telnet localhost 65525
+```
+
+---
+
+## 7. Error Handling
+
+All Application errors follow the protocol format `ER <message>`.
+
+-   **Invalid Command**: `ER Unknown command.`
+-   **Format Error**: `ER Invalid format.`
+-   **Logic Error**: `ER Insufficient funds.`
+
+Internal exceptions are logged using `ILogger` but never exposed raw to the client.
+
+---
+
+## 8. Requirements Checklist (Zadani.md)
+
+-   [x] **P2P Architecture**: Node acts as both server and client (Proxy feature).
+-   [x] **TCP/IP**: Listens on specific ports.
+-   [x] **Command Protocol**: Implements BC, AC, AD, AW, AB, AR, BA, BN.
+-   [x] **Hacker Goal**: `RP` (Robbery Plan) command planned/structured.
+-   [x] **Configuration**: Port and Timeout configurable.
+-   [x] **Logging**: `ILogger` interface for tracking operations.
+-   [x] **Documentation**: This file.
+-   [x] **Reused Code**: Structure inspired by clean architecture best practices.
+
+## 9. Third-Party Libraries
+-   **xUnit**: For Unit and Integration testing.
+-   **Microsoft.Extensions.DependencyInjection**: For IoC container.
+
+---
+*Generated by Antigravity Agent*
