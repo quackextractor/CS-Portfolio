@@ -21,6 +21,8 @@ This implementation aims for the **Hacker Bank Node** difficulty level, which in
 
 All commands are sent as UTF-8 text ending with a newline.
 
+**Address Format**: Accounts are identified as `<account_number>/<ip>`. You can optionally specify a port: `<account_number>/<ip>:<port>`. This is useful for testing multiple nodes on the same machine.
+
 | Command | Syntax | Description | Success Response | Error Response |
 | :--- | :--- | :--- | :--- | :--- |
 | **Bank Code** | `BC` | IP Check. Returns node IP. | `BC <ip>` | `ER <msg>` |

@@ -58,37 +58,55 @@ This interacts with the P2P logic exactly as intended in a real network.
 
 ## Option 2: Testing on a Single Device
 
-To test on a single device, you must simulate the "other node" because the current implementation limits a single node to one listening port and assumes outgoing connections use that same port config.
+To test on a single device, you can run multiple instances of the node on different ports and have them communicate with each other.
 
-### A. Testing Server Logic (Using Telnet)
-You can test how your node handles requests from "others" by using Telnet to act as the second node.
+### 1. Start Two Nodes
+Open two separate terminal windows.
 
-1.  **Start your Node**
-    ```bash
-    dotnet run -- --port 65525
-    ```
+**Terminal 1 (Node A):**
+```bash
+cd src/BankNode.App
+dotnet run -- --port 65525
+```
 
-2.  **Connect with Telnet**
-    Open a new terminal and run:
+**Terminal 2 (Node B):**
+```bash
+cd src/BankNode.App
+dotnet run -- --port 65526
+```
+
+### 2. Connect and Execute Transactions
+We will now send commands from **Node A** (65525) to **Node B** (65526).
+
+1.  Open a Telnet session (or use a third terminal) to **Node A**:
     ```bash
     telnet localhost 65525
     ```
 
-3.  **Send Remote Commands**
-    You are now the "client". You can send commands as if you were another node.
+2.  **Create an Account**:
     ```
     AC
-    AD 10001/127.0.0.1 500
     ```
-    *(Note: Since you are connecting to localhost, your node treats `127.0.0.1` as "Local" so it processes it directly. To test Proxy logic, you'd need the node to believe the IP is remote, but that requires code changes).*
+    > Response: `AC 10001/127.0.0.1` (or your LAN IP)
 
-### B. Testing Two Nodes locally (Requires Code Change)
-**Limitation**: The current code uses `_config.Port` (e.g., 65525) for *outgoing* connections. If you run Node B on 65526, Node A will still try to contact it on 65525 (Node A's port) unless you modify `NetworkClient.cs`.
+3.  **Send Money to Node B**:
+    To send money to an account on Node B, you need to specify its port. Let's assume you want to deposit to account `20001` on Node B (which is running on 127.0.0.1:65526).
 
-**Workaround**:
-If you need to test full P2P interaction on one machine:
-1.  Run Node A on 65525.
-2.  Run Node B on 65526.
-3.  **Code Change Required**: You would need to update `ParseAccount` (in `AccountCommandStrategy.cs`) to allow `IP:Port` syntax (e.g. `127.0.0.1:65526`) and update `NetworkClient` to respect it.
+    ```
+    AD 20001/127.0.0.1:65526 500
+    ```
+    *(Note the `:65526` at the end of the IP)*
 
-For unmodifed code, use **Option 1**.
+    > Node A will recognize the different port and forward the request to Node B.
+    > Response: `AD`
+
+### 3. Verify
+You can verify the balance on Node B by checking it from Node A (or by connecting directly to Node B).
+
+**From Node A (Proxy check):**
+```
+AB 20001/127.0.0.1:65526
+```
+> Response: `AB 500`
+
+This confirms that Node A successfully communicated with Node B running on a different port.
