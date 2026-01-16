@@ -1,0 +1,1 @@
+Generate me the structure of this project. Use design patterns. C#, and do the HACKER BANK NODE assignment. translation system: strategy. full configurability. C#, OOP, KISS, DRY, modular, Integration testing, lint testing, unit testing and testing scenarios.
