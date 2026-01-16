@@ -110,3 +110,35 @@ AB 20001/127.0.0.1:65526
 > Response: `AB 500`
 
 This confirms that Node A successfully communicated with Node B running on a different port.
+
+---
+
+## Appendix: Connecting via PuTTY or Telnet
+
+To manually interact with a node (e.g., to send commands like `AC`, `BC`, `AD` manually), you need a raw TCP client.
+
+### Using PuTTY (Windows)
+
+1.  **Download PuTTY**: If you don't have it, download it from [putty.org](https://www.putty.org/).
+2.  **Open PuTTY**.
+3.  **Configure Session**:
+    -   **Host Name (or IP address)**: Enter `localhost` (or the IP of the remote node).
+    -   **Port**: Enter the port the node is listening on (e.g., `65525`).
+    -   **Connection type**: Select **Raw**.
+4.  **Connect**: Click **Open**.
+5.  **Usage**: A black terminal window will open. You can now type commands like `BC` and press Enter.
+
+### Using Telnet (Windows/Linux/Mac)
+
+**Windows Note**: You may need to enable the Telnet Client feature in "Turn Windows features on or off".
+
+1.  Open your terminal or command prompt.
+2.  Run the telnet command:
+    ```bash
+    telnet <host> <port>
+    ```
+    Example:
+    ```bash
+    telnet localhost 65525
+    ```
+3.  **Usage**: Once connected, you can type commands like `BC` and press Enter.
