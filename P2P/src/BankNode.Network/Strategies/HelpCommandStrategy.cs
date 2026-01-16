@@ -18,10 +18,13 @@ namespace BankNode.Network.Strategies
             sb.AppendLine("Available Commands:");
             sb.AppendLine("  AC                    - Create a new account");
             sb.AppendLine("  BC                    - Check node IP/Status");
-            sb.AppendLine("  AB <account_id>       - Check account balance");
-            sb.AppendLine("  AD <account_id> <amount> - Deposit money");
-            sb.AppendLine("  AW <account_id> <amount> - Withdraw money");
-            sb.AppendLine("  AR <target_ip> <port> - Attempt robbery (Hacker Edition)");
+            sb.AppendLine("  AB <account>/<ip>     - Check account balance");
+            sb.AppendLine("  AD <account>/<ip> <amount> - Deposit money");
+            sb.AppendLine("  AW <account>/<ip> <amount> - Withdraw money");
+            sb.AppendLine("  AR <account>/<ip>     - Remove account (if balance is 0)");
+            sb.AppendLine("  BA                    - Get total bank amount");
+            sb.AppendLine("  BN                    - Get number of clients");
+            sb.AppendLine("  RP <amount>           - Plan robbery (Hacker Edition)");
             sb.AppendLine("  EXIT                  - Close connection");
             sb.AppendLine("  HELP                  - Show this help message");
             
