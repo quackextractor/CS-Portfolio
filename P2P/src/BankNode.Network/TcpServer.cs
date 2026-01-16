@@ -63,10 +63,20 @@ namespace BankNode.Network
                     using (var reader = new StreamReader(stream, Encoding.UTF8, leaveOpen: true))
                     using (var writer = new StreamWriter(stream, Encoding.UTF8, leaveOpen: true) { AutoFlush = true })
                     {
-                        var command = await reader.ReadLineAsync(); // ReadLineAsync doesn't support CancellationToken effectively in netstandard sometimes without extension, but net9 is fine.
-                        
-                        if (command != null)
+                        string? command;
+                        while ((command = await reader.ReadLineAsync()) != null)
                         {
+                            if (string.IsNullOrWhiteSpace(command))
+                            {
+                                await writer.WriteLineAsync("");
+                                continue;
+                            }
+
+                            if (command.Trim().Equals("EXIT", StringComparison.OrdinalIgnoreCase))
+                            {
+                                break;
+                            }
+
                             var response = await _commandProcessor.ProcessCommandAsync(command);
                             await writer.WriteLineAsync(response);
                         }
