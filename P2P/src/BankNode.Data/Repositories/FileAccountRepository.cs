@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text.Json;
 using BankNode.Core.Interfaces;
 using BankNode.Core.Models;
+using BankNode.Shared.IO;
 
 namespace BankNode.Data.Repositories
 {
@@ -22,26 +23,38 @@ namespace BankNode.Data.Repositories
 
         private List<Account> LoadAccounts()
         {
-            if (!File.Exists(_filePath))
-            {
-                return new List<Account>();
-            }
+            var accounts = new List<Account>();
+            var iterator = new FileChunkIterator(_filePath);
 
-            try
+            foreach (var line in iterator.ReadChuncked())
             {
-                var json = File.ReadAllText(_filePath);
-                return JsonSerializer.Deserialize<List<Account>>(json) ?? new List<Account>();
+                try
+                {
+                    var account = JsonSerializer.Deserialize<Account>(line);
+                    if (account != null)
+                    {
+                        accounts.Add(account);
+                    }
+                }
+                catch
+                {
+                    // Skip malformed lines
+                }
             }
-            catch
-            {
-                return new List<Account>();
-            }
+            return accounts;
         }
 
         private void SaveAccounts()
         {
-            var json = JsonSerializer.Serialize(_accounts, new JsonSerializerOptions { WriteIndented = true });
-            File.WriteAllText(_filePath, json);
+            using (var stream = File.Create(_filePath))
+            using (var writer = new StreamWriter(stream))
+            {
+                foreach (var account in _accounts)
+                {
+                    var json = JsonSerializer.Serialize(account);
+                    writer.WriteLine(json);
+                }
+            }
         }
 
         public Account? GetByAccountNumber(string accountNumber)

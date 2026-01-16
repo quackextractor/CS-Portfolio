@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 
 namespace BankNode.Network
 {
-    public class CommandParser
+    public class CommandParser : ICommandProcessor
     {
         private readonly IEnumerable<ICommandStrategy> _strategies;
         private readonly ITranslationStrategy _translator;
@@ -31,7 +31,7 @@ namespace BankNode.Network
             var parts = rawCommand.Trim().Split(' ');
             var commandCode = parts[0];
 
-            _logger.LogInformation($"Received command: {commandCode}");
+
 
             var strategy = _strategies.FirstOrDefault(s => s.CanHandle(commandCode));
 

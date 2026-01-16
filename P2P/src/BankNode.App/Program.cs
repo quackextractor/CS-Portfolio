@@ -5,7 +5,9 @@ using BankNode.Shared;
 using BankNode.Core.Interfaces;
 using BankNode.Core.Services;
 using BankNode.Data.Repositories;
+using BankNode.Data.Repositories;
 using BankNode.Network;
+using BankNode.Shared.Logging;
 using BankNode.Network.Strategies;
 using BankNode.Translation;
 using BankNode.Translation.Strategies;
@@ -57,6 +59,7 @@ namespace BankNode.App
             services.AddLogging(configure =>
             {
                 configure.AddConsole();
+                configure.AddFile("node.log");
                 configure.SetMinimumLevel(LogLevel.Information);
             });
 
@@ -68,6 +71,11 @@ namespace BankNode.App
             services.AddSingleton<TcpServer>();
             services.AddSingleton<NetworkClient>();
             services.AddSingleton<CommandParser>();
+            services.AddSingleton<ICommandProcessor>(p => 
+                new RequestLoggingDecorator(
+                    p.GetRequiredService<CommandParser>(),
+                    p.GetRequiredService<ILogger<RequestLoggingDecorator>>()
+                ));
 
             // Translation
             services.AddSingleton<ITranslationStrategy, CzechTranslationStrategy>();

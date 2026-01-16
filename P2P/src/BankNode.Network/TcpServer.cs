@@ -13,14 +13,15 @@ namespace BankNode.Network
     public class TcpServer
     {
         private readonly AppConfig _config;
-        private readonly CommandParser _commandParser;
+        private readonly ICommandProcessor _commandProcessor;
         private readonly ILogger<TcpServer> _logger;
         private TcpListener? _listener;
 
-        public TcpServer(AppConfig config, CommandParser commandParser, ILogger<TcpServer> logger)
+        public TcpServer(AppConfig config, ICommandProcessor commandProcessor, ILogger<TcpServer> logger)
         {
             _config = config;
-            _commandParser = commandParser;
+            _commandProcessor = commandProcessor;
+
             _logger = logger;
         }
 
@@ -66,7 +67,7 @@ namespace BankNode.Network
                         
                         if (command != null)
                         {
-                            var response = await _commandParser.ProcessCommandAsync(command);
+                            var response = await _commandProcessor.ProcessCommandAsync(command);
                             await writer.WriteLineAsync(response);
                         }
                     }
