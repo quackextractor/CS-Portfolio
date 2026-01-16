@@ -17,9 +17,11 @@ namespace BankNode.Network.Strategies
             _translator = translator;
         }
 
+        public System.Collections.Generic.IEnumerable<string> SupportedCommands => new[] { "BC", "BA", "BN" };
+
         public bool CanHandle(string commandCode)
         {
-            return commandCode == "BC" || commandCode == "BA" || commandCode == "BN";
+            return System.Linq.Enumerable.Contains(SupportedCommands, commandCode);
         }
 
         public Task<string> ExecuteAsync(string[] args)

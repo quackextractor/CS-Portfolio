@@ -5,6 +5,8 @@ namespace BankNode.Network.Strategies
 {
     public class HelpCommandStrategy : ICommandStrategy
     {
+        public System.Collections.Generic.IEnumerable<string> SupportedCommands => new[] { "HELP" };
+
         public bool CanHandle(string commandCode)
         {
             return commandCode == "HELP";

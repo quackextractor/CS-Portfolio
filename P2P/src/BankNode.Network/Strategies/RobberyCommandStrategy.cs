@@ -19,6 +19,8 @@ namespace BankNode.Network.Strategies
             _translator = translator;
         }
 
+        public System.Collections.Generic.IEnumerable<string> SupportedCommands => new[] { "RP" };
+
         public bool CanHandle(string commandCode)
         {
             return commandCode == "RP";

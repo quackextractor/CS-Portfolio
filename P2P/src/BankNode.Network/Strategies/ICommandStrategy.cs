@@ -6,5 +6,7 @@ namespace BankNode.Network.Strategies
     {
         bool CanHandle(string commandCode);
         Task<string> ExecuteAsync(string[] args);
+        System.Collections.Generic.IEnumerable<string> SupportedCommands { get; }
+
     }
 }

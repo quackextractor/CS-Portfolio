@@ -21,9 +21,11 @@ namespace BankNode.Network.Strategies
             _translator = translator;
         }
 
+        public System.Collections.Generic.IEnumerable<string> SupportedCommands => new[] { "AC", "AD", "AW", "AB", "AR" };
+
         public bool CanHandle(string commandCode)
         {
-            return new[] { "AC", "AD", "AW", "AB", "AR" }.Contains(commandCode);
+            return SupportedCommands.Contains(commandCode);
         }
 
         public async Task<string> ExecuteAsync(string[] args)

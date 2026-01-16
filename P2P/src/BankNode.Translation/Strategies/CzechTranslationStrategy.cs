@@ -19,7 +19,8 @@ namespace BankNode.Translation.Strategies
             { "NO_RESPONSE", "Žádná odpověď." },
             { "CONNECTION_FAILED", "Připojení selhalo." },
             { "ROBBERY_PLAN", "Plán loupeže" },
-            { "HELP_HINT", "help" }
+            { "HELP_HINT", "help" },
+            { "DID_YOU_MEAN", "Mysleli jste {0}?" }
         };
 
         public string GetMessage(string key) 
