@@ -151,6 +151,8 @@ The application is designed to support persistent storage.
 -   .NET 8.0 SDK
 -   Windows OS (for School PC compatibility)
 
+> **Note:** You can change the target framework version by running the `change_target_net_framework.bat` script in the root directory. This updates the configuration in `src/Directory.Build.props`.
+
 ### Building
 Navigate to the `src` directory and run:
 

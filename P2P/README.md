@@ -15,6 +15,16 @@ Full documentation is available in [docs/documentation.md](docs/documentation.md
 - **Persistence**: Accounts are stored in `accounts.json` (NDJSON format).
 - **Logging**: Requests and errors are logged to console and `node.log`.
 
+## Configuration
+
+If you need to change the target .NET framework (e.g., to use .NET 9.0 instead of 8.0), you can use the included script:
+
+```bash
+change_target_net_framework.bat
+```
+
+This will update the `TargetFramework` property in `src/Directory.Build.props`.
+
 ## Quick Start
 
 1. **Build**:
