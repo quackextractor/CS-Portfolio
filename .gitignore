@@ -231,3 +231,4 @@ config.json
 **/obj/
 **/bin/
 **/**.log
+P2P/src/BankNode.App/accounts.json
