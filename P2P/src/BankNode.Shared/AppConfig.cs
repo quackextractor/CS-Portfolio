@@ -1,5 +1,8 @@
+using System;
+using System.IO;
 using System.Net;
 using System.Net.Sockets;
+using System.Text.Json;
 
 namespace BankNode.Shared
 {
@@ -8,12 +11,41 @@ namespace BankNode.Shared
         public int Port { get; set; } = 65525;
         public int Timeout { get; set; } = 5000;
         public string NodeIp { get; set; } = "127.0.0.1";
+        public string Language { get; set; } = "en";
 
         public void Load()
         {
-            // Simple logic to detect IP if not set, or loading from args could go here.
-            // For now, we default to loopback or try to find a real IP.
-            NodeIp = GetLocalIpAddress();
+            if (File.Exists("config.json"))
+            {
+                try
+                {
+                    var json = File.ReadAllText("config.json");
+                    var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                    var loadedConfig = JsonSerializer.Deserialize<AppConfig>(json, options);
+                    
+                    if (loadedConfig != null)
+                    {
+                        Port = loadedConfig.Port;
+                        Timeout = loadedConfig.Timeout;
+                        // Only override NodeIp if it's explicitly set in the config file
+                        if (!string.IsNullOrEmpty(loadedConfig.NodeIp) && loadedConfig.NodeIp != "127.0.0.1")
+                        {
+                            NodeIp = loadedConfig.NodeIp;
+                        }
+                        Language = loadedConfig.Language ?? "en";
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error loading config.json: {ex.Message}");
+                }
+            }
+
+            // If NodeIp is still default loopback, try to auto-detect
+            if (NodeIp == "127.0.0.1")
+            {
+                NodeIp = GetLocalIpAddress();
+            }
         }
 
         private string GetLocalIpAddress()

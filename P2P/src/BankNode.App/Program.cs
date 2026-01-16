@@ -104,7 +104,7 @@ namespace BankNode.App
                 ));
 
             // Translation
-            services.AddSingleton<ITranslationStrategy, CzechTranslationStrategy>();
+            services.AddSingleton<ITranslationStrategy, JsonFileTranslationStrategy>();
             
             // Strategies
             services.AddSingleton<ICommandStrategy, BasicCommandStrategy>();
