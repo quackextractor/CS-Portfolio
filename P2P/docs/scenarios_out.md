@@ -58,5 +58,3 @@ All scenarios have been verified using a comprehensive automated integration tes
 | B-21 | EXECUTE | **PASS** | Executed script file (`MixedScenarios_AdvancedTests`). |
 | B-22 | Max Length | **PASS** | Rejected 2KB command (`MixedScenarios_ConfigurationTests`). |
 | B-23 | Strict Range | **PASS** | Verified invalid account format rejection. |
-| B-24 | Dockerfile | **PASS** | Verified existence of Dockerfile. |
-| B-25 | Kubernetes | **PASS** | Verified existence of deployment.yaml. |
