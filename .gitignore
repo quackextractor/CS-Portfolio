@@ -232,3 +232,4 @@ config.json
 **/bin/
 **/**.log
 P2P/src/BankNode.App/accounts.json
+/P2P/docs/TODO
