@@ -34,8 +34,9 @@ namespace BankNode.Tests.Integration
                       .ReturnsAsync("AD"); // Simulate remote success
 
             services.AddSingleton<INetworkClient>(mockClient.Object);
-
-            services.AddSingleton<IAccountRepository>(new FileAccountRepository("proxy_test.json"));
+            
+            services.AddSingleton<IAccountRepository>(sp => 
+                new FileAccountRepository(sp.GetRequiredService<ILogger<FileAccountRepository>>(), "proxy_test.json"));
             services.AddSingleton<IAccountService, AccountService>();
             
             services.AddSingleton<TcpServer>();

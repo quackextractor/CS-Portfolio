@@ -78,10 +78,10 @@ namespace BankNode.Tests.Integration
 
             services.AddLogging(configure => configure.AddConsole());
             
-            // Use in-memory repo logic if possible? No, we used FileAccountRepository.
             // We should use a different file per test or transient repo to avoid collisions.
             // But FileAccountRepository takes a path. We can inject a test-specific path.
-            services.AddSingleton<IAccountRepository>(new FileAccountRepository($"test_accounts_{port}.json"));
+            services.AddSingleton<IAccountRepository>(sp => 
+                new FileAccountRepository(sp.GetRequiredService<ILogger<FileAccountRepository>>(), $"test_accounts_{port}.json"));
             services.AddSingleton<IAccountService, AccountService>();
 
 

@@ -85,7 +85,8 @@ namespace BankNode.Tests.Integration
             services.AddSingleton(config);
             services.AddLogging(c => c.AddConsole());
 
-            services.AddSingleton<IAccountRepository>(new FileAccountRepository(filePath));
+            services.AddSingleton<IAccountRepository>(sp => 
+                new FileAccountRepository(sp.GetRequiredService<ILogger<FileAccountRepository>>(), filePath));
             services.AddSingleton<IAccountService, AccountService>();
             
             services.AddSingleton<TcpServer>();

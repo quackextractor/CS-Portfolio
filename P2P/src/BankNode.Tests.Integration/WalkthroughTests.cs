@@ -99,7 +99,8 @@ namespace BankNode.Tests.Integration
             services.AddLogging(c => c.AddConsole());
             
             // Use unique file for each node to avoid collision
-            services.AddSingleton<IAccountRepository>(new FileAccountRepository($"accounts_{port}.json"));
+            services.AddSingleton<IAccountRepository>(sp => 
+                new FileAccountRepository(sp.GetRequiredService<ILogger<FileAccountRepository>>(), $"accounts_{port}.json"));
             services.AddSingleton<IAccountService, AccountService>();
             
             // Network

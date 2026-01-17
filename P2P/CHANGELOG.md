@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-01-17
+### Added
+- **Interactive CLI**:
+  - Server now runs in background loop acceptin `EXIT`, `BN` and `HELP` commands locally.
+- **Data Integrity**:
+  - `FileAccountRepository` now uses atomic writes (write-temp-move) to prevent corruption.
+- **Documentation**:
+  - Explicit algorithmic complexity explanation for `RP` command.
+  - `LANG` command documentation.
+
+
 ## [1.0.0] - 2026-01-17
 
 ### Added

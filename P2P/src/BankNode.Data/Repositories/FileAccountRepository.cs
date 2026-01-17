@@ -6,17 +6,20 @@ using System.Text.Json;
 using BankNode.Core.Interfaces;
 using BankNode.Core.Models;
 using BankNode.Shared.IO;
+using Microsoft.Extensions.Logging;
 
 namespace BankNode.Data.Repositories
 {
     public class FileAccountRepository : IAccountRepository
     {
+        private readonly ILogger<FileAccountRepository> _logger;
         private readonly string _filePath;
         private List<Account> _accounts;
         private readonly object _lock = new object();
 
-        public FileAccountRepository(string filePath = "accounts.json")
+        public FileAccountRepository(ILogger<FileAccountRepository> logger, string filePath = "accounts.json")
         {
+            _logger = logger;
             _filePath = filePath;
             _accounts = LoadAccounts();
         }
@@ -46,14 +49,26 @@ namespace BankNode.Data.Repositories
 
         private void SaveAccounts()
         {
-            using (var stream = File.Create(_filePath))
-            using (var writer = new StreamWriter(stream))
+            var tempPath = _filePath + ".tmp";
+            
+            try 
             {
-                foreach (var account in _accounts)
+                using (var stream = File.Create(tempPath))
+                using (var writer = new StreamWriter(stream))
                 {
-                    var json = JsonSerializer.Serialize(account);
-                    writer.WriteLine(json);
+                    foreach (var account in _accounts)
+                    {
+                        var json = JsonSerializer.Serialize(account);
+                        writer.WriteLine(json);
+                    }
                 }
+
+                if (File.Exists(_filePath)) File.Delete(_filePath);
+                File.Move(tempPath, _filePath);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to save accounts to {FilePath}", _filePath);
             }
         }
 

@@ -16,6 +16,7 @@ This implementation aims for the **Hacker Bank Node** difficulty level, which in
 -   Basic banking operations (Create, Deposit, Withdraw, Balance, Remove).
 -   Proxy functionality (Forwarding requests to other nodes).
 -   **Robbery Plan (RP)**: An advanced algorithm to calculate optimal robbery strategies across the P2P network.
+    > *Note: The Robbery Plan uses a greedy density-based heuristic ($/client) to approximate the optimal strategy in O(N log N) time.*
 
 ### Allowed Commands
 
@@ -200,6 +201,18 @@ Use PuTTY or Telnet to connect to `localhost` on port `65525` (or configured por
 ```bash
 telnet localhost 65525
 ```
+
+Once connected, you can switch language using the `LANG` command:
+```bash
+LANG cz  # Switch to Czech
+LANG en  # Switch to English
+```
+
+### Server Console
+The server window accepts the following local commands:
+- `HELP`: Show available local commands.
+- `BN`: Show local bank statistics (Count, Total Balance).
+- `EXIT`: Gracefully stop the server.
 
 ---
 

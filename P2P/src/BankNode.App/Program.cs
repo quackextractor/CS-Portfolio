@@ -72,7 +72,57 @@ namespace BankNode.App
                 cancellationTokenSource.Cancel();
             };
 
-            await server.StartAsync(cancellationTokenSource.Token);
+            var serverTask = server.StartAsync(cancellationTokenSource.Token);
+            
+            // Interactive CLI
+            Console.WriteLine("Server started. Type 'HELP' for commands.");
+            
+            while (!cancellationTokenSource.Token.IsCancellationRequested)
+            {
+                var input = Console.ReadLine();
+                if (string.IsNullOrWhiteSpace(input)) continue;
+                
+                var cmd = input.Trim().ToUpper();
+                try
+                {
+                    switch (cmd)
+                    {
+                        case "EXIT":
+                            logger.LogInformation("Stopping server...");
+                            cancellationTokenSource.Cancel();
+                            break;
+                            
+                        case "BN":
+                            var repo = serviceProvider.GetRequiredService<IAccountRepository>();
+                            logger.LogInformation($"Local Accounts: {repo.GetCount()}, Total Balance: {repo.GetTotalBalance()}");
+                            break;
+                            
+                        case "HELP":
+                            Console.WriteLine("Available Local Commands:");
+                            Console.WriteLine("  EXIT - Stop the server");
+                            Console.WriteLine("  BN   - Show local bank stats");
+                            Console.WriteLine("  HELP - Show this help");
+                            break;
+                            
+                        default:
+                            Console.WriteLine($"Unknown local command: {cmd}");
+                            break;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, "Error executing local command");
+                }
+            }
+
+            try 
+            {
+                await serverTask;
+            }
+            catch (OperationCanceledException)
+            {
+                // Normal shutdown
+            }
         }
 
         private static void ConfigureServices(IServiceCollection services)
@@ -89,7 +139,8 @@ namespace BankNode.App
             });
 
             // Core
-            services.AddSingleton<IAccountRepository, FileAccountRepository>();
+            services.AddSingleton<IAccountRepository>(sp => 
+                new FileAccountRepository(sp.GetRequiredService<ILogger<FileAccountRepository>>()));
             services.AddSingleton<IAccountService, AccountService>();
 
             // Network
