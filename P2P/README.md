@@ -58,3 +58,14 @@ This will update the `TargetFramework` property in `src/Directory.Build.props`.
 
 3. **Connect**:
    Use Telnet or PuTTY to connect to `localhost` on port `65525`.
+
+## Testing
+
+To run the automated test suite (Unit and Integration tests), execute the following commands:
+
+```bash
+cd src
+dotnet test
+```
+
+This will run all tests, including the language switching logic and command strategies.
