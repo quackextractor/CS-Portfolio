@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [1.6.1] - 2026-01-17
+### Added
+- **Testing**:
+  - Comprehensive Integration Scenarios (`FullScenariosTests`) covering all requirements (Groups A-H).
+  - Verification Report (`docs/scenarios_out.md`).
+
 ### Fixed
 - **Compiler Warnings**:
   - Fixed CS8618 (Uninitialized non-nullable field) in `AppConfig.cs`.
