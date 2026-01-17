@@ -11,10 +11,13 @@ Full documentation is available in [docs/documentation.md](docs/documentation.md
 - **P2P Architecture**: Nodes communicate via TCP/IP.
 - **Banking Operations**: Create accounts, Deposit, Withdraw, Balance check.
 - **Proxying**: Requests can be forwarded to other nodes in the network.
-- **Robbery Plan (RP)**: Advanced algorithm to calculate optimal robbery strategy.
+- **Robbery Plan (RP)**: Advanced algorithm to calculate optimal robbery strategy (now with optimized parallel scanning).
+- **Health Check (HC)**: Monitor node uptime and resource usage.
 - **Persistence**: Accounts are stored in `accounts.json` (NDJSON format).
 - **Logging**: Requests and errors are logged to console and `node.log`.
 - **Internationalization (i18n)**: Support for multiple languages (EN/CS) via JSON configuration.
+
+See [CHANGELOG.md](CHANGELOG.md) for recent updates.
 
 ## Configuration
 

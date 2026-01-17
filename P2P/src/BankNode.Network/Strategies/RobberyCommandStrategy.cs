@@ -44,7 +44,6 @@ namespace BankNode.Network.Strategies
 
         private async Task<List<BankInfo>> ScanNetworkAsync()
         {
-            var banks = new List<BankInfo>();
             var port = _config.Port;
             string baseIp;
             int myLastOctet = -1;
@@ -71,22 +70,27 @@ namespace BankNode.Network.Strategies
                 baseIp = "127.0.0.";
             }
 
-            // Scanning usually takes time. For this demo, we might limit range or parallelism.
-            // We'll scan 10 IPs around our own IP for speed in this implementation, 
-            // or 1..254 if we want full coverage (but slow).
-            // Let's do a smart scan: +/- 5 addresses and some fixed ones if needed.
-            // In a real classroom environment, maybe we just scan all 254.
-            
             var tasks = new List<Task<BankInfo?>>();
-            
-            // Scan narrow range for demo purposes (speed), but logic supports full subnet
-            // In full implementation: loop i = 1 to 254
+            using var semaphore = new System.Threading.SemaphoreSlim(20); // Limit concurrency to 20
+
             for (int i = 1; i <= 254; i++)
             {
                 if (i == myLastOctet) continue; // Skip self
                 
                 var ip = $"{baseIp}{i}";
-                tasks.Add(ProbeBankAsync(ip, port));
+                
+                tasks.Add(Task.Run(async () => 
+                {
+                    await semaphore.WaitAsync();
+                    try
+                    {
+                        return await ProbeBankAsync(ip, port);
+                    }
+                    finally
+                    {
+                        semaphore.Release();
+                    }
+                }));
             }
 
             var results = await Task.WhenAll(tasks);
