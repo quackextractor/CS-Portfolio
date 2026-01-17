@@ -34,6 +34,7 @@ namespace BankNode.Network.Strategies
             sb.AppendLine($"  BN                    - {_translator.GetMessage("HELP_BN")}");
             sb.AppendLine($"  RP <amount>           - {_translator.GetMessage("HELP_RP")}");
             sb.AppendLine($"  EXIT                  - {_translator.GetMessage("HELP_EXIT")}");
+            sb.AppendLine($"  LANG                  - {_translator.GetMessage("HELP_LANG")}");
             sb.AppendLine($"  HELP                  - {_translator.GetMessage("HELP_HELP")}");
             
             return Task.FromResult(sb.ToString());

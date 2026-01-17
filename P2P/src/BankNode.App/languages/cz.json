@@ -23,6 +23,7 @@
     "HELP_BN": "Získat počet klientů",
     "HELP_RP": "Naplánovat loupež (Hacker Edition): RP <částka>",
     "HELP_EXIT": "Odpojí se od uzlu.",
+    "HELP_LANG": "Změnit jazyk: LANG <zkratka> (např. LANG cz)",
     "HELP_HELP": "Zobrazí tuto nápovědu.",
     "LANG_AVAILABLE": "Dostupné jazyky",
     "LANG_CHANGED": "Jazyk změněn na",

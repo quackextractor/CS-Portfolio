@@ -23,6 +23,7 @@
     "HELP_BN": "Get number of clients",
     "HELP_RP": "Plan robbery (Hacker Edition): RP <amount>",
     "HELP_EXIT": "Disconnects from the node.",
+    "HELP_LANG": "Change language: LANG <code > (e.g. LANG en)",
     "HELP_HELP": "Shows this help message.",
     "LANG_AVAILABLE": "Available languages",
     "LANG_CHANGED": "Language changed to",
