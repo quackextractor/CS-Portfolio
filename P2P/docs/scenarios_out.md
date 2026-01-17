@@ -27,11 +27,11 @@ All scenarios have been verified using a comprehensive automated integration tes
 | A-10 | AR with Funds | **PASS** | Rejected removal of non-empty account. |
 | A-11 | Bank Amount (BA) | **PASS** | Sums total funds correctly. |
 | A-12 | Bank Number (BN) | **PASS** | Counts total accounts correctly. |
-| A-13 | Proxy Access | **PASS** | Verified via Group C (Port 65534->65535). |
-| A-14 | Remote Deposit | **PASS** | Verified via Group C. |
-| A-15 | Robbery Plan (RP) | **PASS** | Verified execution in Group D. |
+| A-13 | Proxy Access | **PASS** | Verified via `ScenarioGroupA_ProxyTests`. |
+| A-14 | Remote Deposit | **PASS** | Verified via `ScenarioGroupA_ProxyTests`. |
+| A-15 | Robbery Plan (RP) | **PASS** | Verified execution in `MixedScenarios_AdvancedTests`. |
 | A-17 | Configuration (Port) | **PASS** | Verified via AppConfig validation exception test. |
-| A-20 | Case Sensitivity | **PASS** | Verified `bc` and `Bc` work (Group E). |
+| A-20 | Case Sensitivity | **PASS** | Verified `bc` and `Bc` work (`MixedScenarios_ConfigurationTests`). |
 
 ### Group B: Features & Constraints (Port 65532 / 65526 / 65527)
 | ID | Scenario | Result | Notes |
@@ -40,23 +40,23 @@ All scenarios have been verified using a comprehensive automated integration tes
 | B-03 | Setup CS | **PASS** | `LANG cs` changes error messages ("Neznámý příkaz"). |
 | B-04 | LANG List | **PASS** | Lists en, cs. |
 | B-05 | HELP | **PASS** | Lists available commands. |
-| B-06 | Console (BN) | **PASS** | Verified via `GroupF_ConsoleLogic_Tests`. |
-| B-07 | Console (LOG) | **PASS** | Verified via `GroupF_ConsoleLogic_Tests`. |
-| B-08 | Hot Reload | **PASS** | Verified via Group E (Manual Config Write + Load). |
-| B-09 | Request Logging | **PASS** | verified via `RequestLoggingDecorator` usage in Group F. |
+| B-06 | Console (BN) | **PASS** | Verified via `ScenarioGroupB_ConsoleLogicTests`. |
+| B-07 | Console (LOG) | **PASS** | Verified via `ScenarioGroupB_ConsoleLogicTests`. |
+| B-08 | Hot Reload | **PASS** | Verified via `MixedScenarios_ConfigurationTests`. |
+| B-09 | Request Logging | **PASS** | verified via `RequestLoggingDecorator` usage in `ScenarioGroupB_LoggingTests`. |
 | B-10 | Did you mean? | **PASS** | Suggests AC for ACCC. |
-| B-11 | Atomic Writes | **PASS** | Verified Recovery from corrupt temp file (Group H) & Retry Logic. |
+| B-11 | Atomic Writes | **PASS** | Verified Recovery in `ScenarioGroupB_PersistenceTests`. |
 | B-12 | IPv6/Format | **PASS** | Address parsing verified in Proxy tests. |
-| B-13 | Connection Pool | **PASS** | Verified Performance Improvement (Group G). |
-| B-14 | Rate Limiting | **PASS** | Verified 10/min limit enforcement in Group E. |
-| B-15 | Health Check (Metrics) | **PASS** | `HC` returns JSON with Uptime/Requests (Group F). |
-| B-16 | BACKUP | **PASS** | Created backup file (Group D). |
-| B-17 | RESTORE | **PASS** | Restored from file (Group D). |
-| B-18 | Max Connections | **PASS** | Verified enforcement (Queueing behavior confirmed in Group E). |
-| B-19 | Idle Timeout | **PASS** | Verified disconnect after timeout (Group E). |
-| B-20 | HISTORY | **PASS** | Verified session command history (Group D). |
-| B-21 | EXECUTE | **PASS** | Executed script file (Group D). |
-| B-22 | Max Length | **PASS** | Rejected 2KB command (Group E). |
+| B-13 | Connection Pool | **PASS** | Verified Performance Improvement (`ScenarioGroupB_PerformanceTests`). |
+| B-14 | Rate Limiting | **PASS** | Verified 10/min limit enforcement in `MixedScenarios_ConfigurationTests`. |
+| B-15 | Health Check (Metrics) | **PASS** | `HC` returns JSON with Uptime/Requests (`ScenarioGroupB_LoggingTests`). |
+| B-16 | BACKUP | **PASS** | Created backup file (`MixedScenarios_AdvancedTests`). |
+| B-17 | RESTORE | **PASS** | Restored from file (`MixedScenarios_AdvancedTests`). |
+| B-18 | Max Connections | **PASS** | Verified enforcement (Queueing behavior confirmed in `MixedScenarios_ConfigurationTests`). |
+| B-19 | Idle Timeout | **PASS** | Verified disconnect after timeout (`MixedScenarios_ConfigurationTests`). |
+| B-20 | HISTORY | **PASS** | Verified session command history (`MixedScenarios_AdvancedTests`). |
+| B-21 | EXECUTE | **PASS** | Executed script file (`MixedScenarios_AdvancedTests`). |
+| B-22 | Max Length | **PASS** | Rejected 2KB command (`MixedScenarios_ConfigurationTests`). |
 | B-23 | Strict Range | **PASS** | Verified invalid account format rejection. |
 | B-24 | Dockerfile | **PASS** | Verified existence of Dockerfile. |
 | B-25 | Kubernetes | **PASS** | Verified existence of deployment.yaml. |

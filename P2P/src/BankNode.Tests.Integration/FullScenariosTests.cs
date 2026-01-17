@@ -89,7 +89,7 @@ namespace BankNode.Tests.Integration
         }
 
         [Fact]
-        public async Task GroupA_CoreFunctionality_Tests()
+        public async Task ScenarioGroupA_CoreTests()
         {
             int port = 65533;
             using var cts = new CancellationTokenSource();
@@ -187,7 +187,7 @@ namespace BankNode.Tests.Integration
         }
 
         [Fact]
-        public async Task GroupB_Features_Tests()
+        public async Task ScenarioGroupB_FeaturesTests()
         {
             int port = 65532;
             using var cts = new CancellationTokenSource();
@@ -257,7 +257,7 @@ namespace BankNode.Tests.Integration
         }
 
         [Fact]
-        public async Task GroupC_Proxy_Tests()
+        public async Task ScenarioGroupA_ProxyTests()
         {
             // Setup Node A (65534) and Node B (65535)
             // A will proxy to B
@@ -328,7 +328,7 @@ namespace BankNode.Tests.Integration
         }
 
         [Fact]
-        public async Task GroupD_AdvancedFeatures_Tests()
+        public async Task MixedScenarios_AdvancedTests()
         {
             int port = 65529;
             
@@ -462,7 +462,7 @@ namespace BankNode.Tests.Integration
         }
 
         [Fact]
-        public async Task GroupE_Configuration_Tests()
+        public async Task MixedScenarios_ConfigurationTests()
         {
             // B-08: Hot Reload
             // B-14: Rate Limiting
@@ -629,7 +629,7 @@ namespace BankNode.Tests.Integration
         }
 
         [Fact]
-        public async Task GroupF_Logging_Console_Tests()
+        public async Task ScenarioGroupB_LoggingTests()
         {
             // B-15: Metrics via HC
             int port = 65527;
@@ -687,7 +687,7 @@ namespace BankNode.Tests.Integration
 
 
         [Fact]
-        public async Task GroupF_ConsoleLogic_Tests()
+        public async Task ScenarioGroupB_ConsoleLogicTests()
         {
             // B-06 (BN), B-07 (LOG), Help, Exit
             using var cts = new CancellationTokenSource();
@@ -736,7 +736,7 @@ namespace BankNode.Tests.Integration
         }
 
         [Fact]
-        public async Task GroupG_Performance_Tests()
+        public async Task ScenarioGroupB_PerformanceTests()
         {
             // B-13: Connection Pooling
             int port = 65528;
@@ -788,7 +788,7 @@ namespace BankNode.Tests.Integration
         }
         
         [Fact]
-        public async Task GroupH_AtomicPersistence_Tests()
+        public async Task ScenarioGroupB_PersistenceTests()
         {
             // B-11: Atomic Writes (Recovery)
             // Setup: Create a partial/corrupt temp file and ensure it is ignored.
