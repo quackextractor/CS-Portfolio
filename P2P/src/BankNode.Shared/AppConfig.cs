@@ -13,6 +13,7 @@ namespace BankNode.Shared
         public int Timeout { get; set; } = 5000;
         public string NodeIp { get; set; } = "127.0.0.1";
         public string Language { get; set; } = "en";
+        public int RobberyConcurrency { get; set; } = 20;
 
         public void Load()
         {
@@ -28,12 +29,12 @@ namespace BankNode.Shared
                     {
                         Port = loadedConfig.Port;
                         Timeout = loadedConfig.Timeout;
-                        // Only override NodeIp if it's explicitly set in the config file
                         if (!string.IsNullOrEmpty(loadedConfig.NodeIp) && loadedConfig.NodeIp != "127.0.0.1")
                         {
                             NodeIp = loadedConfig.NodeIp;
                         }
                         Language = loadedConfig.Language ?? "en";
+                        RobberyConcurrency = loadedConfig.RobberyConcurrency > 0 ? loadedConfig.RobberyConcurrency : 20;
                     }
                 }
                 catch (Exception ex)

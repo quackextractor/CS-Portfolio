@@ -62,7 +62,7 @@ namespace BankNode.Network
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error processing command.");
-                return $"ER {ex.Message}";
+                return $"ER {_translator.GetError("INTERNAL_ERROR")}";
             }
         }
 

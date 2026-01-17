@@ -2,5 +2,6 @@
   "Port": 65525,
   "Timeout": 5000,
   "NodeIp": "127.0.0.1",
-  "Language": "en"
+  "Language": "en",
+  "RobberyConcurrency": 20
 }

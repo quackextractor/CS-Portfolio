@@ -71,7 +71,7 @@ namespace BankNode.Network.Strategies
             }
 
             var tasks = new List<Task<BankInfo?>>();
-            using var semaphore = new System.Threading.SemaphoreSlim(20); // Limit concurrency to 20
+            using var semaphore = new System.Threading.SemaphoreSlim(_config.RobberyConcurrency); // Limit concurrency
 
             for (int i = 1; i <= 254; i++)
             {
