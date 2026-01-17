@@ -67,6 +67,27 @@ namespace BankNode.Tests.Unit
             Assert.Contains("10.0.0.2", result);
         }
 
+        [Fact]
+        public async Task ExecuteAsync_ShouldNotCrash_WhenIpIsLocalhost()
+        {
+            // Arrange
+            var config = new AppConfig { NodeIp = "localhost", Port = 65525 };
+            var strategy = new RobberyCommandStrategy(_mockClient.Object, config, _mockTranslator.Object);
+            
+            // We expect it to scan 127.0.0.x by fallback.
+            // Setup a mock response on 127.0.0.2
+            _mockClient.Setup(c => c.SendCommandAsync("127.0.0.2", 65525, "BC")).ReturnsAsync("BC 127.0.0.2");
+            _mockClient.Setup(c => c.SendCommandAsync("127.0.0.2", 65525, "BA")).ReturnsAsync("BA 1000");
+            _mockClient.Setup(c => c.SendCommandAsync("127.0.0.2", 65525, "BN")).ReturnsAsync("BN 1");
+
+            // Act
+            var result = await strategy.ExecuteAsync(new[] { "RP", "500" });
+
+            // Assert
+            Assert.StartsWith("RP", result);
+            Assert.Contains("127.0.0.2", result);
+        }
+
         private void ConfigureMockResponse(string ip, string amount, string clients)
         {
             _mockClient.Setup(c => c.SendCommandAsync(ip, It.IsAny<int>(), "BC"))

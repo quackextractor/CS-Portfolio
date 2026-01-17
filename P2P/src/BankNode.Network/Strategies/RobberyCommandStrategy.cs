@@ -45,8 +45,31 @@ namespace BankNode.Network.Strategies
         private async Task<List<BankInfo>> ScanNetworkAsync()
         {
             var banks = new List<BankInfo>();
-            var baseIp = GetBaseIp(_config.NodeIp); // e.g., 192.168.1.
             var port = _config.Port;
+            string baseIp;
+            int myLastOctet = -1;
+
+            try 
+            {
+                var parts = _config.NodeIp.Split('.');
+                if (parts.Length == 4)
+                {
+                    baseIp = $"{parts[0]}.{parts[1]}.{parts[2]}.";
+                    if (int.TryParse(parts[3], out int octet))
+                    {
+                        myLastOctet = octet;
+                    }
+                }
+                else
+                {
+                    // Fallback for localhost or other formats
+                    baseIp = "127.0.0."; 
+                }
+            }
+            catch
+            {
+                baseIp = "127.0.0.";
+            }
 
             // Scanning usually takes time. For this demo, we might limit range or parallelism.
             // We'll scan 10 IPs around our own IP for speed in this implementation, 
@@ -55,9 +78,6 @@ namespace BankNode.Network.Strategies
             // In a real classroom environment, maybe we just scan all 254.
             
             var tasks = new List<Task<BankInfo?>>();
-            
-            // Getting just the last octet of current IP
-            var myLastOctet = int.Parse(_config.NodeIp.Split('.').Last());
             
             // Scan narrow range for demo purposes (speed), but logic supports full subnet
             // In full implementation: loop i = 1 to 254
@@ -134,11 +154,7 @@ namespace BankNode.Network.Strategies
             return $"To reach {targetAmount} execute robbery on: {string.Join(", ", victims)}. Hits {victimCount} clients.";
         }
 
-        private string GetBaseIp(string ip)
-        {
-            var parts = ip.Split('.');
-            return $"{parts[0]}.{parts[1]}.{parts[2]}.";
-        }
+
 
         private class BankInfo
         {

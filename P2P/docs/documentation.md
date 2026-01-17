@@ -183,6 +183,17 @@ cd src/BankNode.App
 dotnet run
 ```
 
+### Command Line Arguments
+You can override configuration values using command line arguments:
+
+-   `--port <number>`: Sets the listening port (overrides `config.json`).
+-   `--ip <address>`: Sets the advertised IP address (overrides `config.json`).
+
+Example:
+```bash
+dotnet run -- --port 65530 --ip 192.168.1.50
+```
+
 ### connecting
 Use PuTTY or Telnet to connect to `localhost` on port `65525` (or configured port).
 
