@@ -690,11 +690,14 @@ namespace BankNode.Tests.Integration
         public async Task GroupF_ConsoleLogic_Tests()
         {
             // B-06 (BN), B-07 (LOG), Help, Exit
-            // We test the Program.RunConsoleLoopAsync logic directly using Memory Streams
             using var cts = new CancellationTokenSource();
             var sb = new StringBuilder();
             var writer = new StringWriter(sb);
-            var input = new StringReader("BN\nLOG\nLOG\nHELP\nEXIT\n"); // BN, Toggle Debug, Toggle Info, Help, Exit
+            
+            // Use MemoryStream + StreamReader to be safer than StringReader
+            var inputBytes = Encoding.UTF8.GetBytes($"BN{Environment.NewLine}LOG{Environment.NewLine}LOG{Environment.NewLine}HELP{Environment.NewLine}EXIT{Environment.NewLine}");
+            using var memStream = new MemoryStream(inputBytes);
+            using var reader = new StreamReader(memStream); 
             
             // Mock infrastructure
             var services = new ServiceCollection();
@@ -710,36 +713,25 @@ namespace BankNode.Tests.Integration
 
             services.AddSingleton<IAccountRepository>(sp => new FileAccountRepository(sp.GetRequiredService<ILogger<FileAccountRepository>>(), accountsFile));
             services.AddSingleton<IAccountService, AccountService>();
-            services.AddSingleton<CommandParser>(); // Required if used? Not used in Loop unless BN command uses it? No BN just uses Repo.
+            services.AddSingleton<CommandParser>(); 
             
             var sp = services.BuildServiceProvider();
             var logger = sp.GetRequiredService<ILogger<Program>>();
             
             // Execute
-            await Program.RunConsoleLoopAsync(input, writer, cts, sp, logger);
+            await Program.RunConsoleLoopAsync(reader, writer, cts, sp, logger);
             
             // Verifications
             var output = sb.ToString();
             
-            // 1. Check commands ran
-            Assert.Contains("Server started", output);
-            Assert.Contains("Local Accounts:", output); // from BN
-            Assert.Contains("Log Level set to DEBUG", output); // from LOG
-            Assert.Contains("Log Level set to INFO", output); // from LOG second time
-            Assert.Contains("Available Local Commands:", output); // from HELP
-            
-            // 2. Check Logic (State change)
-            // The input toggled LOG twice (Info->Debug->Info).
-            // Initial default is Info.
-            // LOG 1 -> Debug. logic prints "Set to DEBUG".
-            // LOG 2 -> Info. logic prints "Set to INFO".
-            // switchLog state should be Info finally.
-            // Let's check intermediate state? Hard in one run.
-            // Assert output confirms logic ran.
+            // Use Assert.True with message to see output if failed
+            Assert.True(output.Contains("Server started"), $"Output missing Start. Got: [{output}]");
+            Assert.True(output.Contains("Local Accounts:"), $"Output missing BN. Got: [{output}]");
+            Assert.True(output.Contains("Log Level set to DEBUG"), $"Output missing LOG1. Got: [{output}]");
+            Assert.True(output.Contains("Log Level set to INFO"), $"Output missing LOG2. Got: [{output}]");
+            Assert.True(output.Contains("Available Local Commands:"), $"Output missing HELP. Got: [{output}]");
             
             Assert.Equal(LogLevel.Information, switchLog.MinimumLevel);
-            
-            // 3. EXIT command
             Assert.True(cts.IsCancellationRequested, "EXIT should cancel token");
         }
 

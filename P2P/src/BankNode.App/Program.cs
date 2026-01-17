@@ -100,7 +100,6 @@ namespace BankNode.App
             
             while (!cts.Token.IsCancellationRequested)
             {
-
                 var input = await reader.ReadLineAsync();
                 if (input == null) break; 
                 
@@ -146,6 +145,7 @@ namespace BankNode.App
                             break;
                             
                         case "HELP":
+                            await writer.WriteLineAsync("Available Local Commands:");
                             await writer.WriteLineAsync("  EXIT - Stop the server");
                             await writer.WriteLineAsync("  BN   - Show local bank stats");
                             await writer.WriteLineAsync("  LOG  - Toggle logging verbosity (INFO/DEBUG)");
@@ -153,6 +153,7 @@ namespace BankNode.App
                             break;
                             
                         default:
+                            await writer.WriteLineAsync($"Unknown local command: {cmd}");
                             break;
                     }
                 }
