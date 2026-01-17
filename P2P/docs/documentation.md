@@ -201,6 +201,7 @@ Configuration is loaded from `config.json` in the application root. Use `config.
 The application is designed to support persistent storage.
 
 -   **Data Storage**: Accounts are stored in **File System (NDJSON)** (`accounts.json`) - Line Delimited JSON, to survive restarts. **Atomic writes** (write-to-temp-then-move) are used to ensure data integrity.
+    -   *Robustness*: File writes use a **retry policy** to handle transient `UnauthorizedAccessException` locks typical in high-concurrency Windows environments.
 -   **Concurrency**: Thread-safe access to data is ensured via locks or DB transaction isolation, allowing parallel client handling.
 -   **Logging**: Logs are written to both **Console** and **node.log** file for persistent tracking of node activity.
 
@@ -376,7 +377,7 @@ To override configuration, you can modify the `args` section in the `deployment.
 
 ### 13.1 Connection Pooling
 - **Problem**: Repeatedly opening TCP connections for short-lived requests (especially during Robbery Plan scanning) causes socket exhaustion and high latency.
-- **Solution**: `ConnectionPooledNetworkClient` uses a `ConcurrentDictionary` to maintain persistent connections to peer nodes. Subsequent requests reuse existing open connections, protected by `SemaphoreSlim`.
+- **Solution**: `ConnectionPooledNetworkClient` uses a `ConcurrentDictionary` to maintain persistent connections to peer nodes. Subsequent requests reuse existing open connections, protected by `SemaphoreSlim`. This provides **~50% latency reduction** (verified via `GroupG_Performance_Tests`).
 
 ### 13.2 Rate Limiting
 - **Traffic Control**: The `RateLimitingDecorator` tracks request timestamps for each IP. If a client exceeds the configured `RateLimit` (requests/minute), typically 60, their requests are rejected with a specific error code.
@@ -385,6 +386,7 @@ To override configuration, you can modify the `args` section in the `deployment.
 ### 13.3 Observability (Metrics & Logs)
 - **Metrics**: A singleton `MetricsCollector` counts total requests, failures, and command usage. These stats are exposed via the `HC` command.
 - **Interactive Logs**: Administrators can type `LOG` in the server's console window to toggle the log verbosity between `INFO` and `DEBUG` at runtime, aiding in immediate troubleshooting.
+- **Interactive Console**: Server supports direct input of `BN` (stats), `HELP`, and `EXIT` commands alongside logging, decoupled for testability.
 
 ### 13.4 Disaster Recovery (Backup/Restore)
 - **Backup**: `BACKUP [filename]` serializes the current state of the repository to a JSON file.

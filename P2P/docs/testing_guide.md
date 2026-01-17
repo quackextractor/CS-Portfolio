@@ -139,6 +139,28 @@ Write-Host "Success!"
 ```
 
 ---
+## Option 5: Targeted Manual Testing
+
+You can run specific test scenarios from the integration suite without running everything. This is useful for checking specific features like the Console Logic or Performance.
+
+### 1. Console Logic
+Tests the interactive `BN`, `LOG`, and `HELP` commands:
+```bash
+dotnet test src/BankNode.Tests.Integration/BankNode.Tests.Integration.csproj --filter "FullyQualifiedName~GroupF_ConsoleLogic_Tests"
+```
+
+### 2. Performance Benchmark
+Runs the `GroupG` tests to compare Connection Pooling vs Non-Pooled performance:
+```bash
+dotnet test src/BankNode.Tests.Integration/BankNode.Tests.Integration.csproj --filter "FullyQualifiedName~GroupG_Performance_Tests"
+```
+
+### 3. Stability check (Atomic Writes)
+Runs the recovery test which simulates a crash during file save:
+```bash
+dotnet test src/BankNode.Tests.Integration/BankNode.Tests.Integration.csproj --filter "FullyQualifiedName~GroupH_AtomicPersistence_Tests"
+```
+
 
 ## Appendix: Connecting via PuTTY or Telnet
 
