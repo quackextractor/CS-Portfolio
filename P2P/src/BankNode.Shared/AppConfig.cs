@@ -15,33 +15,15 @@ namespace BankNode.Shared
         public string Language { get; set; } = "en";
         public int RobberyConcurrency { get; set; } = 20;
 
+        private FileSystemWatcher _watcher;
+        private DateTime _lastRead = DateTime.MinValue;
+
         public void Load()
         {
-            if (File.Exists("config.json"))
-            {
-                try
-                {
-                    var json = File.ReadAllText("config.json");
-                    var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-                    var loadedConfig = JsonSerializer.Deserialize<AppConfig>(json, options);
-                    
-                    if (loadedConfig != null)
-                    {
-                        Port = loadedConfig.Port;
-                        Timeout = loadedConfig.Timeout;
-                        if (!string.IsNullOrEmpty(loadedConfig.NodeIp) && loadedConfig.NodeIp != "127.0.0.1")
-                        {
-                            NodeIp = loadedConfig.NodeIp;
-                        }
-                        Language = loadedConfig.Language ?? "en";
-                        RobberyConcurrency = loadedConfig.RobberyConcurrency > 0 ? loadedConfig.RobberyConcurrency : 20;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error loading config.json: {ex.Message}");
-                }
-            }
+            LoadFromFile();
+
+            // Setup Hot Reload
+            SetupWatcher();
 
             // If NodeIp is still default loopback, try to auto-detect
             if (NodeIp == "127.0.0.1")
@@ -50,13 +32,75 @@ namespace BankNode.Shared
             }
         }
 
+        private void LoadFromFile()
+        {
+            if (File.Exists("config.json"))
+            {
+                try
+                {
+                    // Debounce
+                    if (DateTime.Now - _lastRead < TimeSpan.FromSeconds(1)) return;
+
+                    // Retry logic for file lock
+                    for (int i = 0; i < 3; i++)
+                    {
+                        try
+                        {
+                            var json = File.ReadAllText("config.json");
+                            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                            var loadedConfig = JsonSerializer.Deserialize<AppConfig>(json, options);
+                            
+                            if (loadedConfig != null)
+                            {
+                                // Only update runtime-safe properties
+                                Timeout = loadedConfig.Timeout;
+                                Language = loadedConfig.Language ?? "en";
+                                RobberyConcurrency = loadedConfig.RobberyConcurrency > 0 ? loadedConfig.RobberyConcurrency : 20;
+
+                                // Note: Port and NodeIp usually require restart, so we might skip them or log a warning if they changed
+                                Console.WriteLine($"Config reloaded. Timeout: {Timeout}, Language: {Language}");
+                            }
+                            _lastRead = DateTime.Now;
+                            break;
+                        }
+                        catch (IOException)
+                        {
+                            System.Threading.Thread.Sleep(100);
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error loading config.json: {ex.Message}");
+                }
+            }
+        }
+
+        private void SetupWatcher()
+        {
+            if (_watcher != null) return;
+
+            var path = Directory.GetCurrentDirectory();
+            _watcher = new FileSystemWatcher(path, "config.json");
+            _watcher.NotifyFilter = NotifyFilters.LastWrite;
+            _watcher.Changed += (s, e) => LoadFromFile();
+            _watcher.EnableRaisingEvents = true;
+        }
+
         public void Save()
         {
             try
             {
                 var options = new JsonSerializerOptions { WriteIndented = true };
                 var json = JsonSerializer.Serialize(this, options);
+                
+                // Disable watcher briefly to prevent self-trigger loop? 
+                // Actually debounce handles it mostly, but good practice
+                if (_watcher != null) _watcher.EnableRaisingEvents = false;
+                
                 File.WriteAllText("config.json", json);
+                
+                if (_watcher != null) _watcher.EnableRaisingEvents = true;
             }
             catch (Exception ex)
             {

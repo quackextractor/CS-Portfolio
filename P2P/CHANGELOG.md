@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2026-01-17
+### Added
+- **Configuration**:
+  - Hot Reload support for `config.json`.
+- **Features**:
+  - `HC` (Health Check) now includes CPU/RAM usage.
+  - `RP` (Robbery Plan) now outputs a formatted table.
+- **Testing**:
+  - Added Concurrency Integration Tests.
+- **DevOps**:
+  - Added `Dockerfile`.
+
+### Changed
+- **Architecture**: 
+  - **Async I/O**: Complete refactor of `IAccountRepository` and `AccountService` to use `async/await` and `SemaphoreSlim`, eliminating thread starvation issues.
+- **Networking**:
+  - Replaced unsafe `Task.WhenAny` timeouts with `CancellationTokenSource` in `NetworkClient`.
+
 ## [1.2.0] - 2026-01-17
 ### Added
 - **Configurability**:
