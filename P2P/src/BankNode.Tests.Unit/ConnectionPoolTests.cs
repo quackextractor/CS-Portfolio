@@ -11,7 +11,7 @@ namespace BankNode.Tests.Unit
     public class ConnectionPoolTests
     {
         [Fact]
-        public async Task CleanupIdleConnections_ShouldDisposeExpiredConnections()
+        public void CleanupIdleConnections_ShouldDisposeExpiredConnections()
         {
             // This is hard to test with internal/private members and real TcpClient.
             // However, we can at least verify that the class can be instantiated and disposed without error,

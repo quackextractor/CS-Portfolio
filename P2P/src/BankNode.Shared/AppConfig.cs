@@ -18,7 +18,7 @@ namespace BankNode.Shared
         public int MaxConcurrentConnections { get; set; } = 100;
         public int ClientIdleTimeout { get; set; } = 300000; // 5 minutes default
 
-        private FileSystemWatcher _watcher;
+        private FileSystemWatcher? _watcher;
         private DateTime _lastRead = DateTime.MinValue;
 
         public void Load()
