@@ -142,7 +142,7 @@ Configuration is loaded from `config.json` in the application root. Use `config.
 
 The application is designed to support persistent storage.
 
--   **Data Storage**: Accounts are stored in **File System (NDJSON)** (`accounts.json`) - Line Delimited JSON, to survive restarts.
+-   **Data Storage**: Accounts are stored in **File System (NDJSON)** (`accounts.json`) - Line Delimited JSON, to survive restarts. **Atomic writes** (write-to-temp-then-move) are used to ensure data integrity.
 -   **Concurrency**: Thread-safe access to data is ensured via locks or DB transaction isolation, allowing parallel client handling.
 -   **Logging**: Logs are written to both **Console** and **node.log** file for persistent tracking of node activity.
 

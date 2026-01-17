@@ -113,6 +113,33 @@ This confirms that Node A successfully communicated with Node B running on a dif
 
 ---
 
+---
+
+## Option 4: Automated Testing & CI/CD
+
+To run the full suite of automated tests, use the standard dotnet test runner. This is recommended for verifying all functional requirements including thread safety and internationalization.
+
+### Running Tests locally
+```bash
+dotnet test src/
+```
+
+### Example Test Script (PowerShell)
+You can use a simple script to run tests and build the project, useful for pre-commit checks:
+```powershell
+Write-Host "Building Project..."
+dotnet build src/BankNode.sln
+if ($LASTEXITCODE -ne 0) { exit 1 }
+
+Write-Host "Running Tests..."
+dotnet test src/BankNode.sln
+if ($LASTEXITCODE -ne 0) { exit 1 }
+
+Write-Host "Success!"
+```
+
+---
+
 ## Appendix: Connecting via PuTTY or Telnet
 
 To manually interact with a node (e.g., to send commands like `AC`, `BC`, `AD` manually), you need a raw TCP client.

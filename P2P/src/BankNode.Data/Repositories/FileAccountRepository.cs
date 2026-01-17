@@ -63,8 +63,8 @@ namespace BankNode.Data.Repositories
                     }
                 }
 
-                if (File.Exists(_filePath)) File.Delete(_filePath);
-                File.Move(tempPath, _filePath);
+                // Atomic replacement
+                File.Move(tempPath, _filePath, overwrite: true);
             }
             catch (Exception ex)
             {

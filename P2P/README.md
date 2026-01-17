@@ -61,6 +61,18 @@ This will update the `TargetFramework` property in `src/Directory.Build.props`.
 
 3. **Connect**:
    Use Telnet or PuTTY to connect to `localhost` on port `65525`.
+   
+   Once connected, you can switch languages:
+   ```text
+   LANG cz  # Switch to Czech
+   LANG en  # Switch to English
+   ```
+
+## Troubleshooting
+
+- **Firewall**: Ensure your firewall allows incoming TCP connections on port 65525.
+- **Network**: If testing on a LAN, ensure devices can ping each other.
+- **IP Detection**: If the auto-detected IP is incorrect, use the `--ip <address>` argument to manually specify the correct interface IP.
 
 ## Testing
 

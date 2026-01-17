@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
+using System.Net.NetworkInformation;
 using System.Text.Json;
 
 namespace BankNode.Shared
@@ -66,33 +67,43 @@ namespace BankNode.Shared
         {
             try
             {
-                var host = Dns.GetHostEntry(Dns.GetHostName());
-                string? bestIp = null;
-                int bestScore = 0;
+                // First try to use NetworkInterfaces to find an active connection
+                var interfaces = NetworkInterface.GetAllNetworkInterfaces()
+                    .Where(ni => ni.OperationalStatus == OperationalStatus.Up && 
+                                 ni.NetworkInterfaceType != NetworkInterfaceType.Loopback)
+                    .OrderByDescending(ni => ni.NetworkInterfaceType == NetworkInterfaceType.Ethernet)
+                    .ThenByDescending(ni => ni.NetworkInterfaceType == NetworkInterfaceType.Wireless80211)
+                    .ToList();
 
+                foreach (var ni in interfaces)
+                {
+                    var props = ni.GetIPProperties();
+                    foreach (var ip in props.UnicastAddresses)
+                    {
+                        if (ip.Address.AddressFamily == AddressFamily.InterNetwork)
+                        {
+                            var ipStr = ip.Address.ToString();
+                            
+                            // Ignore link-local (169.254.x.x)
+                            if (ipStr.StartsWith("169.254.")) continue;
+
+                            return ipStr;
+                        }
+                    }
+                }
+
+                // Fallback to simpler DNS method if NetworkInterface fails
+                var host = Dns.GetHostEntry(Dns.GetHostName());
                 foreach (var ip in host.AddressList)
                 {
                     if (ip.AddressFamily == AddressFamily.InterNetwork)
                     {
                         var ipStr = ip.ToString();
-                        int score = 0;
-
-                        if (ipStr.StartsWith("192.168.")) score = 3;
-                        else if (ipStr.StartsWith("10.")) score = 2;
-                        else if (ipStr.StartsWith("172.")) score = 1; // Simplification for 172.16-31 range
-                        
-                        // Ignore link-local
-                        if (ipStr.StartsWith("169.254.")) continue;
-
-                        if (score >= bestScore)
-                        {
-                            bestScore = score;
-                            bestIp = ipStr;
-                        }
+                        if (!ipStr.StartsWith("169.254.") && ipStr != "127.0.0.1") return ipStr;
                     }
                 }
 
-                return bestIp ?? "127.0.0.1";
+                return "127.0.0.1";
             }
             catch
             {
