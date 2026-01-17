@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2026-01-17
+### Added
+- **DevOps**:
+  - Added `deployment.yaml` for Kubernetes support.
+- **Documentation**:
+  - Updated `README.md` and docs with K8s deployment instructions.
+
 ## [1.3.0] - 2026-01-17
 ### Added
 - **Configuration**:
@@ -35,16 +42,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.1.0] - 2026-01-17
 ### Added
 - **Interactive CLI**:
-  - Server now runs in background loop acceptin `EXIT`, `BN` and `HELP` commands locally.
+  - Server now runs in background loop accepting `EXIT`, `BN` and `HELP` commands locally.
 - **Data Integrity**:
   - `FileAccountRepository` now uses atomic writes (write-temp-move) to prevent corruption.
 - **Documentation**:
   - Explicit algorithmic complexity explanation for `RP` command.
   - `LANG` command documentation.
 
-
 ## [1.0.0] - 2026-01-17
-
 ### Added
 - **Command System**: Implemented flexible command processing using Strategy Pattern.
   - `BC`: Bank Code check.
@@ -82,6 +87,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Upgraded `AccountService` to use `ReaderWriterLockSlim` for better read concurrency.
 - **Robustness**:
   - Improved `CommandParser` to handle multiple spaces in commands.
+
+## [0.5.0] - 2026-01-16
+### Added
+- **Internationalization**:
+  - Initial integration of translation strategy for error messages.
+  - JSON-based translation system.
+- **Configuration**:
+  - Refined `config.json` structure.
+
+## [0.4.0] - 2026-01-16
+### Added
+- **Networking**:
+  - Support for account addresses with custom ports (`<acc>/<ip>:<port>`).
+  - IP override support and improved IP selection for BankNode.
+- **CLI**:
+  - Added `HELP` command foundation.
+  - Initial `config.json.example`.
+
+## [0.3.0] - 2026-01-16
+### Added
+- **Persistence**:
+  - `FileAccountRepository` implementation with NDJSON support.
+- **Testing**:
+  - Added integration tests for persistence and proxying.
 - **Documentation**:
-  - Added architectural decision records.
-  - Added comprehensive testing guide.
+  - Added testing guide (`docs/testing_guide.md`).
+
+## [0.2.0] - 2026-01-16
+### Added
+- **Architecture**:
+  - Refactored BankNode with Dependency Injection (DI) and network strategies.
+- **Logging**:
+  - Added file-based logging and request logging decorator.
+- **Networking**:
+  - Introduced `INetworkClient` interface.
+
+## [0.1.0] - 2026-01-16
+### Added
+- **Project Structure**:
+  - Initial solution setup with Core, Data, Network, and App projects.
+  - `zadani.md` assignment documentation.
