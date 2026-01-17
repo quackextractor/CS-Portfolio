@@ -4,6 +4,6 @@ namespace BankNode.Network
 {
     public interface ICommandProcessor
     {
-        Task<string> ProcessCommandAsync(string rawCommand);
+        Task<string> ProcessCommandAsync(string rawCommand, string clientIp);
     }
 }

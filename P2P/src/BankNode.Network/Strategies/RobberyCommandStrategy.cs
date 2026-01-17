@@ -1,8 +1,12 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.NetworkInformation;
+using System.Net.Sockets;
 using System.Threading.Tasks;
 using BankNode.Shared;
+using Microsoft.Extensions.Logging;
 
 namespace BankNode.Network.Strategies
 {
@@ -11,12 +15,14 @@ namespace BankNode.Network.Strategies
         private readonly INetworkClient _client;
         private readonly AppConfig _config;
         private readonly BankNode.Translation.ITranslationStrategy _translator;
+        private readonly ILogger<RobberyCommandStrategy> _logger;
 
-        public RobberyCommandStrategy(INetworkClient client, AppConfig config, BankNode.Translation.ITranslationStrategy translator)
+        public RobberyCommandStrategy(INetworkClient client, AppConfig config, BankNode.Translation.ITranslationStrategy translator, ILogger<RobberyCommandStrategy> logger)
         {
             _client = client;
             _config = config;
             _translator = translator;
+            _logger = logger;
         }
 
         public System.Collections.Generic.IEnumerable<string> SupportedCommands => new[] { "RP" };
@@ -45,29 +51,12 @@ namespace BankNode.Network.Strategies
         private async Task<List<BankInfo>> ScanNetworkAsync()
         {
             var port = _config.Port;
-            string baseIp;
-            int myLastOctet = -1;
-
-            try 
+            var networkSegment = GetNetworkSegment(_config.NodeIp);
+            
+            // If we couldn't detect a proper segment, fallback to local loopback range or simple logic
+            if (string.IsNullOrEmpty(networkSegment))
             {
-                var parts = _config.NodeIp.Split('.');
-                if (parts.Length == 4)
-                {
-                    baseIp = $"{parts[0]}.{parts[1]}.{parts[2]}.";
-                    if (int.TryParse(parts[3], out int octet))
-                    {
-                        myLastOctet = octet;
-                    }
-                }
-                else
-                {
-                    // Fallback for localhost or other formats
-                    baseIp = "127.0.0."; 
-                }
-            }
-            catch
-            {
-                baseIp = "127.0.0.";
+                 networkSegment = "127.0.0.";
             }
 
             var tasks = new List<Task<BankInfo?>>();
@@ -75,10 +64,11 @@ namespace BankNode.Network.Strategies
 
             for (int i = 1; i <= 254; i++)
             {
-                if (i == myLastOctet) continue; // Skip self
+                var ip = $"{networkSegment}{i}";
                 
-                var ip = $"{baseIp}{i}";
-                
+                // Skip self if possible to detect
+                if (ip == _config.NodeIp) continue;
+
                 tasks.Add(Task.Run(async () => 
                 {
                     await semaphore.WaitAsync();
@@ -95,6 +85,53 @@ namespace BankNode.Network.Strategies
 
             var results = await Task.WhenAll(tasks);
             return results.Where(b => b != null).ToList()!;
+        }
+
+        private string GetNetworkSegment(string nodeIp)
+        {
+            try
+            {
+                if (IPAddress.TryParse(nodeIp, out var address))
+                {
+                    // Try to find mask from interfaces
+                    var interfaces = NetworkInterface.GetAllNetworkInterfaces();
+                    foreach (var ni in interfaces)
+                    {
+                        if (ni.OperationalStatus != OperationalStatus.Up) continue;
+
+                        var ipProps = ni.GetIPProperties();
+                        foreach (var unicast in ipProps.UnicastAddresses)
+                        {
+                            if (unicast.Address.Equals(address))
+                            {
+                                var mask = unicast.IPv4Mask;
+                                if (mask != null)
+                                {
+                                    // Simple logic: if mask is 255.255.255.0, take first 3 bytes
+                                    // For this project, assuming /24 is standard, but let's try to be a bit smarter or just fallback
+                                    // Calculating network strictly might be overkill if we just want "192.168.1."
+                                    // specific implementation for /24 equivalent:
+                                    var bytes = address.GetAddressBytes();
+                                    return $"{bytes[0]}.{bytes[1]}.{bytes[2]}.";
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                 _logger.LogWarning(ex, "Failed to detect subnet mask, falling back to simple parsing.");
+            }
+
+            // Fallback: just take first 3 parts
+            var parts = nodeIp.Split('.');
+            if (parts.Length == 4)
+            {
+                return $"{parts[0]}.{parts[1]}.{parts[2]}.";
+            }
+            
+            return "127.0.0.";
         }
 
         private async Task<BankInfo?> ProbeBankAsync(string ip, int port)
@@ -120,9 +157,9 @@ namespace BankNode.Network.Strategies
                     return new BankInfo { Ip = ip, TotalAmount = amount, ClientCount = clients };
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                // Ignore connection errors
+                _logger.LogDebug("Failed to probe {Ip}:{Port}: {Message}", ip, port, ex.Message);
             }
             return null;
         }

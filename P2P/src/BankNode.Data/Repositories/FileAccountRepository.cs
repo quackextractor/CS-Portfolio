@@ -42,9 +42,9 @@ namespace BankNode.Data.Repositories
                         accounts.Add(account);
                     }
                 }
-                catch
+                catch (JsonException ex)
                 {
-                    // Skip malformed lines
+                    _logger.LogWarning("Malformed account line skipped in {FilePath}: {Message}", _filePath, ex.Message);
                 }
             }
             return accounts;

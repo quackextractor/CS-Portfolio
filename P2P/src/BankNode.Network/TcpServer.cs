@@ -87,7 +87,10 @@ namespace BankNode.Network
                                 break;
                             }
 
-                            var response = await _commandProcessor.ProcessCommandAsync(command);
+                            var clientEndPoint = client.Client.RemoteEndPoint as IPEndPoint;
+                            var clientIp = clientEndPoint?.Address.ToString() ?? "Unknown";
+
+                            var response = await _commandProcessor.ProcessCommandAsync(command, clientIp);
                             await writer.WriteLineAsync(response);
                         }
                     }

@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] - 2026-01-17
+### Added
+- **Capabilities**:
+  - **Connection Pooling**: Reuses TCP connections to reduce overhead.
+  - **Rate Limiting**: Limits requests per IP (configurable via `RateLimit`).
+  - **Metrics**: `HC` command now shows comprehensive node stats (requests, success rate).
+  - **Disaster Recovery**: `BACKUP` and `RESTORE` commands.
+  - **Interactive Logging**: Toggle log levels at runtime with `LOG` command.
+- **Configuration**:
+  - Added `RateLimit` setting to `config.json`.
+
 ## [1.4.0] - 2026-01-17
 ### Added
 - **DevOps**:

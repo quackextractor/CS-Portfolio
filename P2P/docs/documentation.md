@@ -365,3 +365,23 @@ To override configuration, you can modify the `args` section in the `deployment.
 ```yaml
       args: ["--port", "65525", "--ip", "0.0.0.0"]
 ```
+
+---
+
+## 13. Maintenance & Reliability Features
+
+### 13.1 Connection Pooling
+- **Problem**: Repeatedly opening TCP connections for short-lived requests (especially during Robbery Plan scanning) causes socket exhaustion and high latency.
+- **Solution**: `ConnectionPooledNetworkClient` uses a `ConcurrentDictionary` to maintain persistent connections to peer nodes. Subsequent requests reuse existing open connections, protected by `SemaphoreSlim`.
+
+### 13.2 Rate Limiting
+- **Traffic Control**: The `RateLimitingDecorator` tracks request timestamps for each IP. If a client exceeds the configured `RateLimit` (requests/minute), typically 60, their requests are rejected with a specific error code.
+- **Configuration**: The limit is configurable in `AppConfig`.
+
+### 13.3 Observability (Metrics & Logs)
+- **Metrics**: A singleton `MetricsCollector` counts total requests, failures, and command usage. These stats are exposed via the `HC` command.
+- **Interactive Logs**: Administrators can type `LOG` in the server's console window to toggle the log verbosity between `INFO` and `DEBUG` at runtime, aiding in immediate troubleshooting.
+
+### 13.4 Disaster Recovery (Backup/Restore)
+- **Backup**: `BACKUP [filename]` serializes the current state of the repository to a JSON file.
+- **Restore**: `RESTORE [filename]` clears the current database and reloads accounts from the backup file, allowing for rollback or migration.

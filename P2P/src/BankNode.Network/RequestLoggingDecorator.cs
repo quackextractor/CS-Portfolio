@@ -16,14 +16,14 @@ namespace BankNode.Network
             _logger = logger;
         }
 
-        public async Task<string> ProcessCommandAsync(string rawCommand)
+        public async Task<string> ProcessCommandAsync(string rawCommand, string clientIp)
         {
             var commandCode = rawCommand.Split(' ')[0];
-            _logger.LogInformation("[{Time}] Incoming request: {Method}", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"), commandCode);
+            _logger.LogInformation("[{Time}] Incoming request from {Ip}: {Method}", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"), clientIp, commandCode);
 
             var stopwatch = Stopwatch.StartNew();
             
-            var response = await _inner.ProcessCommandAsync(rawCommand);
+            var response = await _inner.ProcessCommandAsync(rawCommand, clientIp);
 
             stopwatch.Stop();
 

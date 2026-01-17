@@ -21,7 +21,7 @@ namespace BankNode.Network
             _logger = logger;
         }
 
-        public async Task<string> ProcessCommandAsync(string rawCommand)
+        public async Task<string> ProcessCommandAsync(string rawCommand, string clientIp)
         {
             if (string.IsNullOrWhiteSpace(rawCommand))
             {

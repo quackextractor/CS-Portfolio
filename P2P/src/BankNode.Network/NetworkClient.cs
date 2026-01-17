@@ -81,7 +81,7 @@ namespace BankNode.Network
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Connection failed to {ip}:{port}");
-                return $"ER {_translator.GetError("CONNECTION_FAILED")} {ex.Message}";
+                return $"ER {_translator.GetError("CONNECTION_FAILED")}";
             }
         }
     }

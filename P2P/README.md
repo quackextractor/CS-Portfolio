@@ -16,6 +16,7 @@ Full documentation is available in [docs/documentation.md](docs/documentation.md
 - **Persistence**: Accounts are stored in `accounts.json` (NDJSON format).
 - **Logging**: Requests and errors are logged to console and `node.log`.
 - **Internationalization (i18n)**: Support for multiple languages (EN/CS) via JSON configuration.
+- **Maintenance**: BACKUP/RESTORE commands, Connection Pooling, Rate Limiting, and Runtime Metrics.
 
 See [CHANGELOG.md](CHANGELOG.md) for recent updates.
 
@@ -66,6 +67,12 @@ This will update the `TargetFramework` property in `src/Directory.Build.props`.
    ```text
    LANG cz  # Switch to Czech
    LANG en  # Switch to English
+   ```
+
+   You can also manage backups:
+   ```text
+   BACKUP my_backup.json
+   RESTORE my_backup.json
    ```
 
 ## Troubleshooting

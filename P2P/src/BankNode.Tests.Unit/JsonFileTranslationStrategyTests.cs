@@ -23,6 +23,7 @@ namespace BankNode.Tests.Unit
             // Create dummy language files
             File.WriteAllText(Path.Combine(_testLangDir, "test_en.json"), "{\"KEY\": \"VALUE_EN\"}");
             File.WriteAllText(Path.Combine(_testLangDir, "test_cz.json"), "{\"KEY\": \"VALUE_CZ\"}");
+            File.WriteAllText(Path.Combine(_testLangDir, "en.json"), "{\"KEY\": \"VALUE_REAL_EN\"}");
 
             _config = new AppConfig { Language = "test_en" };
         }

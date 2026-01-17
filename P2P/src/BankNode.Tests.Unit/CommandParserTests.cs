@@ -22,7 +22,7 @@ namespace BankNode.Tests.Unit
             var parser = new CommandParser(strategies, translator.Object, logger.Object);
 
             // Act
-            var result = await parser.ProcessCommandAsync("XYZ 123");
+            var result = await parser.ProcessCommandAsync("XYZ 123", "127.0.0.1");
 
             // Assert
             Assert.Contains("ER Unknown command", result);
@@ -43,7 +43,7 @@ namespace BankNode.Tests.Unit
             var parser = new CommandParser(strategies, translator.Object, logger.Object);
 
             // Act
-            var result = await parser.ProcessCommandAsync("TEST arg1");
+            var result = await parser.ProcessCommandAsync("TEST arg1", "127.0.0.1");
 
             // Assert
             Assert.Equal("TEST OK", result);

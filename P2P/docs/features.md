@@ -251,3 +251,19 @@ The solution enforces a strict separation of concerns to ensure maintainability 
 
 
 * **Automatic IP Detection**: If `NodeIp` is left as default, the system attempts to auto-detect the LAN IP.
+
+
+## 11. Maintenance & Reliability Capabilities
+
+### 11.1 High-Performance Networking
+* **Connection Pooling**: The `ConnectionPooledNetworkClient` reuses TCP connections to peer nodes, significantly reducing socket exhaustion and handshake overhead during high-frequency operations like scanning.
+
+### 11.2 Traffic Control
+* **Rate Limiting**: A `RateLimitingDecorator` protects the node from abuse by enforcing a request limit (default 60 requests/minute) per client IP address.
+
+### 11.3 Enhanced Observability
+* **Metrics Collection**: The `MetricsCollector` singleton tracks global statistics (total requests, failure rates, command distribution), which are exposed via the `HC` command.
+* **Interactive Logging Control**: Administrators can toggle between `INFO` and `DEBUG` log levels at runtime using the local `LOG` console command, facilitating easier debugging without restarts.
+
+### 11.4 Disaster Recovery
+* **Backup & Restore**: New `BACKUP [filename]` and `RESTORE [filename]` commands allow administrators to snapshot the account database to a JSON file and restore it on demand, ensuring data safety.

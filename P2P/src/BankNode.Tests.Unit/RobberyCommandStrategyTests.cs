@@ -15,6 +15,7 @@ namespace BankNode.Tests.Unit
     {
         private readonly Mock<INetworkClient> _mockClient;
         private readonly Mock<ITranslationStrategy> _mockTranslator;
+        private readonly Mock<ILogger<RobberyCommandStrategy>> _mockLogger;
         private readonly AppConfig _config;
         private readonly RobberyCommandStrategy _strategy;
 
@@ -22,9 +23,10 @@ namespace BankNode.Tests.Unit
         {
             _mockClient = new Mock<INetworkClient>();
             _mockTranslator = new Mock<ITranslationStrategy>();
+            _mockLogger = new Mock<ILogger<RobberyCommandStrategy>>();
             _config = new AppConfig { NodeIp = "10.0.0.1", Port = 65525 };
             
-            _strategy = new RobberyCommandStrategy(_mockClient.Object, _config, _mockTranslator.Object);
+            _strategy = new RobberyCommandStrategy(_mockClient.Object, _config, _mockTranslator.Object, _mockLogger.Object);
         }
 
         [Fact]
@@ -72,7 +74,7 @@ namespace BankNode.Tests.Unit
         {
             // Arrange
             var config = new AppConfig { NodeIp = "localhost", Port = 65525 };
-            var strategy = new RobberyCommandStrategy(_mockClient.Object, config, _mockTranslator.Object);
+            var strategy = new RobberyCommandStrategy(_mockClient.Object, config, _mockTranslator.Object, _mockLogger.Object);
             
             // We expect it to scan 127.0.0.x by fallback.
             // Setup a mock response on 127.0.0.2

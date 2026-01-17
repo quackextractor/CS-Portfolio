@@ -25,10 +25,19 @@ namespace BankNode.App
             ConfigureServices(services);
 
             var serviceProvider = services.BuildServiceProvider();
+            var logger = serviceProvider.GetRequiredService<ILogger<Program>>();
 
             // Load Config
             var config = serviceProvider.GetRequiredService<AppConfig>();
-            config.Load();
+            try 
+            {
+                config.Load();
+            }
+            catch (Exception ex)
+            {
+                logger.LogError($"Configuration Error: {ex.Message}");
+                return;
+            }
             
             // Allow override from args: --port 65526
             if (args.Length > 1 && args[0] == "--port" && int.TryParse(args[1], out int port))
@@ -42,8 +51,6 @@ namespace BankNode.App
             {
                 config.NodeIp = args[ipIndex + 1];
             }
-
-            var logger = serviceProvider.GetRequiredService<ILogger<Program>>();
             
             // List all available IPs for user convenience
             logger.LogInformation("Available Network Interfaces:");
@@ -98,11 +105,26 @@ namespace BankNode.App
                             var balance = await repo.GetTotalBalanceAsync();
                             logger.LogInformation($"Local Accounts: {count}, Total Balance: {balance}");
                             break;
+
+                        case "LOG":
+                            var switcher = serviceProvider.GetRequiredService<LogLevelSwitch>();
+                            if (switcher.MinimumLevel == LogLevel.Information)
+                            {
+                                switcher.MinimumLevel = LogLevel.Debug;
+                                logger.LogInformation("Log Level set to DEBUG");
+                            }
+                            else
+                            {
+                                switcher.MinimumLevel = LogLevel.Information;
+                                logger.LogInformation("Log Level set to INFO");
+                            }
+                            break;
                             
                         case "HELP":
                             Console.WriteLine("Available Local Commands:");
                             Console.WriteLine("  EXIT - Stop the server");
                             Console.WriteLine("  BN   - Show local bank stats");
+                            Console.WriteLine("  LOG  - Toggle logging verbosity (INFO/DEBUG)");
                             Console.WriteLine("  HELP - Show this help");
                             break;
                             
@@ -133,11 +155,15 @@ namespace BankNode.App
             services.AddSingleton<AppConfig>();
 
             // Logging
+            var logLevelSwitch = new LogLevelSwitch();
+            services.AddSingleton(logLevelSwitch);
+            
             services.AddLogging(configure =>
             {
                 configure.AddConsole();
                 configure.AddFile("node.log");
-                configure.SetMinimumLevel(LogLevel.Information);
+                configure.SetMinimumLevel(LogLevel.Trace); // Allow all, filter with switch
+                configure.AddFilter((provider, category, level) => level >= logLevelSwitch.MinimumLevel);
             });
 
             // Core
@@ -147,12 +173,19 @@ namespace BankNode.App
 
             // Network
             services.AddSingleton<TcpServer>();
-            services.AddSingleton<INetworkClient, NetworkClient>();
+            // Use Connection Pooled Client for better performance
+            services.AddSingleton<INetworkClient, ConnectionPooledNetworkClient>();
             services.AddSingleton<CommandParser>();
             services.AddSingleton<ICommandProcessor>(p => 
-                new RequestLoggingDecorator(
-                    p.GetRequiredService<CommandParser>(),
-                    p.GetRequiredService<ILogger<RequestLoggingDecorator>>()
+                new BankNode.App.Decorators.MetricsDecorator( // Metrics
+                        new BankNode.App.Decorators.RateLimitingDecorator( // Rate Limit
+                            new RequestLoggingDecorator( // Logging
+                                p.GetRequiredService<CommandParser>(),
+                                p.GetRequiredService<ILogger<RequestLoggingDecorator>>()
+                            ),
+                            p.GetRequiredService<ILogger<BankNode.App.Decorators.RateLimitingDecorator>>(),
+                            p.GetRequiredService<AppConfig>()
+                        )
                 ));
 
             // Translation
@@ -165,6 +198,12 @@ namespace BankNode.App
             services.AddSingleton<ICommandStrategy, HealthCommandStrategy>();
             services.AddSingleton<ICommandStrategy, LanguageCommandStrategy>();
             services.AddSingleton<ICommandStrategy, HelpCommandStrategy>();
+            services.AddSingleton<ICommandStrategy, BackupCommandStrategy>();
         }
+    }
+
+    public class LogLevelSwitch
+    {
+        public LogLevel MinimumLevel { get; set; } = LogLevel.Information;
     }
 }

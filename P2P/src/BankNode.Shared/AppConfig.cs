@@ -14,6 +14,7 @@ namespace BankNode.Shared
         public string NodeIp { get; set; } = "127.0.0.1";
         public string Language { get; set; } = "en";
         public int RobberyConcurrency { get; set; } = 20;
+        public int RateLimit { get; set; } = 60;
 
         private FileSystemWatcher _watcher;
         private DateTime _lastRead = DateTime.MinValue;
@@ -30,6 +31,23 @@ namespace BankNode.Shared
             {
                 NodeIp = GetLocalIpAddress();
             }
+
+            ValidateConfiguration();
+        }
+
+        private void ValidateConfiguration()
+        {
+            if (Port < 65525 || Port > 65535)
+                throw new ArgumentException($"Port must be between 65525 and 65535, got {Port}");
+            
+            if (Timeout <= 0)
+                throw new ArgumentException($"Timeout must be positive, got {Timeout}");
+            
+            if (RobberyConcurrency <= 0 || RobberyConcurrency > 100)
+                throw new ArgumentException($"RobberyConcurrency must be between 1 and 100, got {RobberyConcurrency}");
+            
+            if (RateLimit <= 0)
+                throw new ArgumentException($"RateLimit must be positive, got {RateLimit}");
         }
 
         private void LoadFromFile()
@@ -56,6 +74,7 @@ namespace BankNode.Shared
                                 Timeout = loadedConfig.Timeout;
                                 Language = loadedConfig.Language ?? "en";
                                 RobberyConcurrency = loadedConfig.RobberyConcurrency > 0 ? loadedConfig.RobberyConcurrency : 20;
+                                RateLimit = loadedConfig.RateLimit > 0 ? loadedConfig.RateLimit : 60;
 
                                 // Note: Port and NodeIp usually require restart, so we might skip them or log a warning if they changed
                                 Console.WriteLine($"Config reloaded. Timeout: {Timeout}, Language: {Language}");

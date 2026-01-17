@@ -25,13 +25,17 @@ namespace BankNode.Network.Strategies
 
         public async Task<string> ExecuteAsync(string[] args)
         {
+            var metrics = BankNode.Shared.MetricsCollector.Instance.GetMetrics();
+            
             var health = new
             {
                 Status = "OK",
-                Uptime = DateTime.Now - Process.GetCurrentProcess().StartTime,
-                Memory = $"{Process.GetCurrentProcess().WorkingSet64 / 1024 / 1024}MB",
-                Accounts = await _accountService.GetClientCountAsync(),
-                TotalBalance = await _accountService.GetTotalBankBalanceAsync()
+                BankStats = new 
+                {
+                    Accounts = await _accountService.GetClientCountAsync(),
+                    TotalBalance = await _accountService.GetTotalBankBalanceAsync()
+                },
+                Metrics = metrics
             };
 
             return $"HC {JsonSerializer.Serialize(health)}";

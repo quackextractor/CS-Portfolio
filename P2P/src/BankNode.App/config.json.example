@@ -3,5 +3,6 @@
   "Timeout": 5000,
   "NodeIp": "127.0.0.1",
   "Language": "en",
-  "RobberyConcurrency": 20
+  "RobberyConcurrency": 20,
+  "RateLimit": 60
 }
