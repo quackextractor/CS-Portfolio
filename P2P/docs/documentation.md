@@ -325,3 +325,43 @@ This project is released under the **MIT License**.
 * **Third-Party Components:**
     * `Microsoft.Extensions.DependencyInjection` (MIT)
     * `Microsoft.Extensions.Logging` (MIT)
+
+---
+
+## 12. Deployment
+
+### Docker
+
+You can containerize the application using the provided `Dockerfile`.
+
+1.  **Build the Image**:
+    ```bash
+    cd src
+    docker build -t banknode .
+    ```
+
+2.  **Run the Container**:
+    ```bash
+    docker run -d -p 65525:65525 --name my-bank-node banknode
+    ```
+
+### Rancher / Kubernetes
+
+A sample Kubernetes manifest is provided in `src/deployment.yaml`.
+
+**Steps to deploy in Rancher:**
+
+1.  **Build & Push Image**: Ensure your docker image is accessible to your cluster (or use local images with `imagePullPolicy: IfNotPresent` as configured).
+2.  **Import YAML**:
+    - Go to your Rancher Cluster Dashboard.
+    - Click **Import YAML** (top right).
+    - Copy-paste the content of `src/deployment.yaml` or upload the file.
+    - Click **Import**.
+3.  **Access**:
+    - The service is configured as `NodePort` (30000). You can access the bank node via `<NodeIP>:30000`.
+
+**Configuration in K8s**:
+To override configuration, you can modify the `args` section in the `deployment.yaml`:
+```yaml
+      args: ["--port", "65525", "--ip", "0.0.0.0"]
+```
