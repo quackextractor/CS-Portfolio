@@ -94,7 +94,9 @@ namespace BankNode.App
                             
                         case "BN":
                             var repo = serviceProvider.GetRequiredService<IAccountRepository>();
-                            logger.LogInformation($"Local Accounts: {repo.GetCount()}, Total Balance: {repo.GetTotalBalance()}");
+                            var count = await repo.GetCountAsync();
+                            var balance = await repo.GetTotalBalanceAsync();
+                            logger.LogInformation($"Local Accounts: {count}, Total Balance: {balance}");
                             break;
                             
                         case "HELP":

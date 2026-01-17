@@ -23,18 +23,18 @@ namespace BankNode.Network.Strategies
             return commandCode == "HC";
         }
 
-        public Task<string> ExecuteAsync(string[] args)
+        public async Task<string> ExecuteAsync(string[] args)
         {
             var health = new
             {
                 Status = "OK",
                 Uptime = DateTime.Now - Process.GetCurrentProcess().StartTime,
-                Memory = $"{GC.GetTotalMemory(false) / 1024 / 1024}MB",
-                Accounts = _accountService.GetClientCount(),
-                TotalBalance = _accountService.GetTotalBankBalance()
+                Memory = $"{Process.GetCurrentProcess().WorkingSet64 / 1024 / 1024}MB",
+                Accounts = await _accountService.GetClientCountAsync(),
+                TotalBalance = await _accountService.GetTotalBankBalanceAsync()
             };
 
-            return Task.FromResult($"HC {JsonSerializer.Serialize(health)}");
+            return $"HC {JsonSerializer.Serialize(health)}";
         }
     }
 }

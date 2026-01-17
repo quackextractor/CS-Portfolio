@@ -24,22 +24,22 @@ namespace BankNode.Network.Strategies
             return System.Linq.Enumerable.Contains(SupportedCommands, commandCode);
         }
 
-        public Task<string> ExecuteAsync(string[] args)
+        public async Task<string> ExecuteAsync(string[] args)
         {
             var command = args[0];
 
             switch (command)
             {
                 case "BC":
-                    return Task.FromResult($"BC {_config.NodeIp}");
+                    return $"BC {_config.NodeIp}";
                 case "BA":
-                    var total = _accountService.GetTotalBankBalance();
-                    return Task.FromResult($"BA {total}");
+                    var total = await _accountService.GetTotalBankBalanceAsync();
+                    return $"BA {total}";
                 case "BN":
-                    var count = _accountService.GetClientCount();
-                    return Task.FromResult($"BN {count}");
+                    var count = await _accountService.GetClientCountAsync();
+                    return $"BN {count}";
                 default:
-                    return Task.FromResult($"ER {_translator.GetError("UNKNOWN_COMMAND")}");
+                    return $"ER {_translator.GetError("UNKNOWN_COMMAND")}";
             }
         }
     }

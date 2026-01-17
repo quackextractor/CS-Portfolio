@@ -1,5 +1,6 @@
 using System;
 using System.Threading;
+using System.Threading.Tasks;
 using BankNode.Core.Interfaces;
 using BankNode.Core.Models;
 
@@ -8,7 +9,7 @@ namespace BankNode.Core.Services
     public class AccountService : IAccountService, IDisposable
     {
         private readonly IAccountRepository _repository;
-        private readonly ReaderWriterLockSlim _lock = new ReaderWriterLockSlim();
+        private readonly SemaphoreSlim _semaphore = new SemaphoreSlim(1, 1);
         private readonly Random _random = new Random();
 
         public AccountService(IAccountRepository repository)
@@ -16,16 +17,16 @@ namespace BankNode.Core.Services
             _repository = repository;
         }
 
-        public Account CreateAccount(string bankIp)
+        public async Task<Account> CreateAccountAsync(string bankIp)
         {
-            _lock.EnterWriteLock();
+            await _semaphore.WaitAsync();
             try
             {
                 string accountNumber;
                 do
                 {
                     accountNumber = _random.Next(10000, 100000).ToString();
-                } while (_repository.GetByAccountNumber(accountNumber) != null);
+                } while (await _repository.GetByAccountNumberAsync(accountNumber) != null);
 
                 var account = new Account
                 {
@@ -34,42 +35,42 @@ namespace BankNode.Core.Services
                     BankCode = bankIp
                 };
 
-                _repository.Add(account);
+                await _repository.AddAsync(account);
                 return account;
             }
             finally
             {
-                _lock.ExitWriteLock();
+                _semaphore.Release();
             }
         }
 
-        public void Deposit(string accountNumber, decimal amount)
+        public async Task DepositAsync(string accountNumber, decimal amount)
         {
             if (amount < 0) throw new ArgumentException("Amount cannot be negative.");
 
-            _lock.EnterWriteLock();
+            await _semaphore.WaitAsync();
             try
             {
-                var account = _repository.GetByAccountNumber(accountNumber);
+                var account = await _repository.GetByAccountNumberAsync(accountNumber);
                 if (account == null) throw new InvalidOperationException("Account not found.");
 
                 account.Balance += amount;
-                _repository.Update(account);
+                await _repository.UpdateAsync(account);
             }
             finally
             {
-                _lock.ExitWriteLock();
+                _semaphore.Release();
             }
         }
 
-        public void Withdraw(string accountNumber, decimal amount)
+        public async Task WithdrawAsync(string accountNumber, decimal amount)
         {
             if (amount < 0) throw new ArgumentException("Amount cannot be negative.");
 
-            _lock.EnterWriteLock();
+            await _semaphore.WaitAsync();
             try
             {
-                var account = _repository.GetByAccountNumber(accountNumber);
+                var account = await _repository.GetByAccountNumberAsync(accountNumber);
                 if (account == null) throw new InvalidOperationException("Account not found.");
 
                 if (account.Balance < amount)
@@ -78,35 +79,28 @@ namespace BankNode.Core.Services
                 }
 
                 account.Balance -= amount;
-                _repository.Update(account);
+                await _repository.UpdateAsync(account);
             }
             finally
             {
-                _lock.ExitWriteLock();
+                _semaphore.Release();
             }
         }
 
-        public decimal GetBalance(string accountNumber)
+        public async Task<decimal> GetBalanceAsync(string accountNumber)
         {
-            _lock.EnterReadLock();
-            try
-            {
-                var account = _repository.GetByAccountNumber(accountNumber);
-                if (account == null) throw new InvalidOperationException("Account not found.");
-                return account.Balance;
-            }
-            finally
-            {
-                _lock.ExitReadLock();
-            }
+            // No lock needed, repo is thread safe for single reads
+            var account = await _repository.GetByAccountNumberAsync(accountNumber);
+            if (account == null) throw new InvalidOperationException("Account not found.");
+            return account.Balance;
         }
 
-        public void RemoveAccount(string accountNumber)
+        public async Task RemoveAccountAsync(string accountNumber)
         {
-            _lock.EnterWriteLock();
+            await _semaphore.WaitAsync();
             try
             {
-                var account = _repository.GetByAccountNumber(accountNumber);
+                var account = await _repository.GetByAccountNumberAsync(accountNumber);
                 if (account == null) throw new InvalidOperationException("Account not found.");
 
                 if (account.Balance != 0)
@@ -114,56 +108,32 @@ namespace BankNode.Core.Services
                     throw new InvalidOperationException("Cannot remove account with non-zero balance.");
                 }
 
-                _repository.Remove(accountNumber);
+                await _repository.RemoveAsync(accountNumber);
             }
             finally
             {
-                _lock.ExitWriteLock();
+                _semaphore.Release();
             }
         }
 
-        public decimal GetTotalBankBalance()
+        public async Task<decimal> GetTotalBankBalanceAsync()
         {
-            _lock.EnterReadLock();
-            try
-            {
-                return _repository.GetTotalBalance();
-            }
-            finally
-            {
-                _lock.ExitReadLock();
-            }
+            return await _repository.GetTotalBalanceAsync();
         }
 
-        public int GetClientCount()
+        public async Task<int> GetClientCountAsync()
         {
-            _lock.EnterReadLock();
-            try
-            {
-                return _repository.GetCount();
-            }
-            finally
-            {
-                _lock.ExitReadLock();
-            }
+            return await _repository.GetCountAsync();
         }
 
-        public bool AccountExists(string accountNumber)
+        public async Task<bool> AccountExistsAsync(string accountNumber)
         {
-            _lock.EnterReadLock();
-            try
-            {
-                return _repository.GetByAccountNumber(accountNumber) != null;
-            }
-            finally
-            {
-                _lock.ExitReadLock();
-            }
+            return await _repository.GetByAccountNumberAsync(accountNumber) != null;
         }
 
         public void Dispose()
         {
-            _lock?.Dispose();
+            _semaphore?.Dispose();
         }
     }
 }

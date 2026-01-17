@@ -37,7 +37,7 @@ namespace BankNode.Network.Strategies
                 switch (command)
                 {
                     case "AC":
-                        return HandleCreate();
+                        return await HandleCreate();
                     case "AD": // AD <acc>/<ip> <amount>
                         return await HandleDeposit(args);
                     case "AW": // AW <acc>/<ip> <amount>
@@ -56,9 +56,9 @@ namespace BankNode.Network.Strategies
             }
         }
 
-        private string HandleCreate()
+    private async Task<string> HandleCreate()
         {
-            var account = _accountService.CreateAccount(_config.NodeIp);
+            var account = await _accountService.CreateAccountAsync(_config.NodeIp);
             return $"AC {account.FullAccountNumber}";
         }
 
@@ -74,7 +74,7 @@ namespace BankNode.Network.Strategies
                 return await _networkClient.SendCommandAsync(ip, port, string.Join(" ", args));
             }
 
-            _accountService.Deposit(accNum, amount);
+            await _accountService.DepositAsync(accNum, amount);
             return "AD";
         }
 
@@ -89,7 +89,7 @@ namespace BankNode.Network.Strategies
                 return await _networkClient.SendCommandAsync(ip, port, string.Join(" ", args));
             }
 
-            _accountService.Withdraw(accNum, amount);
+            await _accountService.WithdrawAsync(accNum, amount);
             return "AW";
         }
 
@@ -103,7 +103,7 @@ namespace BankNode.Network.Strategies
                 return await _networkClient.SendCommandAsync(ip, port, string.Join(" ", args));
             }
 
-            var balance = _accountService.GetBalance(accNum);
+            var balance = await _accountService.GetBalanceAsync(accNum);
             return $"AB {balance}";
         }
 
@@ -117,7 +117,7 @@ namespace BankNode.Network.Strategies
                 return await _networkClient.SendCommandAsync(ip, port, string.Join(" ", args));
             }
 
-            _accountService.RemoveAccount(accNum);
+            await _accountService.RemoveAccountAsync(accNum);
             return "AR";
         }
 

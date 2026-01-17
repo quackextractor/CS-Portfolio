@@ -10,50 +10,52 @@ namespace BankNode.Tests.Unit
     public class AccountServiceTests
     {
         [Fact]
-        public void CreateAccount_ShouldReturnNewAccount()
+        public async Task CreateAccount_ShouldReturnNewAccount()
         {
             // Arrange
             var repo = new Mock<IAccountRepository>();
-            repo.Setup(r => r.GetByAccountNumber(It.IsAny<string>())).Returns((Account?)null); // Always new
+            repo.Setup(r => r.GetByAccountNumberAsync(It.IsAny<string>())).ReturnsAsync((Account?)null); // Always new
+            repo.Setup(r => r.AddAsync(It.IsAny<Account>())).Returns(Task.CompletedTask);
             var service = new AccountService(repo.Object);
 
             // Act
-            var account = service.CreateAccount("127.0.0.1");
+            var account = await service.CreateAccountAsync("127.0.0.1");
 
             // Assert
             Assert.NotNull(account);
             Assert.Contains("/127.0.0.1", account.FullAccountNumber);
-            repo.Verify(r => r.Add(It.IsAny<Account>()), Times.Once);
+            repo.Verify(r => r.AddAsync(It.IsAny<Account>()), Times.Once);
         }
 
         [Fact]
-        public void Deposit_ShouldIncreaseBalance()
+        public async Task Deposit_ShouldIncreaseBalance()
         {
             // Arrange
             var account = new Account { AccountNumber = "123", Balance = 100 };
             var repo = new Mock<IAccountRepository>();
-            repo.Setup(r => r.GetByAccountNumber("123")).Returns(account);
+            repo.Setup(r => r.GetByAccountNumberAsync("123")).ReturnsAsync(account);
+            repo.Setup(r => r.UpdateAsync(account)).Returns(Task.CompletedTask);
             var service = new AccountService(repo.Object);
 
             // Act
-            service.Deposit("123", 50);
+            await service.DepositAsync("123", 50);
 
             // Assert
             Assert.Equal(150, account.Balance);
-            repo.Verify(r => r.Update(account), Times.Once);
+            repo.Verify(r => r.UpdateAsync(account), Times.Once);
         }
 
         [Fact]
-        public void Withdraw_ShouldThrow_WhenInsufficientFunds()
+        public async Task Withdraw_ShouldThrow_WhenInsufficientFunds()
         {
             // Arrange
             var account = new Account { AccountNumber = "123", Balance = 100 };
             var repo = new Mock<IAccountRepository>();
-            repo.Setup(r => r.GetByAccountNumber("123")).Returns(account);
+            repo.Setup(r => r.GetByAccountNumberAsync("123")).ReturnsAsync(account);
             var service = new AccountService(repo.Object);
 
             // Act & Assert
-            Assert.Throws<InvalidOperationException>(() => service.Withdraw("123", 150));
+            await Assert.ThrowsAsync<InvalidOperationException>(() => service.WithdrawAsync("123", 150));
         }
     }
 }

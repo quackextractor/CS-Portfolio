@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
+using System.Threading;
+using System.Threading.Tasks;
 using BankNode.Core.Interfaces;
 using BankNode.Core.Models;
 using BankNode.Shared.IO;
@@ -10,12 +12,12 @@ using Microsoft.Extensions.Logging;
 
 namespace BankNode.Data.Repositories
 {
-    public class FileAccountRepository : IAccountRepository
+    public class FileAccountRepository : IAccountRepository, IDisposable
     {
         private readonly ILogger<FileAccountRepository> _logger;
         private readonly string _filePath;
         private List<Account> _accounts;
-        private readonly object _lock = new object();
+        private readonly SemaphoreSlim _semaphore = new SemaphoreSlim(1, 1);
 
         public FileAccountRepository(ILogger<FileAccountRepository> logger, string filePath = "accounts.json")
         {
@@ -27,6 +29,7 @@ namespace BankNode.Data.Repositories
         private List<Account> LoadAccounts()
         {
             var accounts = new List<Account>();
+            // Using existing synchronous iterator for startup
             var iterator = new FileChunkIterator(_filePath);
 
             foreach (var line in iterator.ReadChuncked())
@@ -47,100 +50,142 @@ namespace BankNode.Data.Repositories
             return accounts;
         }
 
-        private void SaveAccounts()
+        private async Task SaveAccountsAsync()
         {
             var tempPath = _filePath + ".tmp";
             
             try 
             {
-                using (var stream = File.Create(tempPath))
+                using (var stream = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None, 4096, useAsync: true))
                 using (var writer = new StreamWriter(stream))
                 {
                     foreach (var account in _accounts)
                     {
                         var json = JsonSerializer.Serialize(account);
-                        writer.WriteLine(json);
+                        await writer.WriteLineAsync(json);
                     }
                 }
 
                 // Atomic replacement
-                File.Move(tempPath, _filePath, overwrite: true);
+                if (File.Exists(_filePath)) File.Delete(_filePath);
+                File.Move(tempPath, _filePath);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to save accounts to {FilePath}", _filePath);
+                throw;
             }
         }
 
-        public Account? GetByAccountNumber(string accountNumber)
+        public async Task<Account?> GetByAccountNumberAsync(string accountNumber)
         {
-            lock (_lock)
+            await _semaphore.WaitAsync();
+            try
             {
                 return _accounts.FirstOrDefault(a => a.AccountNumber == accountNumber);
             }
-        }
-
-        public IEnumerable<Account> GetAll()
-        {
-            lock (_lock)
+            finally
             {
-                return _accounts.ToList(); // Return copy
+                _semaphore.Release();
             }
         }
 
-        public void Add(Account account)
+        public async Task<IEnumerable<Account>> GetAllAsync()
         {
-            lock (_lock)
+            await _semaphore.WaitAsync();
+            try
+            {
+                return _accounts.ToList(); // Return copy
+            }
+            finally
+            {
+                _semaphore.Release();
+            }
+        }
+
+        public async Task AddAsync(Account account)
+        {
+            await _semaphore.WaitAsync();
+            try
             {
                 if (_accounts.Any(a => a.AccountNumber == account.AccountNumber))
                 {
                     throw new InvalidOperationException("Account already exists.");
                 }
                 _accounts.Add(account);
-                SaveAccounts();
+                await SaveAccountsAsync();
+            }
+            finally
+            {
+                _semaphore.Release();
             }
         }
 
-        public void Update(Account account)
+        public async Task UpdateAsync(Account account)
         {
-            lock (_lock)
+            await _semaphore.WaitAsync();
+            try
             {
                 var index = _accounts.FindIndex(a => a.AccountNumber == account.AccountNumber);
                 if (index != -1)
                 {
                     _accounts[index] = account;
-                    SaveAccounts();
+                    await SaveAccountsAsync();
                 }
+            }
+            finally
+            {
+                _semaphore.Release();
             }
         }
 
-        public void Remove(string accountNumber)
+        public async Task RemoveAsync(string accountNumber)
         {
-            lock (_lock)
+            await _semaphore.WaitAsync();
+            try
             {
                 var account = _accounts.FirstOrDefault(a => a.AccountNumber == accountNumber);
                 if (account != null)
                 {
                     _accounts.Remove(account);
-                    SaveAccounts();
+                    await SaveAccountsAsync();
                 }
+            }
+            finally
+            {
+                _semaphore.Release();
             }
         }
 
-        public int GetCount()
+        public async Task<int> GetCountAsync()
         {
-            lock (_lock)
+            await _semaphore.WaitAsync();
+            try
             {
                 return _accounts.Count;
             }
+            finally
+            {
+                _semaphore.Release();
+            }
         }
 
-        public decimal GetTotalBalance()
+        public async Task<decimal> GetTotalBalanceAsync()
         {
-            lock (_lock)
+            await _semaphore.WaitAsync();
+            try
             {
                 return _accounts.Sum(a => a.Balance);
             }
+            finally
+            {
+                _semaphore.Release();
+            }
+        }
+
+        public void Dispose()
+        {
+            _semaphore?.Dispose();
         }
     }
 }

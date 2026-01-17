@@ -129,17 +129,11 @@ namespace BankNode.Network.Strategies
 
         private string CalculateRobberyPlan(List<BankInfo> banks, long targetAmount)
         {
-            // Goal: Sum(Amount) >= targetAmount, Min(Sum(Clients))
-            // This is a variation of Knapsack (Min weight for at least Value).
-            // Since N is small (number of banks), we can brute force or use DP? 
-            // Actually, we want MIN clients.
-            
-            // Heuristic: Sort by Density? (Amount / Client)? High money, low clients first.
             var sorted = banks.OrderByDescending(b => b.ClientCount == 0 ? double.MaxValue : (double)b.TotalAmount / b.ClientCount).ToList();
             
             decimal currentAmount = 0;
             int victimCount = 0;
-            var victims = new List<string>();
+            var victims = new List<BankInfo>();
 
             foreach (var bank in sorted)
             {
@@ -147,7 +141,7 @@ namespace BankNode.Network.Strategies
                 
                 currentAmount += bank.TotalAmount;
                 victimCount += bank.ClientCount;
-                victims.Add(bank.Ip);
+                victims.Add(bank);
             }
 
             if (currentAmount < targetAmount)
@@ -155,7 +149,14 @@ namespace BankNode.Network.Strategies
                 return $"Unable to reach {targetAmount}. Max possible: {currentAmount} from {victims.Count} banks.";
             }
 
-            return $"To reach {targetAmount} execute robbery on: {string.Join(", ", victims)}. Hits {victimCount} clients.";
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine("RP PLANNED:");
+            foreach (var bank in victims)
+            {
+                sb.AppendLine($"Target: {bank.Ip,-15} | Loot: ${bank.TotalAmount,8} | Clients: {bank.ClientCount,3}");
+            }
+            sb.Append($"Total: ${currentAmount} (Victims: {victimCount})");
+            return sb.ToString(); 
         }
 
 

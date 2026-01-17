@@ -104,10 +104,12 @@ namespace BankNode.Shared
                     }
                 }
 
+                Console.WriteLine("Warning: Node visible only to localhost (127.0.0.1).");
                 return "127.0.0.1";
             }
             catch
             {
+                Console.WriteLine("Warning: Node visible only to localhost (127.0.0.1).");
                 return "127.0.0.1";
             }
         }

@@ -6,17 +6,17 @@ namespace BankNode.Core.Interfaces
     public interface IAccountService
     {
         // Core operations
-        Account CreateAccount(string bankIp);
-        void Deposit(string accountNumber, decimal amount);
-        void Withdraw(string accountNumber, decimal amount);
-        decimal GetBalance(string accountNumber);
-        void RemoveAccount(string accountNumber);
+        Task<Account> CreateAccountAsync(string bankIp);
+        Task DepositAsync(string accountNumber, decimal amount);
+        Task WithdrawAsync(string accountNumber, decimal amount);
+        Task<decimal> GetBalanceAsync(string accountNumber);
+        Task RemoveAccountAsync(string accountNumber);
         
         // Bank stats
-        decimal GetTotalBankBalance();
-        int GetClientCount();
+        Task<decimal> GetTotalBankBalanceAsync();
+        Task<int> GetClientCountAsync();
         
         // Helper for validation
-        bool AccountExists(string accountNumber);
+        Task<bool> AccountExistsAsync(string accountNumber);
     }
 }

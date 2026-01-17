@@ -5,12 +5,12 @@ namespace BankNode.Core.Interfaces
 {
     public interface IAccountRepository
     {
-        Account? GetByAccountNumber(string accountNumber);
-        IEnumerable<Account> GetAll();
-        void Add(Account account);
-        void Update(Account account);
-        void Remove(string accountNumber);
-        int GetCount();
-        decimal GetTotalBalance();
+        Task<Account?> GetByAccountNumberAsync(string accountNumber);
+        Task<IEnumerable<Account>> GetAllAsync();
+        Task AddAsync(Account account);
+        Task UpdateAsync(Account account);
+        Task RemoveAsync(string accountNumber);
+        Task<int> GetCountAsync();
+        Task<decimal> GetTotalBalanceAsync();
     }
 }

@@ -16,7 +16,7 @@ This implementation aims for the **Hacker Bank Node** difficulty level, which in
 -   Basic banking operations (Create, Deposit, Withdraw, Balance, Remove).
 -   Proxy functionality (Forwarding requests to other nodes).
 -   **Robbery Plan (RP)**: An advanced algorithm to calculate optimal robbery strategies across the P2P network.
-    > *Note: The Robbery Plan uses a greedy density-based heuristic ($/client) to approximate the optimal strategy in O(N log N) time.*
+    > *Note: The Robbery Plan uses a greedy density-based heuristic (Amount / Client Count) to approximate the optimal strategy in O(N log N) time, rather than a full exponential Knapsack solution.*
 
 ### Allowed Commands
 
@@ -91,6 +91,42 @@ graph TD
     end
 ```
 
+### Class Diagram
+
+```mermaid
+classDiagram
+    class Program {
+        +Main()
+    }
+    class AppConfig {
+        +Load()
+        +Save()
+    }
+    class NetworkClient {
+        +SendCommandAsync()
+    }
+    class TcpServer {
+        +Start()
+        +Stop()
+    }
+    class FileAccountRepository {
+        +GetByNumber()
+        +Update()
+    }
+    
+    Program --> AppConfig
+    Program --> TcpServer
+    TcpServer --> CommandParser
+    CommandParser --> ICommandStrategy
+    ICommandStrategy <|-- BalanceCommandStrategy
+    ICommandStrategy <|-- RobberyCommandStrategy
+    RobberyCommandStrategy --> NetworkClient
+    BalanceCommandStrategy --> IAccountService
+    IAccountService <|-- AccountService
+    AccountService --> IAccountRepository
+    IAccountRepository <|-- FileAccountRepository
+```
+
 ---
 
 ## 3. Application Flow
@@ -121,6 +157,24 @@ sequenceDiagram
     Service-->>Strategy: 500
     Strategy-->>TcpServer: "AB 500"
     TcpServer-->>Client: "AB 500"
+```
+
+### Proxy Request Flow
+When Node A receives a request for an account on Node B:
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant NodeA as Node A (Local)
+    participant NodeB as Node B (Remote)
+    
+    Client->>NodeA: AB 10001/10.0.0.99
+    NodeA->>NodeA: Parse Command
+    NodeA->>NodeA: Detect IP Mismatch
+    NodeA->>NodeB: Forward: AB 10001/10.0.0.99
+    NodeB->>NodeB: Local Processing
+    NodeB-->>NodeA: Response: AB 500
+    NodeA-->>Client: Response: AB 500
 ```
 
 ---
@@ -262,3 +316,12 @@ This project explicitly reuses and adapts code from previous portfolio projects 
 -   **xUnit**: For Unit and Integration testing.
 -   **Microsoft.Extensions.DependencyInjection**: For IoC container.
 -   **Microsoft.Extensions.Logging**: Abstraction for logging.
+
+## 11. License & Legal
+
+This project is released under the **MIT License**.
+* **Usage:** Free for educational and personal use.
+* **Disclaimer:** This software is a school project simulating a banking system. It involves "hacking" simulations (Robbery Plan). The author is not responsible for misuse or deployment on unauthorized networks.
+* **Third-Party Components:**
+    * `Microsoft.Extensions.DependencyInjection` (MIT)
+    * `Microsoft.Extensions.Logging` (MIT)

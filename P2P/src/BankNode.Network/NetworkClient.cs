@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using BankNode.Shared;
 using Microsoft.Extensions.Logging;
@@ -28,16 +29,20 @@ namespace BankNode.Network
                 _logger.LogInformation($"Proxying command to {ip}:{port} -> {command}");
 
                 using var client = new TcpClient();
-                var connectTask = client.ConnectAsync(ip, port);
+                using var ctsConnect = new CancellationTokenSource(_config.Timeout);
                 
-                if (await Task.WhenAny(connectTask, Task.Delay(_config.Timeout)) != connectTask)
+                try 
+                {
+                    await client.ConnectAsync(ip, port, ctsConnect.Token);
+                }
+                catch (OperationCanceledException)
                 {
                     _logger.LogWarning($"Connection timeout to {ip}:{port}");
-                     return $"ER {_translator.GetError("CONNECTION_TIMEOUT")}";
+                    return $"ER {_translator.GetError("CONNECTION_TIMEOUT")}";
                 }
-                await connectTask;
 
                 using var stream = client.GetStream();
+                // Stream timeouts are still good to have as backup
                 stream.ReadTimeout = _config.Timeout;
                 stream.WriteTimeout = _config.Timeout;
 
@@ -45,23 +50,31 @@ namespace BankNode.Network
                 using var reader = new StreamReader(stream, Encoding.UTF8, leaveOpen: true);
 
                 // Consume welcome message
-                var welcomeTask = reader.ReadLineAsync();
-                if (await Task.WhenAny(welcomeTask, Task.Delay(_config.Timeout)) != welcomeTask)
+                using var ctsWelcome = new CancellationTokenSource(_config.Timeout);
+                try
+                {
+                    await reader.ReadLineAsync(ctsWelcome.Token);
+                }
+                catch (OperationCanceledException)
                 {
                     _logger.LogWarning($"Timeout waiting for welcome message from {ip}:{port}");
                     return $"ER {_translator.GetError("CONNECTION_TIMEOUT")}";
                 }
 
-                await writer.WriteLineAsync(command);
+                await writer.WriteLineAsync(command.AsMemory(), CancellationToken.None); // Write is usually fast, but could use token too
                 
-                var readTask = reader.ReadLineAsync();
-                if (await Task.WhenAny(readTask, Task.Delay(_config.Timeout)) != readTask)
+                using var ctsRead = new CancellationTokenSource(_config.Timeout);
+                string? response = null;
+                try
+                {
+                    response = await reader.ReadLineAsync(ctsRead.Token);
+                }
+                catch (OperationCanceledException)
                 {
                     _logger.LogWarning($"Response timeout from {ip}:{port}");
                     return $"ER {_translator.GetError("RESPONSE_TIMEOUT")}";
                 }
                 
-                var response = await readTask;
                 _logger.LogInformation($"Received response from {ip}:{port} <- {response ?? "null"}");
                 return response ?? $"ER {_translator.GetError("NO_RESPONSE")}";
             }
