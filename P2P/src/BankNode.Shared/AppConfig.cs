@@ -15,6 +15,8 @@ namespace BankNode.Shared
         public string Language { get; set; } = "en";
         public int RobberyConcurrency { get; set; } = 20;
         public int RateLimit { get; set; } = 60;
+        public int MaxConcurrentConnections { get; set; } = 100;
+        public int ClientIdleTimeout { get; set; } = 300000; // 5 minutes default
 
         private FileSystemWatcher _watcher;
         private DateTime _lastRead = DateTime.MinValue;
@@ -48,6 +50,12 @@ namespace BankNode.Shared
             
             if (RateLimit <= 0)
                 throw new ArgumentException($"RateLimit must be positive, got {RateLimit}");
+
+            if (MaxConcurrentConnections <= 0)
+                throw new ArgumentException($"MaxConcurrentConnections must be positive, got {MaxConcurrentConnections}");
+            
+            if (ClientIdleTimeout <= 0)
+                throw new ArgumentException($"ClientIdleTimeout must be positive, got {ClientIdleTimeout}");
         }
 
         private void LoadFromFile()
@@ -75,6 +83,8 @@ namespace BankNode.Shared
                                 Language = loadedConfig.Language ?? "en";
                                 RobberyConcurrency = loadedConfig.RobberyConcurrency > 0 ? loadedConfig.RobberyConcurrency : 20;
                                 RateLimit = loadedConfig.RateLimit > 0 ? loadedConfig.RateLimit : 60;
+                                MaxConcurrentConnections = loadedConfig.MaxConcurrentConnections > 0 ? loadedConfig.MaxConcurrentConnections : 100;
+                                ClientIdleTimeout = loadedConfig.ClientIdleTimeout > 0 ? loadedConfig.ClientIdleTimeout : 300000;
 
                                 // Note: Port and NodeIp usually require restart, so we might skip them or log a warning if they changed
                                 Console.WriteLine($"Config reloaded. Timeout: {Timeout}, Language: {Language}");

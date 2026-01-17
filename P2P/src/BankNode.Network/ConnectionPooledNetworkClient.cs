@@ -16,12 +16,15 @@ namespace BankNode.Network
         private readonly ILogger<ConnectionPooledNetworkClient> _logger;
         private readonly BankNode.Translation.ITranslationStrategy _translator;
         private readonly ConcurrentDictionary<string, EndpointConnection> _connections = new();
+        private readonly Timer _cleanupTimer;
+        private readonly TimeSpan _connectionIdleTimeout = TimeSpan.FromMinutes(5);
 
         public ConnectionPooledNetworkClient(AppConfig config, ILogger<ConnectionPooledNetworkClient> logger, BankNode.Translation.ITranslationStrategy translator)
         {
             _config = config;
             _logger = logger;
             _translator = translator;
+            _cleanupTimer = new Timer(CleanupIdleConnections, null, TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(1));
         }
 
         public async Task<string> SendCommandAsync(string ip, int port, string command)
@@ -31,8 +34,30 @@ namespace BankNode.Network
             return await connection.SendCommandAsync(command);
         }
 
+        private void CleanupIdleConnections(object? state)
+        {
+            foreach (var key in _connections.Keys)
+            {
+                if (_connections.TryGetValue(key, out var connection))
+                {
+                    if (connection.IsExpired(_connectionIdleTimeout))
+                    {
+                        // Try to remove and dispose
+                        // Use a lock in EndpointConnection or just rely on concurrent dictionary removal
+                        // If we remove it, we own the disposal
+                        if (_connections.TryRemove(key, out var removedConnection))
+                        {
+                            _logger.LogDebug("Removing idle connection to {Key}", key);
+                            removedConnection.Dispose();
+                        }
+                    }
+                }
+            }
+        }
+
         public void Dispose()
         {
+            _cleanupTimer.Dispose();
             foreach (var conn in _connections.Values)
             {
                 conn.Dispose();
@@ -52,6 +77,7 @@ namespace BankNode.Network
             private StreamWriter? _writer;
             private StreamReader? _reader;
             private readonly SemaphoreSlim _lock = new(1, 1);
+            private DateTime _lastUsed = DateTime.UtcNow;
 
             public EndpointConnection(string ip, int port, AppConfig config, ILogger logger, BankNode.Translation.ITranslationStrategy translator)
             {
@@ -62,11 +88,19 @@ namespace BankNode.Network
                 _translator = translator;
             }
 
+            public bool IsExpired(TimeSpan timeout)
+            {
+                // Simple check, no lock needed for rough interactions
+                return DateTime.UtcNow - _lastUsed > timeout;
+            }
+
             public async Task<string> SendCommandAsync(string command)
             {
                 await _lock.WaitAsync();
                 try
                 {
+                    _lastUsed = DateTime.UtcNow;
+
                     if (!IsConnected())
                     {
                         await ConnectAsync();

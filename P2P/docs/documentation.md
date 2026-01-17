@@ -35,6 +35,8 @@ All commands are sent as UTF-8 text ending with a newline.
 | **Bank Amount** | `BA` | Total money in bank. | `BA <amount>` | `ER <msg>` |
 | **Bank Number** | `BN` | Number of clients. | `BN <count>` | `ER <msg>` |
 | **Robbery Plan** | `RP <target_amount>` | Calculate robbery plan (Hacker feature). | `RP <strategy_msg>` | `ER <msg>` |
+| **History** | `HISTORY` | Show last 10 commands. | List of commands | - |
+| **Execute Script** | `EXECUTE <path>` | Run commands from file. | Command outputs | `ER <msg>` |
 
 ---
 
@@ -184,7 +186,9 @@ sequenceDiagram
 Configuration is managed via the `AppConfig` class.
 
 -   **Port**: Default `65525`. Must be between 65525 and 65535.
--   **Timeout**: Default `5000` ms. Used for both client inactivity and proxy request timeouts.
+-   **Timeout**: Default `5000` ms. Used for internal node communication timeouts.
+-   **ClientIdleTimeout**: Default `300000` ms (5 min). Idle timeout for connected clients.
+-   **MaxConcurrentConnections**: Default `100`. Maximum simultaneous client connections.
 -   **Language**: Default `en`. Loads translation strings from `languages/<language>.json`.
 -   **NodeIp**: The IP address this node advertises. Can be auto-detected or manually set.
 

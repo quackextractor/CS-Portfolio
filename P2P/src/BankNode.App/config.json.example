@@ -4,5 +4,7 @@
   "NodeIp": "127.0.0.1",
   "Language": "en",
   "RobberyConcurrency": 20,
-  "RateLimit": 60
+  "RateLimit": 60,
+  "MaxConcurrentConnections": 100,
+  "ClientIdleTimeout": 300000
 }

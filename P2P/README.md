@@ -29,7 +29,9 @@ The application is configured via `config.json` placed in the executable directo
   "Port": 65525,
   "Timeout": 5000,
   "NodeIp": "127.0.0.1",
-  "Language": "en"
+  "Language": "en",
+  "MaxConcurrentConnections": 100,
+  "ClientIdleTimeout": 300000
 }
 ```
 

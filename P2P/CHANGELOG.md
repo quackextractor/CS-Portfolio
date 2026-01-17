@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.0] - 2026-01-17
+### Added
+- **Quality of Life**:
+  - `HISTORY` command to view last 10 commands in session.
+  - `EXECUTE <file>` command to run script files line-by-line.
+- **Resource Management**:
+  - `MaxConcurrentConnections` configuration (default 100).
+  - `ClientIdleTimeout` configuration (default 5 minutes).
+  - Connection Pool idle connection cleanup.
+- **Validation**:
+  - `MaxCommandLength` enforcement (1024 chars).
+
+### Changed
+- **Breaking Change**: Account numbers must now be strictly between 10000 and 99999.
+- **Dependency**: Updated internal components to use `BankNode.Shared` consistently.
+
 ## [1.5.0] - 2026-01-17
 ### Added
 - **Capabilities**:

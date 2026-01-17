@@ -144,6 +144,12 @@ namespace BankNode.Network.Strategies
             accountNumber = parts[0];
             var addressPart = parts[1];
 
+            // Validate Account Number Range (10000 - 99999)
+            if (!int.TryParse(accountNumber, out int accNum) || accNum < 10000 || accNum > 99999)
+            {
+                return false;
+            }
+
             // Check for Port
             if (addressPart.Contains(":"))
             {
