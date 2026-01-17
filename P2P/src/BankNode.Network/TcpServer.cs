@@ -65,7 +65,13 @@ namespace BankNode.Network
                     using (var reader = new StreamReader(stream, Encoding.UTF8, leaveOpen: true))
                     using (var writer = new StreamWriter(stream, Encoding.UTF8, leaveOpen: true) { AutoFlush = true })
                     {
-                        await writer.WriteLineAsync(_translator.GetMessage("WELCOME_MESSAGE"));
+                        var welcome = _translator.GetMessage("WELCOME_MESSAGE");
+                        var initError = _translator.GetInitializationError();
+                        if (!string.IsNullOrEmpty(initError))
+                        {
+                            welcome += $"\r\n{initError}";
+                        }
+                        await writer.WriteLineAsync(welcome);
 
                         string? command;
                         while ((command = await reader.ReadLineAsync()) != null)

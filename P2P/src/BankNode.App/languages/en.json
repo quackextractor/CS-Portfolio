@@ -22,6 +22,11 @@
     "HELP_BA": "Get total bank amount",
     "HELP_BN": "Get number of clients",
     "HELP_RP": "Plan robbery (Hacker Edition): RP <amount>",
-    "HELP_EXIT": "Close connection",
-    "HELP_HELP": "Show this help message"
+    "HELP_EXIT": "Disconnects from the node.",
+    "HELP_HELP": "Shows this help message.",
+    "LANG_AVAILABLE": "Available languages",
+    "LANG_CHANGED": "Language changed to",
+    "LANG_NOT_FOUND": "Language not found",
+    "LANG_UPDATE_ERROR": "Error updating language",
+    "LANG_FALLBACK_WARNING": "Warning: Configured language not found. Using default."
 }

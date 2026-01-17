@@ -48,6 +48,20 @@ namespace BankNode.Shared
             }
         }
 
+        public void Save()
+        {
+            try
+            {
+                var options = new JsonSerializerOptions { WriteIndented = true };
+                var json = JsonSerializer.Serialize(this, options);
+                File.WriteAllText("config.json", json);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error saving config.json: {ex.Message}");
+            }
+        }
+
         private string GetLocalIpAddress()
         {
             try

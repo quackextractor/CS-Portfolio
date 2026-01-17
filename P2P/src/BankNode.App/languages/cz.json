@@ -22,6 +22,11 @@
     "HELP_BA": "Získat celkovou částku v bance",
     "HELP_BN": "Získat počet klientů",
     "HELP_RP": "Naplánovat loupež (Hacker Edition): RP <částka>",
-    "HELP_EXIT": "Zavřít připojení",
-    "HELP_HELP": "Zobrazit tuto nápovědu"
+    "HELP_EXIT": "Odpojí se od uzlu.",
+    "HELP_HELP": "Zobrazí tuto nápovědu.",
+    "LANG_AVAILABLE": "Dostupné jazyky",
+    "LANG_CHANGED": "Jazyk změněn na",
+    "LANG_NOT_FOUND": "Jazyk nenalezen",
+    "LANG_UPDATE_ERROR": "Chyba při změně jazyka",
+    "LANG_FALLBACK_WARNING": "Varování: Nastavený jazyk nenalezen. Použit výchozí."
 }
