@@ -17,7 +17,7 @@ using System.Net.Sockets;
 
 namespace BankNode.App
 {
-    class Program
+    public class Program
     {
         static async Task Main(string[] args)
         {
@@ -82,62 +82,7 @@ namespace BankNode.App
             var serverTask = server.StartAsync(cancellationTokenSource.Token);
             
             // Interactive CLI
-            Console.WriteLine("Server started. Type 'HELP' for commands.");
-            
-            while (!cancellationTokenSource.Token.IsCancellationRequested)
-            {
-                var input = Console.ReadLine();
-                if (string.IsNullOrWhiteSpace(input)) continue;
-                
-                var cmd = input.Trim().ToUpper();
-                try
-                {
-                    switch (cmd)
-                    {
-                        case "EXIT":
-                            logger.LogInformation("Stopping server...");
-                            cancellationTokenSource.Cancel();
-                            break;
-                            
-                        case "BN":
-                            var repo = serviceProvider.GetRequiredService<IAccountRepository>();
-                            var count = await repo.GetCountAsync();
-                            var balance = await repo.GetTotalBalanceAsync();
-                            logger.LogInformation($"Local Accounts: {count}, Total Balance: {balance}");
-                            break;
-
-                        case "LOG":
-                            var switcher = serviceProvider.GetRequiredService<LogLevelSwitch>();
-                            if (switcher.MinimumLevel == LogLevel.Information)
-                            {
-                                switcher.MinimumLevel = LogLevel.Debug;
-                                logger.LogInformation("Log Level set to DEBUG");
-                            }
-                            else
-                            {
-                                switcher.MinimumLevel = LogLevel.Information;
-                                logger.LogInformation("Log Level set to INFO");
-                            }
-                            break;
-                            
-                        case "HELP":
-                            Console.WriteLine("Available Local Commands:");
-                            Console.WriteLine("  EXIT - Stop the server");
-                            Console.WriteLine("  BN   - Show local bank stats");
-                            Console.WriteLine("  LOG  - Toggle logging verbosity (INFO/DEBUG)");
-                            Console.WriteLine("  HELP - Show this help");
-                            break;
-                            
-                        default:
-                            Console.WriteLine($"Unknown local command: {cmd}");
-                            break;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    logger.LogError(ex, "Error executing local command");
-                }
-            }
+            await RunConsoleLoopAsync(Console.In, Console.Out, cancellationTokenSource, serviceProvider, logger);
 
             try 
             {
@@ -147,6 +92,76 @@ namespace BankNode.App
             {
                 // Normal shutdown
             }
+        }
+
+        public static async Task RunConsoleLoopAsync(TextReader reader, TextWriter writer, CancellationTokenSource cts, IServiceProvider serviceProvider, ILogger logger)
+        {
+            await writer.WriteLineAsync("Server started. Type 'HELP' for commands.");
+            
+            while (!cts.Token.IsCancellationRequested)
+            {
+
+                var input = await reader.ReadLineAsync();
+                if (input == null) break; 
+                
+                if (string.IsNullOrWhiteSpace(input)) continue;
+                
+                var cmd = input.Trim().ToUpper();
+                try
+                {
+                    switch (cmd)
+                    {
+                        case "EXIT":
+                            logger.LogInformation("Stopping server...");
+                            cts.Cancel();
+                            break;
+                            
+                        case "BN":
+                            var repo = serviceProvider.GetRequiredService<IAccountRepository>();
+                            var count = await repo.GetCountAsync();
+                            var balance = await repo.GetTotalBalanceAsync();
+                            // Write to Console AND Log? Original did Log. 
+                            // But usually console command expects console output.
+                            // The original code logged it: logger.LogInformation($"Local Accounts...");
+                            // We should probably write to writer too for testing?
+                            var msg = $"Local Accounts: {count}, Total Balance: {balance}";
+                            logger.LogInformation(msg);
+                            await writer.WriteLineAsync(msg);
+                            break;
+
+                        case "LOG":
+                            var switcher = serviceProvider.GetRequiredService<LogLevelSwitch>();
+                            if (switcher.MinimumLevel == LogLevel.Information)
+                            {
+                                switcher.MinimumLevel = LogLevel.Debug;
+                                logger.LogInformation("Log Level set to DEBUG");
+                                await writer.WriteLineAsync("Log Level set to DEBUG");
+                            }
+                            else
+                            {
+                                switcher.MinimumLevel = LogLevel.Information;
+                                logger.LogInformation("Log Level set to INFO");
+                                await writer.WriteLineAsync("Log Level set to INFO");
+                            }
+                            break;
+                            
+                        case "HELP":
+                            await writer.WriteLineAsync("  EXIT - Stop the server");
+                            await writer.WriteLineAsync("  BN   - Show local bank stats");
+                            await writer.WriteLineAsync("  LOG  - Toggle logging verbosity (INFO/DEBUG)");
+                            await writer.WriteLineAsync("  HELP - Show this help");
+                            break;
+                            
+                        default:
+                            break;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, "Error executing local command");
+                }
+            }
+
         }
 
         private static void ConfigureServices(IServiceCollection services)

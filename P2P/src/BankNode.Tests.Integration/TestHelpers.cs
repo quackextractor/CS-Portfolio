@@ -48,6 +48,40 @@ namespace BankNode.Tests.Integration
     ""HELP_RP"": ""Naplánovat loupež (Hacker Edition): RP <částka>""
 }");
                 }
+
+                path = Path.Combine(dir, "en.json");
+                if (!File.Exists(path))
+                {
+                     File.WriteAllText(path, @"
+{
+    ""UNKNOWN_COMMAND"": ""Unknown command."",
+    ""INVALID_FORMAT"": ""Invalid format."",
+    ""INVALID_ACCOUNT_FORMAT"": ""Invalid account format."",
+    ""INVALID_AMOUNT"": ""Invalid amount."",
+    ""INSUFFICIENT_FUNDS"": ""Insufficient funds."",
+    ""CONNECTION_TIMEOUT"": ""Connection timeout."",
+    ""RESPONSE_TIMEOUT"": ""Response timeout."",
+    ""NO_RESPONSE"": ""No response."",
+    ""CONNECTION_FAILED"": ""Connection failed."",
+    ""ROBBERY_PLAN"": ""Robbery Plan"",
+    ""HELP_HINT"": ""type HELP for help"",
+    ""DID_YOU_MEAN"": ""Did you mean {0}?"",
+    ""WELCOME_MESSAGE"": ""Welcome to BankNode! Type HELP for help."",
+    ""HELP_HEADER"": ""Available commands:"",
+    ""HELP_AC"": ""Create new account"",
+    ""HELP_BC"": ""Check IP/Node Status"",
+    ""HELP_AB"": ""Check account balance: AB <account>/<ip>"",
+    ""HELP_AD"": ""Deposit money: AD <account>/<ip> <amount>"",
+    ""HELP_AW"": ""Withdraw money: AW <account>/<ip> <amount>"",
+    ""HELP_AR"": ""Remove account (if balance 0): AR <account>/<ip>"",
+    ""HELP_BA"": ""Get total bank amount"",
+    ""HELP_BN"": ""Get client count"",
+    ""HELP_RP"": ""Plan robbery (Hacker Edition): RP <amount>"",
+    ""HELP_EXIT"": ""Close connection"",
+    ""HELP_LANG"": ""Switch language: LANG <code|list>"",
+    ""HELP_HELP"": ""Show this help""
+}");
+                }
             }
         }
     }

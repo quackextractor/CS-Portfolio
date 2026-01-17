@@ -67,8 +67,27 @@ namespace BankNode.Data.Repositories
                 }
 
                 // Atomic replacement
-                if (File.Exists(_filePath)) File.Delete(_filePath);
-                File.Move(tempPath, _filePath);
+                int retries = 3;
+                while (retries > 0)
+                {
+                    try 
+                    {
+                        File.Move(tempPath, _filePath, overwrite: true);
+                        break;
+                    }
+                    catch (IOException) // UnauthorizedAccess or InUse
+                    {
+                        retries--;
+                        if (retries == 0) throw;
+                        await Task.Delay(50);
+                    }
+                    catch (UnauthorizedAccessException) 
+                    {
+                         retries--;
+                        if (retries == 0) throw;
+                        await Task.Delay(50);
+                    }
+                }
             }
             catch (Exception ex)
             {

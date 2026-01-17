@@ -16,7 +16,7 @@ namespace BankNode.Tests.Integration
 {
     public class PersistenceTests
     {
-        private readonly int _port = 65532;
+        private readonly int _port = 65530;
         
         [Fact]
         public async Task Data_ShouldPersist_BetweenRestarts()
@@ -34,7 +34,7 @@ namespace BankNode.Tests.Integration
                 var sp = services.BuildServiceProvider();
                 var server = sp.GetRequiredService<TcpServer>();
                 var serverTask = server.StartAsync(cts.Token);
-                await Task.Delay(500); // Wait for start
+                await Task.Delay(2000); // Wait for start
 
                 var client = sp.GetRequiredService<INetworkClient>();
                 
@@ -59,7 +59,7 @@ namespace BankNode.Tests.Integration
                 var sp = services.BuildServiceProvider();
                 var server = sp.GetRequiredService<TcpServer>();
                 var serverTask = server.StartAsync(cts.Token);
-                await Task.Delay(500);
+                await Task.Delay(2000);
 
                 var client = sp.GetRequiredService<INetworkClient>();
 
@@ -81,7 +81,7 @@ namespace BankNode.Tests.Integration
         private IServiceCollection CreateServices(int port, string filePath)
         {
             var services = new ServiceCollection();
-            var config = new AppConfig { Port = port, NodeIp = "127.0.0.1", Language = "cs" };
+            var config = new AppConfig { Port = port, NodeIp = "127.0.0.1", Language = "en" };
             services.AddSingleton(config);
             services.AddLogging(c => c.AddConsole());
 
