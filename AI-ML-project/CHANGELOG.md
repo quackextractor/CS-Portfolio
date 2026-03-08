@@ -5,7 +5,43 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] - 2026-03-08
+### Added
+- `setup` subcommand in `main.py` (`python main.py setup`) that calls
+  `setup_models.download_models()` to download required MediaPipe model files.
+- `setup.bat`: Windows batch script that creates a virtual environment,
+  installs `requirements.txt`, and runs `python main.py setup` in one step.
+- First-time setup instructions added to the `argparse` description shown
+  by `python main.py --help`.
+
+### Changed
+- Updated `README.md` to reference `python main.py setup` instead of the
+  standalone `python setup_models.py` command.
+
+## [1.4.0] - 2026-03-08
+
+### Changed
+- Migrated face detection in `src/build_dataset.py` and `src/app.py` from the
+  removed `mediapipe.solutions` API to the current `mediapipe.tasks.vision.FaceDetector`
+  Tasks API (required by mediapipe >= 0.10.x).
+- `process_images` now accepts a `model_path` parameter; `build_dataset` reads
+  the path from `config.yaml` (`model.face_detector_model_path`).
+- Bounding box coordinates are now read as absolute pixels
+  (`origin_x`, `origin_y`, `width`, `height`) instead of relative floats.
+
+### Added
+- `setup_models.py`: one-time helper script to download the required
+  BlazeFace short-range `.task` model file into `models/`.
+- `model.face_detector_model_path` key added to `config.yaml`.
+- `test_build_face_detector_missing_model_raises` unit test covering the new
+  `FileNotFoundError` code path.
+
+### Fixed
+- `app.py` now calls `face_detector.close()` on all exit paths (camera error,
+  normal quit) to avoid resource leaks.
+
 ## [1.3.0] - 2026-03-08
+
 ### Fixed
 - Replaced `import mediapipe as mp` / `mp.solutions.face_detection` with a lazy import
   in `src/build_dataset.py` and `src/app.py`. `mediapipe >= 0.10.x` removed `solutions`

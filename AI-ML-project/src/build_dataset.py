@@ -7,28 +7,53 @@ import argparse
 from sklearn.model_selection import train_test_split
 
 
-# Lazy mediapipe handle - resolved on first use so tests can mock it freely.
-_mp_face_detection = None
-
-
-def _get_mp_face_detection():
-    """Return the mediapipe.solutions.face_detection module, importing it lazily."""
-    global _mp_face_detection
-    if _mp_face_detection is None:
-        try:
-            from mediapipe.solutions import face_detection as _mod
-            _mp_face_detection = _mod
-        except ImportError as err:
-            raise ImportError(
-                "mediapipe is not installed or is incompatible. "
-                "Run: pip install -r requirements.txt"
-            ) from err
-    return _mp_face_detection
-
-
 def load_config(config_path: str = "config.yaml") -> dict:
     with open(config_path, "r") as f:
         return yaml.safe_load(f)
+
+
+def _build_face_detector(model_path: str):
+    """
+    Construct a MediaPipe Tasks FaceDetector using the Tasks API
+    (mediapipe >= 0.10.x, which no longer ships mediapipe.solutions).
+
+    Raises:
+        ImportError:  if mediapipe is not installed.
+        FileNotFoundError: if the model file does not exist.
+        RuntimeError: if the detector cannot be initialised.
+    """
+    try:
+        import mediapipe as mp
+    except ImportError as err:
+        raise ImportError(
+            "mediapipe is not installed or is incompatible. "
+            "Run: pip install -r requirements.txt"
+        ) from err
+
+    if not os.path.isfile(model_path):
+        raise FileNotFoundError(
+            f"Face detector model not found at '{model_path}'. "
+            "Download it by running: python setup_models.py  "
+            "or see the README for manual download instructions."
+        )
+
+    try:
+        BaseOptions = mp.tasks.BaseOptions
+        FaceDetector = mp.tasks.vision.FaceDetector
+        FaceDetectorOptions = mp.tasks.vision.FaceDetectorOptions
+        VisionRunningMode = mp.tasks.vision.RunningMode
+
+        options = FaceDetectorOptions(
+            base_options=BaseOptions(model_asset_path=model_path),
+            running_mode=VisionRunningMode.IMAGE,
+            min_detection_confidence=0.5,
+        )
+        return FaceDetector.create_from_options(options)
+    except Exception as e:
+        raise RuntimeError(
+            f"Failed to initialise MediaPipe FaceDetector: {e}\n"
+            "Ensure mediapipe >= 0.10.9 is installed and the model file is valid."
+        ) from e
 
 
 def process_images(
@@ -36,24 +61,17 @@ def process_images(
     output_dir: str,
     label: int,
     img_size: int,
-    split_mapping: dict = None,
+    model_path: str = "models/blaze_face_short_range.task",
 ) -> list:
     """
     Processes images in a directory: detects faces, crops, resizes, and saves them.
     Returns a list of dictionaries with metadata for the CSV.
     """
+    import mediapipe as mp
+
     records = []
 
-    mp_face_detection = _get_mp_face_detection()
-    try:
-        face_detection = mp_face_detection.FaceDetection(
-            model_selection=1, min_detection_confidence=0.5
-        )
-    except Exception as e:
-        raise RuntimeError(
-            f"Failed to initialise MediaPipe FaceDetection: {e}\n"
-            "Ensure mediapipe >= 0.10.9 is installed."
-        ) from e
+    face_detector = _build_face_detector(model_path)
 
     os.makedirs(output_dir, exist_ok=True)
 
@@ -65,30 +83,34 @@ def process_images(
     discarded_count = 0
 
     for img_path in image_paths:
-        img = cv2.imread(img_path)
-        if img is None:
+        img_bgr = cv2.imread(img_path)
+        if img_bgr is None:
             discarded_count += 1
             print(f"Failed to read image: {img_path}")
             continue
 
-        img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        results = face_detection.process(img_rgb)
+        # Tasks API requires an mp.Image in RGB format
+        img_rgb = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)
+        mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=img_rgb)
+
+        detection_result = face_detector.detect(mp_image)
 
         # We strictly require exactly one face
-        if not results.detections or len(results.detections) != 1:
+        if not detection_result.detections or len(detection_result.detections) != 1:
             discarded_count += 1
             continue
 
-        detection = results.detections[0]
-        bboxC = detection.location_data.relative_bounding_box
+        detection = detection_result.detections[0]
+        # BoundingBox is now absolute pixels in the Tasks API
+        bbox = detection.bounding_box
+        x = bbox.origin_x
+        y = bbox.origin_y
+        w = bbox.width
+        h = bbox.height
 
-        ih, iw, _ = img.shape
-        x = int(bboxC.xmin * iw)
-        y = int(bboxC.ymin * ih)
-        w = int(bboxC.width * iw)
-        h = int(bboxC.height * ih)
+        ih, iw, _ = img_bgr.shape
 
-        # Add a slight margin (optional but helps CNN)
+        # Add a slight margin (helps CNN generalise)
         margin_x = int(w * 0.1)
         margin_y = int(h * 0.1)
 
@@ -97,7 +119,7 @@ def process_images(
         x_max = min(iw, x + w + margin_x)
         y_max = min(ih, y + h + margin_y)
 
-        cropped_face = img[y_min:y_max, x_min:x_max]
+        cropped_face = img_bgr[y_min:y_max, x_min:x_max]
 
         if cropped_face.size == 0:
             discarded_count += 1
@@ -109,15 +131,14 @@ def process_images(
         output_path = os.path.join(output_dir, filename)
         cv2.imwrite(output_path, resized_face)
 
-        # Create record
-        # Note: dataset path should be relative to project root ideally
         rel_output_path = os.path.relpath(output_path, start=".")
         records.append({"filepath": rel_output_path, "label": label})
         processed_count += 1
 
-    face_detection.close()
+    face_detector.close()
     print(
-        f"Processed {processed_count} images for label {label}. Discarded {discarded_count}."
+        f"Processed {processed_count} images for label {label}. "
+        f"Discarded {discarded_count}."
     )
     return records
 
@@ -131,18 +152,23 @@ def build_dataset() -> None:
     test_split_size = config["data"].get("test_split_size", 0.2)
     random_seed = config["data"].get("random_seed", 42)
     img_size = config["model"]["img_size"]
+    model_path = config["model"].get(
+        "face_detector_model_path", "models/blaze_face_short_range.task"
+    )
 
     proc_pos_dir = os.path.join(processed_dir, "positive")
     proc_neg_dir = os.path.join(processed_dir, "negative")
 
     print("Processing positive class (Miro)...")
     pos_records = process_images(
-        raw_positive_dir, proc_pos_dir, label=1, img_size=img_size
+        raw_positive_dir, proc_pos_dir, label=1, img_size=img_size,
+        model_path=model_path,
     )
 
     print("Processing negative class (Random)...")
     neg_records = process_images(
-        raw_negative_dir, proc_neg_dir, label=0, img_size=img_size
+        raw_negative_dir, proc_neg_dir, label=0, img_size=img_size,
+        model_path=model_path,
     )
 
     all_records = pos_records + neg_records

@@ -1,5 +1,5 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Version](https://img.shields.io/badge/version-1.2.0-blue.svg)](https://github.com/quackextractor/CS-Portfolio)
+[![Version](https://img.shields.io/badge/version-1.5.0-blue.svg)](https://github.com/quackextractor/CS-Portfolio)
 
 # Miro Face Detector
 
@@ -33,11 +33,14 @@ The project uses several external Python libraries for data scraping, image proc
    `venv\Scripts\activate`
 4. Install the required packages:
    `pip install -r requirements.txt`
+5. Download the required MediaPipe model files:
+   `python main.py setup`
 
 ## Using the Command Line Interface (CLI)
 
 The project is operated entirely through a unified CLI managed by `main.py`. Once your virtual environment is active and dependencies are installed, you can use the following commands:
 
+* `python main.py setup`: Download required MediaPipe model files (run once after installing dependencies).
 * `python main.py scrape`: Download portrait images from Pexels for the negative class.
 * `python main.py extract <video_path>`: Extract frames from personal videos for the positive class.
 * `python main.py build`: Clean, crop, and normalize raw images to build the dataset CSV.
@@ -59,9 +62,11 @@ The documentation is generated dynamically using a Python script that builds tra
 * `vendor/`: Foreign code, third party libraries, and external snippets not authored by you.
 * `data/`: Divided into `raw/` and `processed/` directories to store the collected image dataset and the final `dataset.csv`.
 * `notebooks/`: Google Colab Jupyter Notebooks used for cloud based model training.
-* `models/`: Exported weights of the trained neural network.
+* `models/`: Exported weights of the trained neural network and the downloaded MediaPipe face detector model.
 * `docs/`: Generated PDF project documentation.
 * `out/`: Temporary build folder for LaTeX compilation and graph generation.
+* `setup_models.py`: Helper module that downloads required MediaPipe model files (invoked via `python main.py setup`).
+* `setup.bat`: Windows batch script that creates a virtual environment, installs dependencies, and downloads models in one step.
 
 ## Deployment and Execution Instructions
 
@@ -98,6 +103,13 @@ python -m venv venv
 4. **Install Dependencies:**
 ```bash
 pip install -r requirements.txt
+
+```
+
+
+4.5 **Download MediaPipe Models:**
+```bash
+python main.py setup
 
 ```
 

@@ -5,45 +5,71 @@ import tensorflow as tf
 import yaml
 
 
-# Lazy mediapipe handle - resolved on first use so tests can mock it freely.
-_mp_face_detection = None
-
-
-def _get_mp_face_detection():
-    """Return the mediapipe.solutions.face_detection module, importing it lazily."""
-    global _mp_face_detection
-    if _mp_face_detection is None:
-        try:
-            from mediapipe.solutions import face_detection as _mod
-            _mp_face_detection = _mod
-        except ImportError as err:
-            raise ImportError(
-                "mediapipe is not installed or is incompatible. "
-                "Run: pip install -r requirements.txt"
-            ) from err
-    return _mp_face_detection
-
-
 def load_config(config_path: str = "config.yaml") -> dict:
     with open(config_path, "r") as f:
         return yaml.safe_load(f)
 
 
+def _build_face_detector(model_path: str):
+    """
+    Construct a MediaPipe Tasks FaceDetector for live-stream inference.
+
+    Raises:
+        ImportError: if mediapipe is not installed.
+        FileNotFoundError: if the model file does not exist.
+        RuntimeError: if the detector cannot be initialised.
+    """
+    try:
+        import mediapipe as mp
+    except ImportError as err:
+        raise ImportError(
+            "mediapipe is not installed or is incompatible. "
+            "Run: pip install -r requirements.txt"
+        ) from err
+
+    if not os.path.isfile(model_path):
+        raise FileNotFoundError(
+            f"Face detector model not found at '{model_path}'. "
+            "See the README for download instructions."
+        )
+
+    try:
+        BaseOptions = mp.tasks.BaseOptions
+        FaceDetector = mp.tasks.vision.FaceDetector
+        FaceDetectorOptions = mp.tasks.vision.FaceDetectorOptions
+        VisionRunningMode = mp.tasks.vision.RunningMode
+
+        options = FaceDetectorOptions(
+            base_options=BaseOptions(model_asset_path=model_path),
+            running_mode=VisionRunningMode.IMAGE,
+            min_detection_confidence=0.5,
+        )
+        return FaceDetector.create_from_options(options)
+    except Exception as e:
+        raise RuntimeError(
+            f"Failed to initialise MediaPipe FaceDetector: {e}\n"
+            "Ensure mediapipe >= 0.10.9 is installed and the model file is valid."
+        ) from e
+
+
 def main():
+    import mediapipe as mp
+
     config = load_config()
     model_path = config["model"]["output_path"]
     img_size = config["model"]["img_size"]
     camera_index = config["camera"]["index"]
     threshold = config["model"].get("threshold", 0.5)
+    face_model_path = config["model"].get(
+        "face_detector_model_path", "models/blaze_face_short_range.task"
+    )
 
     print(f"Loading model from {model_path}...")
     if not os.path.exists(model_path):
         print(
-            f"Error: Model file not found at {model_path}. Please train the model first."
+            f"Error: Model file not found at {model_path}. "
+            "Please train the model first."
         )
-        # If the model doesn't exist, we can't run inference.
-        # But for development/testing UI, we could mock the model.
-        # However, the user is required to have the trained model for final deployment.
         return
 
     try:
@@ -52,25 +78,18 @@ def main():
         print(f"Error loading model: {e}")
         return
 
-    mp_face_detection = _get_mp_face_detection()
-    try:
-        face_detection = mp_face_detection.FaceDetection(
-            model_selection=0, min_detection_confidence=0.5
-        )
-    except Exception as e:
-        raise RuntimeError(
-            f"Failed to initialise MediaPipe FaceDetection: {e}\n"
-            "Ensure mediapipe >= 0.10.9 is installed."
-        ) from e
+    face_detector = _build_face_detector(face_model_path)
 
     print(f"Opening camera {camera_index}...")
     cap = cv2.VideoCapture(camera_index)
 
     if not cap.isOpened():
         print("Error: Could not open camera.")
+        face_detector.close()
         return
 
     print("Camera opened successfully. Press 'q' to quit.")
+    frame_index = 0
 
     while True:
         ret, frame = cap.read()
@@ -78,20 +97,22 @@ def main():
             print("Failed to grab frame")
             break
 
-        # Convert the BGR image to RGB
+        # Convert BGR frame to RGB mp.Image for the Tasks API
         rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb_frame)
 
-        # Process the image and find faces
-        results = face_detection.process(rgb_frame)
+        detection_result = face_detector.detect(mp_image)
+        frame_index += 1
 
-        if results.detections:
-            for detection in results.detections:
-                bboxC = detection.location_data.relative_bounding_box
-                ih, iw, _ = frame.shape
-                x = int(bboxC.xmin * iw)
-                y = int(bboxC.ymin * ih)
-                w = int(bboxC.width * iw)
-                h = int(bboxC.height * ih)
+        if detection_result.detections:
+            ih, iw, _ = frame.shape
+            for detection in detection_result.detections:
+                # BoundingBox is absolute pixels in the Tasks API
+                bbox = detection.bounding_box
+                x = bbox.origin_x
+                y = bbox.origin_y
+                w = bbox.width
+                h = bbox.height
 
                 # Margin for cropping
                 margin_x = int(w * 0.1)
@@ -105,16 +126,14 @@ def main():
                 cropped_face = frame[y_min:y_max, x_min:x_max]
 
                 if cropped_face.size > 0:
-                    # Preprocess for model
+                    # Preprocess for classifier model
                     resized_face = cv2.resize(cropped_face, (img_size, img_size))
                     rgb_face = cv2.cvtColor(resized_face, cv2.COLOR_BGR2RGB)
                     normalized_face = rgb_face / 255.0
                     input_face = np.expand_dims(normalized_face, axis=0)
 
-                    # Predict
                     prediction = model.predict(input_face, verbose=0)[0][0]
 
-                    # Depending on threshold, classify. Positive (1) is Miro.
                     if prediction >= threshold:
                         label = f"Miro ({prediction:.2f})"
                         color = (0, 255, 0)  # Green
@@ -122,7 +141,6 @@ def main():
                         label = f"Unknown ({prediction:.2f})"
                         color = (0, 0, 255)  # Red
 
-                    # Draw bounding box
                     cv2.rectangle(frame, (x_min, y_min), (x_max, y_max), color, 2)
                     cv2.putText(
                         frame,
@@ -134,15 +152,13 @@ def main():
                         2,
                     )
 
-        # Display the resulting frame
         cv2.imshow("Miro Face Detector", frame)
 
-        # Exit on 'q' press
         if cv2.waitKey(1) & 0xFF == ord("q"):
             break
 
-    # When everything done, release the capture
     cap.release()
+    face_detector.close()
     cv2.destroyAllWindows()
 
 

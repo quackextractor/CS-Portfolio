@@ -4,17 +4,16 @@ import os
 os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 
-import argparse
-import sys
+import argparse  # noqa: E402
+import sys  # noqa: E402
+import importlib.util  # noqa: E402
 
 # Import the core functions from your existing modules
-from src.app import main as run_inference
-from src.build_dataset import build_dataset
-from src.pexels_scraper import download_pexels_images
-from src.video_extractor import extract_frames
-
-# Import the documentation generator dynamically to handle pathing
-import importlib.util
+from src.app import main as run_inference  # noqa: E402
+from src.build_dataset import build_dataset  # noqa: E402
+from src.pexels_scraper import download_pexels_images  # noqa: E402
+from src.video_extractor import extract_frames  # noqa: E402
+from setup_models import download_models  # noqa: E402
 
 
 def generate_docs():
@@ -22,37 +21,51 @@ def generate_docs():
     if not os.path.exists(script_path):
         print(f"Error: Documentation script not found at {script_path}")
         return
-    
+
     spec = importlib.util.spec_from_file_location("gen_docs", script_path)
     gen_docs_module = importlib.util.module_from_spec(spec)
     sys.modules["gen_docs"] = gen_docs_module
     spec.loader.exec_module(gen_docs_module)
     gen_docs_module.build_pdf()
 
+
 def main():
     parser = argparse.ArgumentParser(
-        description="Miro Face Detector - Unified CLI Tool"
+        description=(
+            "Miro Face Detector - Unified CLI Tool\n\n"
+            "Typical first-time setup:\n"
+            "  python main.py setup   # download required model files\n"
+            "  python main.py build   # process raw images into dataset CSV\n"
+            "  python main.py run     # launch live webcam inference"
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    
+
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
     subparsers.required = True
 
+    # Command: setup
+    subparsers.add_parser(
+        "setup",
+        help="Download required MediaPipe model files (run once after pip install)",
+    )
+
     # Command: run
-    parser_run = subparsers.add_parser(
-        "run", 
-        help="Launch the live webcam face detection application"
+    subparsers.add_parser(
+        "run",
+        help="Launch the live webcam face detection application",
     )
 
     # Command: build
-    parser_build = subparsers.add_parser(
-        "build", 
-        help="Clean, crop, and normalize raw images to build the dataset CSV"
+    subparsers.add_parser(
+        "build",
+        help="Clean, crop, and normalize raw images to build the dataset CSV",
     )
 
     # Command: scrape
     parser_scrape = subparsers.add_parser(
-        "scrape", 
-        help="Download portrait images from Pexels for the negative class"
+        "scrape",
+        help="Download portrait images from Pexels for the negative class",
     )
     parser_scrape.add_argument(
         "--query", type=str, default="portrait face", help="Search query for Pexels"
@@ -66,8 +79,8 @@ def main():
 
     # Command: extract
     parser_extract = subparsers.add_parser(
-        "extract", 
-        help="Extract frames from personal videos for the positive class"
+        "extract",
+        help="Extract frames from personal videos for the positive class",
     )
     parser_extract.add_argument(
         "video_path", type=str, help="Path to the source video file"
@@ -80,9 +93,9 @@ def main():
     )
 
     # Command: docs
-    parser_docs = subparsers.add_parser(
-        "docs", 
-        help="Generate the LaTeX project documentation PDF"
+    subparsers.add_parser(
+        "docs",
+        help="Generate the LaTeX project documentation PDF",
     )
 
     # Check if no arguments were passed, print help and exit
@@ -92,7 +105,9 @@ def main():
 
     args = parser.parse_args()
 
-    if args.command == "run":
+    if args.command == "setup":
+        download_models()
+    elif args.command == "run":
         run_inference()
     elif args.command == "build":
         build_dataset()
@@ -102,6 +117,7 @@ def main():
         extract_frames(args.video_path, args.output_dir, args.frame_rate)
     elif args.command == "docs":
         generate_docs()
+
 
 if __name__ == "__main__":
     main()
