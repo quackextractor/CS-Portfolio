@@ -8,7 +8,7 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # Output directories set relative to the script's location
 OUT_DIR = os.path.join(SCRIPT_DIR, "out")
-DOCS_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, "..", "..", "docs"))
+DOCS_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, "..", "..", "..", "docs"))
 FINAL_PDF_PATH = os.path.join(DOCS_DIR, "documentation.pdf")
 
 def generate_graphs():
