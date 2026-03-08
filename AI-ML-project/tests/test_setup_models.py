@@ -13,7 +13,7 @@ def temp_config(tmp_path):
                 {
                     "url": "http://example.com/model.task",
                     "dest": "vendor/models/model.task",
-                    "description": "Test Model"
+                    "description": "Test Model",
                 }
             ]
         }
@@ -32,7 +32,9 @@ def test_load_models_reads_config(temp_config):
 @patch("vendor.setup_models.urllib.request.urlretrieve")
 @patch("vendor.setup_models.os.path.isfile")
 @patch("vendor.setup_models._load_models")
-def test_download_models_calls_urlretrieve(mock_load, mock_isfile, mock_retrieve, temp_config):
+def test_download_models_calls_urlretrieve(
+    mock_load, mock_isfile, mock_retrieve, temp_config
+):
     mock_load.return_value = [
         {"url": "http://test.com", "dest": "dest/path", "description": "desc"}
     ]
@@ -46,7 +48,9 @@ def test_download_models_calls_urlretrieve(mock_load, mock_isfile, mock_retrieve
 @patch("vendor.setup_models.urllib.request.urlretrieve")
 @patch("vendor.setup_models.os.path.isfile")
 @patch("vendor.setup_models._load_models")
-def test_download_models_already_exists(mock_load, mock_isfile, mock_retrieve, temp_config):
+def test_download_models_already_exists(
+    mock_load, mock_isfile, mock_retrieve, temp_config
+):
     mock_load.return_value = [
         {"url": "http://test.com", "dest": "dest/path", "description": "desc"}
     ]

@@ -65,6 +65,10 @@ def main():
     )
 
     print(f"Loading model from {model_path}...")
+    if not model_path.endswith(".keras"):
+        print(f"Error: Model file must be in .keras format. Received: {model_path}")
+        return
+
     if not os.path.exists(model_path):
         print(
             f"Error: Model file not found at {model_path}. "

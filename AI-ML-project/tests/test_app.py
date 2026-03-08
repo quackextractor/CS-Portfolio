@@ -11,7 +11,7 @@ def dummy_app_config(tmp_path):
         "data": {},
         "model": {
             "img_size": 128,
-            "output_path": str(tmp_path / "dummy.h5"),
+            "output_path": str(tmp_path / "dummy.keras"),
             "threshold": 0.75,
         },
         "camera": {"index": 2},
@@ -32,7 +32,7 @@ def test_load_app_config(dummy_app_config):
 def test_main_missing_model_graceful_exit(mock_load_config, mock_exists, capsys):
     # Test that gracefully exits if model doesn't exist
     mock_load_config.return_value = {
-        "model": {"output_path": "fake/path.h5", "img_size": 128, "threshold": 0.5},
+        "model": {"output_path": "fake/path.keras", "img_size": 128, "threshold": 0.5},
         "camera": {"index": 0},
     }
     mock_exists.return_value = False
@@ -40,4 +40,4 @@ def test_main_missing_model_graceful_exit(mock_load_config, mock_exists, capsys)
     main()
 
     captured = capsys.readouterr()
-    assert "Error: Model file not found at fake/path.h5" in captured.out
+    assert "Error: Model file not found at fake/path.keras" in captured.out

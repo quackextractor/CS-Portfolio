@@ -46,6 +46,7 @@ def test_load_config(dummy_config):
 # Tests for _build_face_detector error paths
 # ---------------------------------------------------------------------------
 
+
 def test_build_face_detector_missing_model_raises(tmp_path):
     """FileNotFoundError is raised when the model file does not exist."""
     with pytest.raises(FileNotFoundError, match="Face detector model not found"):
@@ -55,6 +56,7 @@ def test_build_face_detector_missing_model_raises(tmp_path):
 # ---------------------------------------------------------------------------
 # Tests for process_images  - detector is mocked so no real model needed.
 # ---------------------------------------------------------------------------
+
 
 def _make_mock_detector(detections=None, init_raises=None):
     """Return a mock FaceDetector with controlled detect() output."""
@@ -103,9 +105,7 @@ def test_process_images_no_face(mock_build, tmp_path):
 @patch(_BUILD_DETECTOR)
 def test_process_images_multiple_faces_discarded(mock_build, tmp_path):
     """Images with more than one detected face are discarded (strict single-face rule)."""
-    mock_build.return_value = _make_mock_detector(
-        detections=[MagicMock(), MagicMock()]
-    )
+    mock_build.return_value = _make_mock_detector(detections=[MagicMock(), MagicMock()])
 
     input_dir = tmp_path / "input"
     output_dir = tmp_path / "output"

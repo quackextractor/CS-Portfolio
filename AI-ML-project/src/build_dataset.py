@@ -161,13 +161,19 @@ def build_dataset() -> None:
 
     print("Processing positive class (Miro)...")
     pos_records = process_images(
-        raw_positive_dir, proc_pos_dir, label=1, img_size=img_size,
+        raw_positive_dir,
+        proc_pos_dir,
+        label=1,
+        img_size=img_size,
         model_path=model_path,
     )
 
     print("Processing negative class (Random)...")
     neg_records = process_images(
-        raw_negative_dir, proc_neg_dir, label=0, img_size=img_size,
+        raw_negative_dir,
+        proc_neg_dir,
+        label=0,
+        img_size=img_size,
         model_path=model_path,
     )
 
