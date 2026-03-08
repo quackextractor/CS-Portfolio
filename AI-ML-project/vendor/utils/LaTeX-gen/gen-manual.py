@@ -129,7 +129,7 @@ The model is trained using Google Colab.
 \begin{enumerate}
     \item Upload the \texttt{notebooks/model\_training.ipynb} file to Google Colab.
     \item Upload your \texttt{config.yaml} and dataset (the \texttt{data/processed/} folder and \texttt{dataset.csv}) to your Google Drive. 
-    \item Example: drive mounted fine and the location of the dataset is at \texttt{/content/drive/MyDrive/processed}. Ensure your \texttt{config.yaml} reflects these paths.
+    \item Example: drive mounted fine and the location of the dataset is at\\ \texttt{/content/drive/MyDrive/processed}. Ensure your \texttt{config.yaml} reflects these paths.
     \item Execute the cells within the notebook sequentially to train the Convolutional Neural Network (CNN).
     \item Once training is complete, the final weights will be exported as \texttt{miro\_detector.h5}. Download this file and place it in the \texttt{models/} directory within your local project.
 \end{enumerate}
