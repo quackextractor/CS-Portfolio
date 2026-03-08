@@ -89,6 +89,7 @@ notebook = {
     "        img = cv2.imread(img_path)\n",
     "        if img is not None:\n",
     "            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)\n",
+    "            img = cv2.resize(img, (IMG_SIZE, IMG_SIZE))\n",
     "            images.append(img)\n",
     "            labels.append(row['label'])\n",
     "    return np.array(images) / 255.0, np.array(labels)\n",
@@ -228,7 +229,13 @@ notebook = {
  "nbformat_minor": 4
 }
 
-notebook_path = os.path.join("..", "notebooks", "model_training.ipynb")
+notebook_path = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)),
+    "..",
+    "notebooks",
+    "model_training.ipynb",
+)
+
 os.makedirs(os.path.dirname(notebook_path), exist_ok=True)
 with open(notebook_path, "w") as f:
     json.dump(notebook, f, indent=1)

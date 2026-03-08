@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Fixed Python 3.12+ compatibility in unit tests by migrating from the deprecated `imp` module to `importlib`.
+- Fixed `ValueError: Invalid input shape` in generated `model_training.ipynb` by forcing explicit image resizing in `load_images_from_df` within `create_notebook.py`.
+- Corrected relative path generation in `create_notebook.py` to use `__file__` to ensure notebooks are placed in `notebooks/` regardless of invocation context.
+
 
 ## [1.6.1] - 2026-03-08
 ### Fixed
@@ -27,8 +30,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Improved error messaging in `extract_frames` to show absolute paths for easier debugging.
 - Enhanced path normalization to better handle Windows-style backslashes and relative paths.
 - Modified `vendor/utils/video_extractor.py` to be more robust against shell-specific path issues.
-
-## [1.5.3] - 2026-03-08
 
 ## [1.5.3] - 2026-03-08
 ### Fixed
