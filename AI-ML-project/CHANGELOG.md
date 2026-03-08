@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed Python 3.12+ compatibility in unit tests by migrating from the deprecated `imp` module to `importlib`.
 - Fixed `ValueError: Invalid input shape` in generated `model_training.ipynb` by forcing explicit image resizing in `load_images_from_df` within `create_notebook.py`.
 - Corrected relative path generation in `create_notebook.py` to use `__file__` to ensure notebooks are placed in `notebooks/` regardless of invocation context.
-
+- Fixed a bug where Windows backslashes in dataset paths resulted in Colab failing to load any images (causing empty dataset `(0,)` shape). `create_notebook.py` now explicitly outputs a replace operation.
 
 ## [1.6.1] - 2026-03-08
 ### Fixed
