@@ -52,8 +52,9 @@ def _build_face_detector(model_path: str):
         ) from e
 
 
-def main(video_path: str = None):
+def main(video_path: str = None, screen: bool = False):
     import mediapipe as mp
+    import mss
 
     config = load_config()
     model_path = config["model"]["output_path"]
@@ -84,7 +85,15 @@ def main(video_path: str = None):
 
     face_detector = _build_face_detector(face_model_path)
 
-    if video_path:
+    sct = None
+    monitor = None
+    cap = None
+
+    if screen:
+        print("Opening screen capture...")
+        sct = mss.mss()
+        monitor = sct.monitors[1]  # primary monitor
+    elif video_path:
         if not os.path.exists(video_path):
             print(f"Error: Video file not found at {video_path}")
             face_detector.close()
@@ -95,7 +104,7 @@ def main(video_path: str = None):
         print(f"Opening camera {camera_index}...")
         cap = cv2.VideoCapture(camera_index)
 
-    if not cap.isOpened():
+    if not screen and (cap is None or not cap.isOpened()):
         print("Error: Could not open video source.")
         face_detector.close()
         return
@@ -120,6 +129,8 @@ def main(video_path: str = None):
         print("  [Space] Pause/Resume")
         print("  [a] / [d] Skip 30 frames backward/forward")
         print("  [q] or [ESC] to quit")
+    elif screen:
+        print("Screen capture started. Press 'q' to quit.")
     else:
         print("Camera opened successfully. Press 'q' to quit.")
 
@@ -127,7 +138,13 @@ def main(video_path: str = None):
 
     while True:
         if not paused or force_read:
-            ret, frame = cap.read()
+            if screen:
+                sct_img = sct.grab(monitor)
+                frame = cv2.cvtColor(np.array(sct_img), cv2.COLOR_BGRA2BGR)
+                ret = True
+            else:
+                ret, frame = cap.read()
+
             if not ret:
                 if video_path:
                     print("End of video reached.")
@@ -214,7 +231,10 @@ def main(video_path: str = None):
             cap.set(cv2.CAP_PROP_POS_FRAMES, min(total_frames, current_frame + 30))
             force_read = True
 
-    cap.release()
+    if cap:
+        cap.release()
+    if sct:
+        sct.close()
     face_detector.close()
     cv2.destroyAllWindows()
 

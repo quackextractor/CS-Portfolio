@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.0] - 2026-03-08
+### Added
+- Added a `--screen` parameter to `python main.py run` to allow capturing the primary screen and running model inference on it.
+- Integrated `mss` dependency to support rapid cross-platform screenshare captures.
+- Added corresponding documentation updates in the README for the screenshare functionality.
+
 ## [1.6.6] - 2026-03-08
 ### Changed
 - The `src/pexels_scraper.py` script now features persistent scraping functionality. It counts previously downloaded images inside the target directory and skips re-downloading them, only requesting new images until the global `--total` objective is reached without over-writing existing progress.
