@@ -233,3 +233,4 @@ config.json
 **/**.log
 P2P/src/BankNode.App/accounts.json
 /P2P/docs/TODO
+/AI-ML-project/utils/LaTeX-gen/out

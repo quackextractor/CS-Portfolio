@@ -1,10 +1,20 @@
 import os
 import subprocess
 import matplotlib.pyplot as plt
+import shutil
+
+# Dynamically find the script's directory
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# Output directories set relative to the script's location
+OUT_DIR = os.path.join(SCRIPT_DIR, "out")
+DOCS_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, "..", "..", "docs"))
+FINAL_PDF_PATH = os.path.join(DOCS_DIR, "documentation.pdf")
 
 def generate_graphs():
     """Generates sample graphs for the documentation."""
     print("Generating graphs...")
+    os.makedirs(OUT_DIR, exist_ok=True)
     
     # 1. Dataset Distribution Graph
     labels = ['Miro (Positive)', 'Random (Negative)']
@@ -14,7 +24,7 @@ def generate_graphs():
     plt.bar(labels, counts, color=['blue', 'orange'])
     plt.title('Dataset Class Distribution (Post Cleaning)')
     plt.ylabel('Number of Images')
-    plt.savefig('dataset_distribution.png', bbox_inches='tight')
+    plt.savefig(os.path.join(OUT_DIR, 'dataset_distribution.png'), bbox_inches='tight')
     plt.close()
 
     # 2. Model Training History Graph
@@ -30,7 +40,7 @@ def generate_graphs():
     plt.ylabel('Accuracy')
     plt.legend()
     plt.grid(True)
-    plt.savefig('training_history.png', bbox_inches='tight')
+    plt.savefig(os.path.join(OUT_DIR, 'training_history.png'), bbox_inches='tight')
     plt.close()
     
     print("Graphs generated successfully.")
@@ -194,9 +204,12 @@ To deploy the application on the target school computer without an IDE, the user
 
 def build_pdf(filename="documentation"):
     """Writes the LaTeX code to a file and compiles it using pdflatex."""
+    os.makedirs(OUT_DIR, exist_ok=True)
+    os.makedirs(DOCS_DIR, exist_ok=True)
+    
     generate_graphs()
     
-    tex_filename = f"{filename}.tex"
+    tex_filename = os.path.join(OUT_DIR, f"{filename}.tex")
     
     print(f"Generating {tex_filename}...")
     latex_content = generate_latex_content()
@@ -207,9 +220,17 @@ def build_pdf(filename="documentation"):
     print("Compiling PDF with pdflatex...")
     
     try:
-        subprocess.run(["pdflatex", tex_filename], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        subprocess.run(["pdflatex", tex_filename], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        print(f"Successfully generated {filename}.pdf")
+        # Run pdflatex with OUT_DIR as the working directory so it finds the images natively
+        subprocess.run(["pdflatex", f"{filename}.tex"], cwd=OUT_DIR, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        subprocess.run(["pdflatex", f"{filename}.tex"], cwd=OUT_DIR, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        
+        # Move the final compiled PDF to the docs directory safely
+        compiled_pdf = os.path.join(OUT_DIR, f"{filename}.pdf")
+        if os.path.exists(FINAL_PDF_PATH):
+            os.remove(FINAL_PDF_PATH)
+        shutil.move(compiled_pdf, FINAL_PDF_PATH)
+        
+        print(f"Successfully generated PDF at {FINAL_PDF_PATH}")
     except subprocess.CalledProcessError:
         print("Error: Compilation failed. Please ensure you have a LaTeX distribution installed.")
     except FileNotFoundError:
