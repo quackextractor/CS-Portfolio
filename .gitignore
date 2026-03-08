@@ -234,3 +234,9 @@ config.json
 P2P/src/BankNode.App/accounts.json
 /P2P/docs/TODO
 /AI-ML-project/utils/LaTeX-gen/out
+/AI-ML-project/data/raw/
+/AI-ML-project/data/processed/
+/AI-ML-project/models/*.h5
+/AI-ML-project/.pytest_cache/
+/AI-ML-project/.coverage
+/AI-ML-project/htmlcov/
