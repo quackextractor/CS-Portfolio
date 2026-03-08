@@ -81,7 +81,7 @@ def main():
     parser_build.add_argument(
         "--blur_threshold",
         type=float,
-        default=30.0,
+        default=10.0,
         help="Variance of Laplacian threshold for blur detection",
     )
 
@@ -138,7 +138,7 @@ def main():
         run_inference(video_path=args.video, screen=screen_mode)
     elif args.command == "build":
         skip_blurry = getattr(args, "skip_blurry", True)
-        blur_threshold = getattr(args, "blur_threshold", 30.0)
+        blur_threshold = getattr(args, "blur_threshold", 10.0)
         build_dataset(skip_blurry, blur_threshold)
     elif args.command == "scrape":
         download_pexels_images(args.query, args.total, args.output_dir)

@@ -12,7 +12,7 @@ def load_config(config_path: str = "config.yaml") -> dict:
         return yaml.safe_load(f)
 
 
-def is_blurry(image, threshold: float = 30.0) -> bool:
+def is_blurry(image, threshold: float = 10.0) -> bool:
     """Returns True if the image is considered blurry."""
     if len(image.shape) == 3:
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -72,7 +72,7 @@ def process_images(
     img_size: int,
     model_path: str = "models/blaze_face_short_range.task",
     skip_blurry: bool = True,
-    blur_threshold: float = 30.0,
+    blur_threshold: float = 10.0,
 ) -> list:
     """
     Processes images in a directory: detects faces, crops, resizes, and saves them.
@@ -158,7 +158,7 @@ def process_images(
     return records
 
 
-def build_dataset(skip_blurry: bool = True, blur_threshold: float = 30.0) -> None:
+def build_dataset(skip_blurry: bool = True, blur_threshold: float = 10.0) -> None:
     config = load_config()
     raw_positive_dir = config["data"]["raw_positive_dir"]
     raw_negative_dir = config["data"]["raw_negative_dir"]
@@ -236,7 +236,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--blur_threshold",
         type=float,
-        default=30.0,
+        default=10.0,
         help="Variance of Laplacian threshold for blur detection",
     )
     args = parser.parse_args()

@@ -117,7 +117,7 @@ This process evaluates all images in the \texttt{raw/} directory, discards image
 \textbf{Optional Build Parameters:}
 \begin{itemize}
     \item \texttt{--no\_skip\_blurry}: Disables the automatic blur filtration.
-    \item \texttt{--blur\_threshold <float>}: Adjusts the sensitivity of the blur detection (default is 30.0).
+    \item \texttt{--blur\_threshold <float>}: Adjusts the sensitivity of the blur detection (default is 10.0).
 \end{itemize}
 
 \textbf{Configuration Parameters (\texttt{config.yaml}):}
