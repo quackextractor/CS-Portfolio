@@ -60,7 +60,7 @@ def generate_latex_content():
 
 \begin{document}
 
-% Opening Page based on reference image
+% Opening Page exactly matching reference formatting
 \begin{titlepage}
     \centering
     \vspace*{1cm}
@@ -77,7 +77,7 @@ def generate_latex_content():
 
     \vfill
 
-    {\large \textbf{Miro Slezák}} \\
+    {\large Miro Slezák} \\
     {\large Informační technologie} \\
     {\large 2026} \\
 
@@ -119,7 +119,7 @@ The architecture is divided into a data generation pipeline, a cloud based train
 \subsection{Phase 1: Data Collection}
 To ensure the final cleaned dataset meets the strict requirement of at least 1500 records, the collection scripts oversample data.
 \begin{itemize}
-    \item \textbf{Positive Class (Miro):} A custom script captures frames from multiple videos of the target under varying lighting conditions, generating 800 initial images saved to the raw data directory.
+    \item \textbf{Positive Class (Miro):} A custom script captures frames from multiple videos of the target under varying lighting conditions, generating 800 initial images saved to the raw data directory. The original unmodified video files are preserved as verifiable proof of non-simulated real data collection.
     \item \textbf{Negative Class (Random):} A script queries the Pexels API for portrait photos and downloads 1200 images into the raw data directory.
 \end{itemize}
 
@@ -128,7 +128,7 @@ To ensure the final cleaned dataset meets the strict requirement of at least 150
     \item All 2000 raw images are passed through the MediaPipe Face Detector.
     \item Images containing zero faces or multiple faces are automatically discarded by the script to ensure data cleanliness.
     \item Valid faces are cropped using the generated bounding boxes and resized to a strict 128x128 resolution.
-    \item \textbf{The 5 Attributes:} To explicitly satisfy data requirements, the preprocessing script extracts and saves 5 specific attributes to a \texttt{dataset.csv} file for every processed image: \texttt{file\_name}, \texttt{bounding\_box\_x}, \texttt{bounding\_box\_y}, \texttt{face\_confidence\_score}, and \texttt{target\_label} (1 for Miro, 0 for random).
+    \item \textbf{The Data Attributes:} The data loader indexes the images using a \texttt{dataset.csv} file. However, the actual training data attributes (parts) utilized by the CNN are the image matrices themselves. Each 128x128x3 RGB image contains 49,152 distinct pixel attributes that the network learns from.
     \item \textbf{Data Splitting:} The final cleaned dataset is split into 80 percent for training and 20 percent strictly reserved for testing.
 \end{itemize}
 
@@ -136,7 +136,7 @@ To ensure the final cleaned dataset meets the strict requirement of at least 150
 The processed \texttt{data/} directory and the \texttt{dataset.csv} file are uploaded to Google Drive. A Google Colab Jupyter Notebook mounts the drive, loads the preprocessed true data, and trains the CNN. The final trained model weights are exported as an \texttt{.h5} file and downloaded back to the local project folder.
 
 \subsection{Phase 4: Real World Application (Inference)}
-The final software is a Python script executable via the command line on the school PC. It accesses the host computer webcam using OpenCV, continuously extracts faces from the live feed, and passes the cropped faces to the trained CNN. The application draws a bounding box on the live video feed, labeling the face as either "Miro" or "Unknown". The user safely terminates the camera feed by pressing the "q" key.
+The final software is a Python script executable via the command line on the school PC. It requires an external USB webcam connected to the computer. It accesses the host computer webcam using OpenCV, continuously extracts faces from the live feed, and passes the cropped faces to the trained CNN. The application draws a bounding box on the live video feed, labeling the face as either "Miro" or "Unknown". The user safely terminates the camera feed by pressing the "q" key.
 
 \section{Maintainability and Quality Assurance}
 
@@ -191,17 +191,18 @@ To strictly adhere to code authorship requirements, the repository is structured
     \item \texttt{video\_extractor.py}: Custom script to extract frames from personal videos.
     \item \texttt{build\_dataset.py}: Custom original pipeline utilizing the MediaPipe library to crop and resize faces.
     \item \texttt{app.py}: The final webcam application launched by the user.
+    \item \textbf{Rule of Authorship:} Absolutely zero lines of foreign code are present in this directory. All logic is authored by hand.
 \end{itemize}
 
 \textbf{2. vendor/ (Foreign Code)}
 \begin{itemize}
-    \item Contains any third party helper libraries, complex boilerplate configurations, or snippets explicitly downloaded and used outside of standard pip installations.
+    \item Contains any third party helper libraries, complex boilerplate configurations, snippets explicitly downloaded, or code generated by AI that was not written by hand. This completely isolates foreign code from the core application logic.
 \end{itemize}
 
 \textbf{3. data/}
 \begin{itemize}
     \item \texttt{raw/}: Contains the unmodified downloaded images and video frames.
-    \item \texttt{processed/}: Contains the cropped 128x128 faces and the \texttt{dataset.csv} containing the 5 required attributes.
+    \item \texttt{processed/}: Contains the cropped 128x128 faces and the \texttt{dataset.csv}.
 \end{itemize}
 
 \textbf{4. notebooks/}
@@ -215,8 +216,10 @@ To strictly adhere to code authorship requirements, the repository is structured
 \end{itemize}
 
 \textbf{Deployment and Execution Instructions:} 
-To deploy the application on the target school computer without an IDE, the user will execute the following steps in the command line:
+To deploy the application on the target school computer without an IDE, the user must connect an external webcam and execute the following steps in the command line:
 \begin{enumerate}
+    \item \texttt{python -m venv venv}
+    \item \texttt{venv\\Scripts\\activate}
     \item \texttt{pip install -r requirements.txt}
     \item \texttt{python src/app.py}
 \end{enumerate}
