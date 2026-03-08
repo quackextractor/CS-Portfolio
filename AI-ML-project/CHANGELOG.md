@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.0] - 2026-03-08
+### Added
+- New unit tests for the video extraction module in `tests/test_video_extractor.py`.
+- Support for directory inputs in the `extract` command (automatically detects video files within a directory).
+
+### Changed
+- Improved error messaging in `extract_frames` to show absolute paths for easier debugging.
+- Enhanced path normalization to better handle Windows-style backslashes and relative paths.
+- Modified `vendor/utils/video_extractor.py` to be more robust against shell-specific path issues.
+
+## [1.5.3] - 2026-03-08
+
 ## [1.5.3] - 2026-03-08
 ### Fixed
 - Fixed LaTeX rendering issue in `gen-manual.py` where double dashes (`--`) were incorrectly displayed as a single dash in the generated PDF.

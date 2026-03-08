@@ -9,20 +9,35 @@ def extract_frames(video_path: str, output_dir: str, frame_rate: int = 1) -> Non
     Extracts frames from a video file and saves them to a directory.
 
     Args:
-        video_path (str): Path to the input video file.
+        video_path (str): Path to the input video file or directory containing videos.
         output_dir (str): Directory where extracted frames will be saved.
         frame_rate (int): Extract 1 frame every `frame_rate` frames.
     """
-    if not os.path.exists(video_path):
-        print(f"Error: Video file not found at {video_path}")
+    # Normalize and get absolute path
+    abs_video_path = os.path.abspath(os.path.normpath(video_path))
+    
+    if not os.path.exists(abs_video_path):
+        print(f"Error: Video file or directory not found at {abs_video_path}")
         return
 
-    os.makedirs(output_dir, exist_ok=True)
-    video_name = Path(video_path).stem
+    # If a directory is provided, look for common video files
+    if os.path.isdir(abs_video_path):
+        video_extensions = ('.mp4', '.avi', '.mov', '.mkv')
+        videos = [f for f in os.listdir(abs_video_path) if f.lower().endswith(video_extensions)]
+        
+        if not videos:
+            print(f"Error: No video files found in directory {abs_video_path}")
+            return
+        
+        print(f"Directory detected. Found {len(videos)} videos. Extracting from the first one: {videos[0]}")
+        abs_video_path = os.path.join(abs_video_path, videos[0])
 
-    cap = cv2.VideoCapture(video_path)
+    os.makedirs(output_dir, exist_ok=True)
+    video_name = Path(abs_video_path).stem
+
+    cap = cv2.VideoCapture(abs_video_path)
     if not cap.isOpened():
-        print(f"Error: Could not open video {video_path}")
+        print(f"Error: Could not open video {abs_video_path}")
         return
 
     frame_count = 0
@@ -44,6 +59,7 @@ def extract_frames(video_path: str, output_dir: str, frame_rate: int = 1) -> Non
 
     cap.release()
     print(f"Extracted {saved_count} frames from {video_name} into {output_dir}")
+
 
 
 if __name__ == "__main__":
