@@ -3,8 +3,11 @@ data:
   raw_negative_dir: "data/raw/negative"
   processed_dir: "data/processed"
   dataset_csv: "data/processed/dataset.csv"
+  test_split_size: 0.2
+  random_seed: 42
 model:
   output_path: "models/miro_detector.h5"
   img_size: 128
+  threshold: 0.65
 camera:
   index: 0

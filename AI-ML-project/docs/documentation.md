@@ -54,7 +54,7 @@ To ensure the final cleaned dataset meets the strict requirement of at least 150
 * Images containing zero faces or multiple faces are automatically discarded by the script to ensure data cleanliness.
 * Valid faces are cropped using the generated bounding boxes and resized to a strict 128x128 resolution.
 * **The Data Attributes:** The data loader indexes the images using a `dataset.csv` file. However, the actual training data attributes (parts) utilized by the CNN are the image matrices themselves. Each 128x128x3 RGB image contains 49,152 distinct pixel attributes that the network learns from.
-* **Data Splitting:** The final cleaned dataset is split into 80 percent for training and 20 percent strictly reserved for testing.
+* **Data Splitting:** The final cleaned dataset is split into portions for training and strictly reserved for testing. The split ratio and random state are centrally managed via `config.yaml` (`test_split_size` and `random_seed`) to ensure adaptability.
 
 ## 3.3 Phase 3: Model Training (Google Colab)
 
@@ -62,7 +62,7 @@ The processed `data/` directory and the `dataset.csv` file are uploaded to Googl
 
 ## 3.4 Phase 4: Real World Application (Inference)
 
-The final software is a Python script executable via the command line on the school PC. It requires an external USB webcam connected to the computer. It accesses the host computer webcam using OpenCV, continuously extracts faces from the live feed, and passes the cropped faces to the trained CNN. The application draws a bounding box on the live video feed, labeling the face as either "Miro" or "Unknown". The user safely terminates the camera feed by pressing the "q" key.
+The final software is a Python script executable via the command line on the school PC. It requires an external USB webcam connected to the computer. It accesses the host computer webcam using OpenCV, continuously extracts faces from the live feed, and passes the cropped faces to the trained CNN. The application draws a bounding box on the live video feed, labeling the face as either "Miro" or "Unknown". The exact confidence threshold for positive classification is customizable via `config.yaml` to ensure adaptability in diverse lighting environments. The user safely terminates the camera feed by pressing the "q" key.
 
 # 4 Maintainability and Quality Assurance
 
@@ -139,7 +139,3 @@ pip install -r requirements.txt
 python src/app.py
 
 ```
-
----
-
-Would you like me to help draft the `README.md` or any of the source code files mentioned in your project structure?

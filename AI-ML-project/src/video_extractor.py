@@ -34,7 +34,9 @@ def extract_frames(video_path: str, output_dir: str, frame_rate: int = 1) -> Non
             break
 
         if frame_count % frame_rate == 0:
-            frame_filename = os.path.join(output_dir, f"{video_name}_frame_{saved_count:04d}.jpg")
+            frame_filename = os.path.join(
+                output_dir, f"{video_name}_frame_{saved_count:04d}.jpg"
+            )
             cv2.imwrite(frame_filename, frame)
             saved_count += 1
 
@@ -45,10 +47,19 @@ def extract_frames(video_path: str, output_dir: str, frame_rate: int = 1) -> Non
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Extract frames from personal videos for the positive class.")
+    parser = argparse.ArgumentParser(
+        description="Extract frames from personal videos for the positive class."
+    )
     parser.add_argument("video_path", type=str, help="Path to the source video file")
-    parser.add_argument("--output_dir", type=str, default="data/raw/positive", help="Output directory for frames")
-    parser.add_argument("--frame_rate", type=int, default=5, help="Extract 1 frame every N frames")
-    
+    parser.add_argument(
+        "--output_dir",
+        type=str,
+        default="data/raw/positive",
+        help="Output directory for frames",
+    )
+    parser.add_argument(
+        "--frame_rate", type=int, default=5, help="Extract 1 frame every N frames"
+    )
+
     args = parser.parse_args()
     extract_frames(args.video_path, args.output_dir, args.frame_rate)

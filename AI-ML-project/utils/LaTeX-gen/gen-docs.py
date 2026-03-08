@@ -129,14 +129,14 @@ To ensure the final cleaned dataset meets the strict requirement of at least 150
     \item Images containing zero faces or multiple faces are automatically discarded by the script to ensure data cleanliness.
     \item Valid faces are cropped using the generated bounding boxes and resized to a strict 128x128 resolution.
     \item \textbf{The Data Attributes:} The data loader indexes the images using a \texttt{dataset.csv} file. However, the actual training data attributes (parts) utilized by the CNN are the image matrices themselves. Each 128x128x3 RGB image contains 49,152 distinct pixel attributes that the network learns from.
-    \item \textbf{Data Splitting:} The final cleaned dataset is split into 80 percent for training and 20 percent strictly reserved for testing.
+    \item \textbf{Data Splitting:} The final cleaned dataset is split into portions for training and strictly reserved for testing. The split ratio and random state are centrally managed via \texttt{config.yaml} (\texttt{test\_split\_size} and \texttt{random\_seed}) to ensure adaptability.
 \end{itemize}
 
 \subsection{Phase 3: Model Training (Google Colab)}
 The processed \texttt{data/} directory and the \texttt{dataset.csv} file are uploaded to Google Drive. A Google Colab Jupyter Notebook mounts the drive, loads the preprocessed true data, and trains the CNN. The final trained model weights are exported as an \texttt{.h5} file and downloaded back to the local project folder.
 
 \subsection{Phase 4: Real World Application (Inference)}
-The final software is a Python script executable via the command line on the school PC. It requires an external USB webcam connected to the computer. It accesses the host computer webcam using OpenCV, continuously extracts faces from the live feed, and passes the cropped faces to the trained CNN. The application draws a bounding box on the live video feed, labeling the face as either "Miro" or "Unknown". The user safely terminates the camera feed by pressing the "q" key.
+The final software is a Python script executable via the command line on the school PC. It requires an external USB webcam connected to the computer. It accesses the host computer webcam using OpenCV, continuously extracts faces from the live feed, and passes the cropped faces to the trained CNN. The application draws a bounding box on the live video feed, labeling the face as either "Miro" or "Unknown". The exact confidence threshold for positive classification is customizable via \texttt{config.yaml} to ensure adaptability in diverse lighting environments. The user safely terminates the camera feed by pressing the "q" key.
 
 \section{Maintainability and Quality Assurance}
 

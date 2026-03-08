@@ -32,7 +32,7 @@ The project uses several external Python libraries for data scraping, image proc
 3. Activate the virtual environment:
    `venv\Scripts\activate`
 4. Install the required packages:
-   `pip install matplotlib mediapipe opencv-python requests pandas`
+   `pip install -r requirements.txt`
 
 ## Generating the Documentation
 
