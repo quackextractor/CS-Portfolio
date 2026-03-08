@@ -4,8 +4,22 @@ import argparse
 from pathlib import Path
 
 
+def is_blurry(image, threshold: float = 100.0) -> bool:
+    """Returns True if the image is considered blurry."""
+    if len(image.shape) == 3:
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    else:
+        gray = image
+    return cv2.Laplacian(gray, cv2.CV_64F).var() < threshold
+
+
 def extract_frames(
-    video_path: str, output_dir: str, frame_rate: int = 1, batch: bool = False
+    video_path: str,
+    output_dir: str,
+    frame_rate: int = 1,
+    batch: bool = False,
+    skip_blurry: bool = True,
+    blur_threshold: float = 100.0
 ) -> None:
     """
     Extracts frames from a video file and saves them to a directory.
@@ -62,6 +76,10 @@ def extract_frames(
                 break
 
             if frame_count % frame_rate == 0:
+                if skip_blurry and is_blurry(frame, blur_threshold):
+                    frame_count += 1
+                    continue
+
                 frame_filename = os.path.join(
                     output_dir, f"{video_name}_frame_{saved_count:04d}.jpg"
                 )
@@ -91,6 +109,25 @@ if __name__ == "__main__":
     parser.add_argument(
         "--batch", action="store_true", help="Process all videos in a given directory"
     )
+    parser.add_argument(
+        "--no_skip_blurry",
+        action="store_false",
+        dest="skip_blurry",
+        help="Do not skip blurry frames",
+    )
+    parser.add_argument(
+        "--blur_threshold",
+        type=float,
+        default=100.0,
+        help="Variance of Laplacian threshold for blur detection",
+    )
 
     args = parser.parse_args()
-    extract_frames(args.video_path, args.output_dir, args.frame_rate, args.batch)
+    extract_frames(
+        args.video_path,
+        args.output_dir,
+        args.frame_rate,
+        args.batch,
+        args.skip_blurry,
+        args.blur_threshold,
+    )

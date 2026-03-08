@@ -105,6 +105,18 @@ def main():
     parser_extract.add_argument(
         "--batch", action="store_true", help="Process all videos in a given directory"
     )
+    parser_extract.add_argument(
+        "--no_skip_blurry",
+        action="store_false",
+        dest="skip_blurry",
+        help="Do not skip blurry frames",
+    )
+    parser_extract.add_argument(
+        "--blur_threshold",
+        type=float,
+        default=100.0,
+        help="Variance of Laplacian threshold for blur detection",
+    )
 
     # Command: docs
     subparsers.add_parser(
@@ -130,7 +142,16 @@ def main():
         download_pexels_images(args.query, args.total, args.output_dir)
     elif args.command == "extract":
         batch_mode = getattr(args, "batch", False)
-        extract_frames(args.video_path, args.output_dir, args.frame_rate, batch_mode)
+        skip_blurry = getattr(args, "skip_blurry", True)
+        blur_threshold = getattr(args, "blur_threshold", 100.0)
+        extract_frames(
+            args.video_path,
+            args.output_dir,
+            args.frame_rate,
+            batch_mode,
+            skip_blurry,
+            blur_threshold,
+        )
     elif args.command == "docs":
         generate_docs()
 
