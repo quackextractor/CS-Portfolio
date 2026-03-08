@@ -28,9 +28,9 @@ The project uses several external Python libraries for data scraping, image proc
 
 1. Open your terminal and navigate to the root directory of this project.
 2. Create a virtual environment to keep your project dependencies isolated:
-   `python -m venv venv`
+   `python -m venv .venv`
 3. Activate the virtual environment:
-   `venv\Scripts\activate`
+   `.venv\Scripts\activate`
 4. Install the required packages:
    `pip install -r requirements.txt`
 5. Download the required MediaPipe model files:
@@ -88,39 +88,39 @@ To deploy the application on the target school computer without an IDE, ensure y
 
 2. **Create a Virtual Environment:**
 This strictly isolates the application dependencies.
+
 ```bash
-python -m venv venv
+python -m venv .venv
 
 ```
 
-
 3. **Activate the Virtual Environment:**
-* Windows (Command Prompt): `venv\Scripts\activate.bat`
-* Windows (PowerShell): `.\venv\Scripts\Activate.ps1`
-* Mac/Linux: `source venv/bin/activate`
 
+* Windows (Command Prompt): `.venv\Scripts\activate.bat`
+* Windows (PowerShell): `.\.venv\Scripts\Activate.ps1`
+* Mac/Linux: `source .venv/bin/activate`
 
 4. **Install Dependencies:**
+
 ```bash
 pip install -r requirements.txt
 
 ```
 
-
 4.5 **Download MediaPipe Models:**
+
 ```bash
 python main.py setup
 
 ```
 
-
 5. **Run the Application:**
 Execute the core application script via the unified CLI.
+
 ```bash
 python main.py run
 
 ```
-
 
 6. **Quit:**
 Press the `q` key on your keyboard to instantly quit the application and release the camera stream.
