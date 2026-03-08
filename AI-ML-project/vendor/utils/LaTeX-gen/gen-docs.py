@@ -112,6 +112,11 @@ To demonstrate a clear understanding of the model architecture, the following ou
     \item \textbf{Dense (Fully Connected) Layer:} This is the final classification stage. It takes the unrolled spatial features and calculates the final prediction to determine if the face is Miro (1) or Random (0).
 \end{itemize}
 
+\subsection{Model Explainability: Grad-CAM}
+To ensure transparency in the model's decision-making process, the application implements Gradient-weighted Class Activation Mapping (Grad-CAM). This technique uses the gradients of any target concept, flowing into the final convolutional layer to produce a coarse localization map highlighting the important regions in the image for predicting the concept. 
+
+In this project, Grad-CAM allows the user to see exactly which facial features (e.g., eyes, nose, jawline) the CNN is using to identify "Miro", providing a layer of interpretability often missing in "black-box" neural networks.
+
 \section{Architecture and Pipeline}
 
 The architecture is divided into a data generation pipeline, a cloud based training phase, and a real time local inference application.

@@ -152,6 +152,7 @@ With the model trained and loaded, you can launch the live webcam inference appl
     \item It draws bounding boxes in real-time, classifying faces as "Miro" (green) or "Unknown" (red).
     \item \textbf{thresholding:} If the detection is overly strict or too lenient, adjust the \texttt{threshold} parameter in \texttt{config.yaml} (default is 0.65).
     \item \textbf{Video Controls:} When in video mode, press the Spacebar to pause/resume playback. You can skip forward and backward 30 frames using the "d" and "a" keys respectfully, or use the interactive slider at the top of the window.
+    \item \textbf{Grad-CAM Heatmap:} Press the \textbf{"g"} key to toggle the Grad-CAM heatmap visualization. This provides a visual explanation of which facial features the model is currently focusing on.
     \item \textbf{Quitting:} Press the \textbf{"q"} key to instantly safely terminate the camera stream and close the application.
 \end{itemize}
 

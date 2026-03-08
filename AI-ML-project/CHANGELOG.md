@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.0] - 2026-03-08
+### Added
+- Integrated Grad-CAM (Gradient-weighted Class Activation Mapping) for model interpretability, allowing users to visualize which facial features influence the model's decision.
+- Added a toggle for Grad-CAM heatmaps with the 'g' key in the inference application (`src/app.py`).
+- Added a `--gradcam` CLI flag to `python main.py run` to enable heatmaps by default.
+- Enhanced the project documentation (`gen-docs.py` and `gen-manual.py`) with a new section and sample images explaining Grad-CAM.
+- Added new unit tests for Grad-CAM helper functions in `tests/test_app.py`.
+
 ## [1.8.0] - 2026-03-08
 ### Added
 - Added blur detection functionality to the data pipeline (`src/build_dataset.py`) to automatically skip blurry faces during processing.

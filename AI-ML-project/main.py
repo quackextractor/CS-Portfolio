@@ -66,6 +66,9 @@ def main():
     parser_run.add_argument(
         "--screen", action="store_true", help="Capture and run inference on your primary screen"
     )
+    parser_run.add_argument(
+        "--gradcam", action="store_true", help="Enable Grad-CAM heatmaps by default"
+    )
 
     # Command: build
     parser_build = subparsers.add_parser(
@@ -135,7 +138,8 @@ def main():
         download_models()
     elif args.command == "run":
         screen_mode = getattr(args, "screen", False)
-        run_inference(video_path=args.video, screen=screen_mode)
+        gradcam_mode = getattr(args, "gradcam", False)
+        run_inference(video_path=args.video, screen=screen_mode, use_gradcam=gradcam_mode)
     elif args.command == "build":
         skip_blurry = getattr(args, "skip_blurry", True)
         blur_threshold = getattr(args, "blur_threshold", 10.0)

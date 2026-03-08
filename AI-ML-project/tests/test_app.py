@@ -1,7 +1,9 @@
 import yaml
 import pytest
 from unittest.mock import patch
-from src.app import main, load_config
+from src.app import main, load_config, make_gradcam_heatmap, display_gradcam
+import numpy as np
+import tensorflow as tf
 
 
 @pytest.fixture
@@ -103,3 +105,33 @@ def test_main_with_screen(
                 main(screen=True)
 
     mock_mss.assert_called_once()
+
+
+def test_make_gradcam_heatmap():
+    # Create a simple model for testing
+    inputs = tf.keras.Input(shape=(128, 128, 3))
+    x = tf.keras.layers.Conv2D(32, (3, 3), name="conv2d_5")(inputs)
+    outputs = tf.keras.layers.GlobalAveragePooling2D()(x)
+    outputs = tf.keras.layers.Dense(1, activation="sigmoid")(outputs)
+    model = tf.keras.Model(inputs, outputs)
+
+    dummy_img = np.random.random((1, 128, 128, 3)).astype("float32")
+    heatmap = make_gradcam_heatmap(dummy_img, model, "conv2d_5")
+
+    assert heatmap.shape == (126, 126)  # Output of 128x128 with 3x3 conv is 126x126
+    assert np.min(heatmap) >= 0
+    assert np.max(heatmap) <= 1.0
+
+
+def test_display_gradcam():
+    frame = np.zeros((200, 200, 3), dtype=np.uint8)
+    heatmap = np.random.random((50, 50)).astype("float32")
+    bbox = (50, 50, 100, 100)
+
+    result_frame = display_gradcam(frame.copy(), heatmap, bbox)
+
+    assert result_frame.shape == frame.shape
+    # Check if the region has been modified
+    assert not np.array_equal(result_frame[50:150, 50:150], frame[50:150, 50:150])
+    # Check if outside region is still the same
+    assert np.array_equal(result_frame[0:50, 0:50], frame[0:50, 0:50])

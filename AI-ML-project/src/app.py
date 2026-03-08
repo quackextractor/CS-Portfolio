@@ -10,6 +10,81 @@ def load_config(config_path: str = "config.yaml") -> dict:
         return yaml.safe_load(f)
 
 
+def make_gradcam_heatmap(img_array, model, last_conv_layer_name, pred_index=None):
+    """
+    Computes a Grad-CAM heatmap for a given image and model.
+    """
+    # Ensure input is a tensor
+    img_tensor = tf.cast(img_array, tf.float32)
+
+    with tf.GradientTape() as tape:
+        tape.watch(img_tensor)
+        x = img_tensor
+        last_conv_layer_output = None
+        for layer in model.layers:
+            # Skip InputLayer which is not callable and redundant here
+            if "InputLayer" in layer.__class__.__name__:
+                continue
+            x = layer(x)
+            if layer.name == last_conv_layer_name:
+                last_conv_layer_output = x
+        
+        preds = x
+        if pred_index is None:
+            pred_index = tf.argmax(preds[0])
+        class_channel = preds[:, pred_index]
+
+    # Safety check if layer was not found or gradients are disconnected
+    if last_conv_layer_output is None:
+        return np.zeros((img_array.shape[1], img_array.shape[2]))
+
+    # This is the gradient of the output neuron (top predicted or chosen)
+    # with regard to the output feature map of the last conv layer
+    grads = tape.gradient(class_channel, last_conv_layer_output)
+
+    if grads is None:
+        return np.zeros((img_array.shape[1], img_array.shape[2]))
+
+    # This is a vector where each entry is the mean intensity of the gradient
+    # over a specific feature map channel
+    pooled_grads = tf.reduce_mean(grads, axis=(0, 1, 2))
+
+    # We multiply each channel in the feature map array
+    # by "how important this channel is" with regard to the top predicted class
+    # then sum all the channels to obtain the heatmap class activation
+    last_conv_layer_output = last_conv_layer_output[0]
+    heatmap = last_conv_layer_output @ pooled_grads[..., tf.newaxis]
+    heatmap = tf.squeeze(heatmap)
+
+    # For visualization purpose, we will also normalize the heatmap between 0 & 1
+    heatmap = tf.maximum(heatmap, 0) / tf.math.reduce_max(heatmap)
+    return heatmap.numpy()
+
+
+def display_gradcam(frame, heatmap, bbox, alpha=0.4):
+    """
+    Overlays the Grad-CAM heatmap on the detected face in the frame.
+    """
+    x, y, w, h = bbox
+
+    # Rescale heatmap to a range 0-255
+    heatmap = np.uint8(255 * heatmap)
+
+    # Use jet colormap to colorize heatmap
+    jet = cv2.applyColorMap(heatmap, cv2.COLORMAP_JET)
+
+    # Resize heatmap to match the bounding box size
+    jet = cv2.resize(jet, (w, h))
+
+    # Create an overlay by combining the original ROI and the colorized heatmap
+    roi = frame[y : y + h, x : x + w]
+    overlay = cv2.addWeighted(roi, 1 - alpha, jet, alpha, 0)
+
+    # Replace the ROI in the original frame
+    frame[y : y + h, x : x + w] = overlay
+    return frame
+
+
 def _build_face_detector(model_path: str):
     """
     Construct a MediaPipe Tasks FaceDetector for live-stream inference.
@@ -52,7 +127,7 @@ def _build_face_detector(model_path: str):
         ) from e
 
 
-def main(video_path: str = None, screen: bool = False):
+def main(video_path: str = None, screen: bool = False, use_gradcam: bool = False):
     import mediapipe as mp
     import mss
 
@@ -116,6 +191,7 @@ def main(video_path: str = None, screen: bool = False):
     paused = False
     force_read = False
     updating_trackbar = False
+    gradcam_active = use_gradcam
 
     if video_path and total_frames > 0:
         def on_trackbar(val):
@@ -128,11 +204,14 @@ def main(video_path: str = None, screen: bool = False):
         print("Video opened successfully. Controls:")
         print("  [Space] Pause/Resume")
         print("  [a] / [d] Skip 30 frames backward/forward")
+        print("  [g] Toggle Grad-CAM heatmap")
         print("  [q] or [ESC] to quit")
     elif screen:
         print("Screen capture started. Press 'q' to quit.")
     else:
-        print("Camera opened successfully. Press 'q' to quit.")
+        print("Camera opened successfully. Controls:")
+        print("  [g] Toggle Grad-CAM heatmap")
+        print("  [q] or [ESC] to quit")
 
     frame_index = 0
 
@@ -198,6 +277,12 @@ def main(video_path: str = None, screen: bool = False):
                             label = f"Unknown ({prediction:.2f})"
                             color = (0, 0, 255)  # Red
 
+                        if gradcam_active:
+                            heatmap = make_gradcam_heatmap(input_face, model, "conv2d_5")
+                            display_gradcam(
+                                frame, heatmap, (x_min, y_min, x_max - x_min, y_max - y_min)
+                            )
+
                         cv2.rectangle(frame, (x_min, y_min), (x_max, y_max), color, 2)
                         cv2.putText(
                             frame,
@@ -230,6 +315,9 @@ def main(video_path: str = None, screen: bool = False):
             current_frame = cap.get(cv2.CAP_PROP_POS_FRAMES)
             cap.set(cv2.CAP_PROP_POS_FRAMES, min(total_frames, current_frame + 30))
             force_read = True
+        elif key == ord("g"):
+            gradcam_active = not gradcam_active
+            print(f"Grad-CAM: {'ON' if gradcam_active else 'OFF'}")
 
     if cap:
         cap.release()
