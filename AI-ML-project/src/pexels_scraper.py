@@ -22,13 +22,27 @@ def download_pexels_images(query: str, total_images: int, output_dir: str) -> No
 
     os.makedirs(output_dir, exist_ok=True)
 
+    existing_files = [
+        f for f in os.listdir(output_dir) if f.startswith("pexels_") and f.endswith(".jpg")
+    ]
+    total_collected = len(existing_files)
+
+    if total_collected >= total_images:
+        print(
+            f"Directory already contains {total_collected} images "
+            f"(target: {total_images}). Skipping download."
+        )
+        return
+
+    print(f"Found {total_collected} existing images. Target is {total_images}.")
+
     headers = {"Authorization": api_key}
 
     per_page = 80
-    pages_needed = (total_images // per_page) + 1
-    downloaded_count = 0
+    page = 1
+    new_downloads = 0
 
-    for page in range(1, pages_needed + 1):
+    while total_collected < total_images:
         url = f"https://api.pexels.com/v1/search?query={query}&per_page={per_page}&page={page}"
         response = requests.get(url, headers=headers)
 
@@ -45,21 +59,30 @@ def download_pexels_images(query: str, total_images: int, output_dir: str) -> No
             break
 
         for photo in photos:
-            if downloaded_count >= total_images:
+            if total_collected >= total_images:
                 break
+
+            filename = os.path.join(output_dir, f"pexels_{photo['id']}.jpg")
+            if os.path.exists(filename):
+                continue
 
             img_url = photo["src"]["medium"]
             img_data = requests.get(img_url).content
 
-            filename = os.path.join(output_dir, f"pexels_{photo['id']}.jpg")
             with open(filename, "wb") as f:
                 f.write(img_data)
 
-            downloaded_count += 1
-            if downloaded_count % 50 == 0:
-                print(f"Downloaded {downloaded_count}/{total_images} images...")
+            total_collected += 1
+            new_downloads += 1
+            if new_downloads % 50 == 0:
+                print(f"Collected {total_collected}/{total_images} images...")
 
-    print(f"Finished downloading {downloaded_count} images into {output_dir}")
+        page += 1
+
+    print(
+        f"Finished. Downloaded {new_downloads} new images "
+        f"into {output_dir} (Total: {total_collected})"
+    )
 
 
 if __name__ == "__main__":
