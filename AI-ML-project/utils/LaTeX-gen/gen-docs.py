@@ -161,6 +161,7 @@ To ensure the project is perfectly maintainable, readable, and adheres to strict
     \item \textbf{Automated Workflows (CI/CD):} GitHub Actions are configured to trigger automatically on every pull request. The workflow executes the \texttt{pytest} suite and runs \texttt{flake8} linting. If any tests fail or formatting rules are broken, the merge is blocked, guaranteeing code quality.
 \end{itemize}
 
+\newpage
 \section{Data Analysis and Evaluation}
 
 \subsection{Dataset Distribution}
