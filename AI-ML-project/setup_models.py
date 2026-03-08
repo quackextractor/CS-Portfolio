@@ -28,7 +28,7 @@ def download_models(config_path: str = CONFIG_PATH) -> None:
         print("No models configured in config.yaml under models.downloads.")
         return
 
-    os.makedirs("models", exist_ok=True)
+    os.makedirs("vendor/models", exist_ok=True)
 
     for m in models:
         dest = m["dest"]

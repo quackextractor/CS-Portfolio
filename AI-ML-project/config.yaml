@@ -6,8 +6,8 @@ data:
   test_split_size: 0.2
   random_seed: 42
 model:
-  output_path: "models/miro_detector.h5"
-  face_detector_model_path: "models/blaze_face_short_range.task"
+  output_path: "vendor/models/miro_detector.h5"
+  face_detector_model_path: "vendor/models/blaze_face_short_range.task"
   img_size: 128
   threshold: 0.65
 camera:
@@ -16,4 +16,4 @@ models:
   downloads:
     - description: "BlazeFace short-range face detector (MediaPipe Tasks)"
       url: "https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/latest/blaze_face_short_range.tflite"
-      dest: "models/blaze_face_short_range.task"
+      dest: "vendor/models/blaze_face_short_range.task"
