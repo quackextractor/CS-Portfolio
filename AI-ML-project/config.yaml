@@ -1,0 +1,10 @@
+data:
+  raw_positive_dir: "data/raw/positive"
+  raw_negative_dir: "data/raw/negative"
+  processed_dir: "data/processed"
+  dataset_csv: "data/processed/dataset.csv"
+model:
+  output_path: "models/miro_detector.h5"
+  img_size: 128
+camera:
+  index: 0

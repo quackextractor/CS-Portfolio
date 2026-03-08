@@ -52,3 +52,45 @@ The documentation is generated dynamically using a Python script that builds tra
 * `models/`: Exported weights of the trained neural network.
 * `docs/`: Generated PDF project documentation.
 * `out/`: Temporary build folder for LaTeX compilation and graph generation.
+
+## Deployment and Execution Instructions
+
+To deploy the application on the target school computer without an IDE, ensure you have an external USB webcam connected and follow these command-line instructions:
+
+### Prerequisites
+- Python 3.10+
+- Internet connection (for initial setup)
+- A connected webcam
+
+### Installation Steps
+
+1. **Clone or Extract the Project:**
+   Navigate into the project root directory.
+   ```bash
+   cd AI-ML-project
+   ```
+
+2. **Create a Virtual Environment:**
+   This strictly isolates the application dependencies.
+   ```bash
+   python -m venv venv
+   ```
+
+3. **Activate the Virtual Environment:**
+   - Windows (Command Prompt): `venv\Scripts\activate.bat`
+   - Windows (PowerShell): `.\venv\Scripts\Activate.ps1`
+   - Mac/Linux: `source venv/bin/activate`
+
+4. **Install Dependencies:**
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+5. **Run the Application:**
+   Execute the core application script from the source directory.
+   ```bash
+   python src/app.py
+   ```
+
+6. **Quit:**
+   Press the `q` key on your keyboard to instantly quit the application and release the camera stream.
