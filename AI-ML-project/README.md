@@ -24,23 +24,25 @@ MiKTeX is required to compile the LaTeX documentation into a PDF. You can instal
 
 ## Installing Python Dependencies
 
-The project uses several external Python libraries for data scraping, image processing, and documentation generation.
+The project uses several external Python libraries for data scraping, image processing, and documentation generation. We highly recommend using the included batch script on Windows to automate the entire setup process.
 
 1. Open your terminal and navigate to the root directory of this project.
-2. Create a virtual environment to keep your project dependencies isolated:
-   `python -m venv .venv`
-3. Activate the virtual environment:
+2. Run the automated setup script:
+   `setup.bat`
+3. Once the setup is complete, activate the virtual environment:
    `.venv\Scripts\activate`
-4. Install the required packages:
-   `pip install -r requirements.txt`
-5. Download the required MediaPipe model files:
-   `python main.py setup`
+
+If you are setting this up on Mac or Linux, you will need to run the steps manually:
+1. Create a virtual environment: `python -m venv .venv`
+2. Activate the virtual environment: `source .venv/bin/activate`
+3. Install the required packages: `pip install -r requirements.txt`
+4. Download the required MediaPipe model files: `python main.py setup`
 
 ## Using the Command Line Interface (CLI)
 
 The project is operated entirely through a unified CLI managed by `main.py`. Once your virtual environment is active and dependencies are installed, you can use the following commands:
 
-* `python main.py setup`: Download required MediaPipe model files (run once after installing dependencies).
+* `python main.py setup`: Download required MediaPipe model files (already handled if you used setup.bat).
 * `python main.py scrape`: Download portrait images from Pexels for the negative class.
 * `python main.py extract <video_path>`: Extract frames from personal videos for the positive class.
 * `python main.py build`: Clean, crop, and normalize raw images to build the dataset CSV.
@@ -73,9 +75,9 @@ The documentation is generated dynamically using a Python script that builds tra
 To deploy the application on the target school computer without an IDE, ensure you have an external USB webcam connected and follow these command-line instructions:
 
 ### Prerequisites
-- Python 3.10+
-- Internet connection (for initial setup)
-- A connected webcam
+* Python 3.10+
+* Internet connection (for initial setup)
+* A connected webcam
 
 ### Installation Steps
 
@@ -86,41 +88,28 @@ To deploy the application on the target school computer without an IDE, ensure y
 
 ```
 
-2. **Create a Virtual Environment:**
-This strictly isolates the application dependencies.
-
+2. **Run the Automated Setup (Windows):**
+This script strictly isolates the application dependencies by creating a virtual environment, installing packages, and downloading required MediaPipe models automatically.
 ```bash
-python -m venv .venv
+setup.bat
 
 ```
 
-3. **Activate the Virtual Environment:**
 
+*(Note: If on Mac/Linux, manually run `python -m venv .venv`, install from `requirements.txt`, and run `python main.py setup`)*
+3. **Activate the Virtual Environment:**
 * Windows (Command Prompt): `.venv\Scripts\activate.bat`
 * Windows (PowerShell): `.\.venv\Scripts\Activate.ps1`
 * Mac/Linux: `source .venv/bin/activate`
 
-4. **Install Dependencies:**
 
-```bash
-pip install -r requirements.txt
-
-```
-
-4.5 **Download MediaPipe Models:**
-
-```bash
-python main.py setup
-
-```
-
-5. **Run the Application:**
+4. **Run the Application:**
 Execute the core application script via the unified CLI.
-
 ```bash
 python main.py run
 
 ```
 
-6. **Quit:**
+
+5. **Quit:**
 Press the `q` key on your keyboard to instantly quit the application and release the camera stream.
