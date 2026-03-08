@@ -80,7 +80,6 @@ You must record a video of yourself to generate the positive dataset.
 
 \textbf{Tips for High-Quality Video Recording:}
 \begin{itemize}
-    \item \textbf{Lighting:} Ensure your face is evenly lit.  Avoid heavy shadows or severe backlighting which can obscure facial features.
     \item \textbf{Lighting:} Ensure your face is evenly lit. Avoid heavy shadows or severe backlighting which can obscure facial features.
     \item \textbf{Angles:} Slowly move your head to capture different angles (front, slight left, slight right, looking slightly up and down).
     \item \textbf{Background:} A neutral, uncluttered background is preferred but not strictly required, as the preprocessing pipeline will crop the background out.
@@ -184,5 +183,4 @@ def build_pdf(filename="user_manual"):
 
 
 if __name__ == "__main__":
-    build_pdf()
     build_pdf()
