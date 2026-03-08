@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2026-03-08
+### Fixed
+- Replaced `import mediapipe as mp` / `mp.solutions.face_detection` with a lazy import
+  in `src/build_dataset.py` and `src/app.py`. `mediapipe >= 0.10.x` removed `solutions`
+  from the top-level module; the new `_get_mp_face_detection()` helper resolves the
+  module on first use, raising a clear `ImportError` if mediapipe is missing and a
+  descriptive `RuntimeError` if `FaceDetection` fails to initialise.
+
+### Added
+- Two new unit tests: `test_process_images_multiple_faces_discarded` and
+  `test_face_detection_init_failure_raises_runtime_error`.
+
+### Changed
+- All test mocks updated to target `src.build_dataset._get_mp_face_detection` so
+  the test suite runs without mediapipe installed.
+
+## [1.2.0] - 2026-03-08
+### Added
+- Implemented a unified Command Line Interface (CLI) in `main.py` using `argparse` to centralize execution of all project phases (scrape, extract, build, run, docs).
+
+### Changed
+- Updated `README.md` deployment and execution instructions to use the new `main.py` entry point instead of running individual scripts.
+
 ## [1.1.0] - 2026-03-08
 ### Added
 - Added rigorous test coverage for `app.py` and improved `build_dataset.py` mock tests.

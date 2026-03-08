@@ -3,9 +3,27 @@ import cv2
 import yaml
 import glob
 import pandas as pd
-import mediapipe as mp
 import argparse
 from sklearn.model_selection import train_test_split
+
+
+# Lazy mediapipe handle - resolved on first use so tests can mock it freely.
+_mp_face_detection = None
+
+
+def _get_mp_face_detection():
+    """Return the mediapipe.solutions.face_detection module, importing it lazily."""
+    global _mp_face_detection
+    if _mp_face_detection is None:
+        try:
+            from mediapipe.solutions import face_detection as _mod
+            _mp_face_detection = _mod
+        except ImportError as err:
+            raise ImportError(
+                "mediapipe is not installed or is incompatible. "
+                "Run: pip install -r requirements.txt"
+            ) from err
+    return _mp_face_detection
 
 
 def load_config(config_path: str = "config.yaml") -> dict:
@@ -26,10 +44,16 @@ def process_images(
     """
     records = []
 
-    mp_face_detection = mp.solutions.face_detection
-    face_detection = mp_face_detection.FaceDetection(
-        model_selection=1, min_detection_confidence=0.5
-    )
+    mp_face_detection = _get_mp_face_detection()
+    try:
+        face_detection = mp_face_detection.FaceDetection(
+            model_selection=1, min_detection_confidence=0.5
+        )
+    except Exception as e:
+        raise RuntimeError(
+            f"Failed to initialise MediaPipe FaceDetection: {e}\n"
+            "Ensure mediapipe >= 0.10.9 is installed."
+        ) from e
 
     os.makedirs(output_dir, exist_ok=True)
 

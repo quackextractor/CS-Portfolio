@@ -1,5 +1,5 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Version](https://img.shields.io/badge/version-1.1.0-blue.svg)](https://github.com/quackextractor/CS-Portfolio)
+[![Version](https://img.shields.io/badge/version-1.2.0-blue.svg)](https://github.com/quackextractor/CS-Portfolio)
 
 # Miro Face Detector
 
@@ -24,7 +24,7 @@ MiKTeX is required to compile the LaTeX documentation into a PDF. You can instal
 
 ## Installing Python Dependencies
 
-The project uses several external Python libraries for data scraping, image processing, and documentation generation. 
+The project uses several external Python libraries for data scraping, image processing, and documentation generation.
 
 1. Open your terminal and navigate to the root directory of this project.
 2. Create a virtual environment to keep your project dependencies isolated:
@@ -34,13 +34,23 @@ The project uses several external Python libraries for data scraping, image proc
 4. Install the required packages:
    `pip install -r requirements.txt`
 
+## Using the Command Line Interface (CLI)
+
+The project is operated entirely through a unified CLI managed by `main.py`. Once your virtual environment is active and dependencies are installed, you can use the following commands:
+
+* `python main.py scrape`: Download portrait images from Pexels for the negative class.
+* `python main.py extract <video_path>`: Extract frames from personal videos for the positive class.
+* `python main.py build`: Clean, crop, and normalize raw images to build the dataset CSV.
+* `python main.py run`: Launch the live webcam face detection application.
+* `python main.py docs`: Generate the LaTeX project documentation PDF.
+
 ## Generating the Documentation
 
 The documentation is generated dynamically using a Python script that builds training graphs and compiles LaTeX source code.
 
 1. Ensure your virtual environment is activated.
-2. Run the generator script:
-   `python gen-docs.py`
+2. Run the generator script via the CLI:
+   `python main.py docs`
 3. The final compiled PDF will be located in the `docs/` directory.
 
 ## Repository Structure
@@ -68,29 +78,37 @@ To deploy the application on the target school computer without an IDE, ensure y
    Navigate into the project root directory.
    ```bash
    cd AI-ML-project
-   ```
+
+```
 
 2. **Create a Virtual Environment:**
-   This strictly isolates the application dependencies.
-   ```bash
-   python -m venv venv
-   ```
+This strictly isolates the application dependencies.
+```bash
+python -m venv venv
+
+```
+
 
 3. **Activate the Virtual Environment:**
-   - Windows (Command Prompt): `venv\Scripts\activate.bat`
-   - Windows (PowerShell): `.\venv\Scripts\Activate.ps1`
-   - Mac/Linux: `source venv/bin/activate`
+* Windows (Command Prompt): `venv\Scripts\activate.bat`
+* Windows (PowerShell): `.\venv\Scripts\Activate.ps1`
+* Mac/Linux: `source venv/bin/activate`
+
 
 4. **Install Dependencies:**
-   ```bash
-   pip install -r requirements.txt
-   ```
+```bash
+pip install -r requirements.txt
+
+```
+
 
 5. **Run the Application:**
-   Execute the core application script from the source directory.
-   ```bash
-   python src/app.py
-   ```
+Execute the core application script via the unified CLI.
+```bash
+python main.py run
+
+```
+
 
 6. **Quit:**
-   Press the `q` key on your keyboard to instantly quit the application and release the camera stream.
+Press the `q` key on your keyboard to instantly quit the application and release the camera stream.
