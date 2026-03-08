@@ -73,7 +73,7 @@ def generate_latex_content():
 
     {\Large \textbf{Miro Face Detector}} \\
     \vspace{0.5cm}
-    Face detection \\
+    Rozpoznávání obličeje \\
 
     \vfill
 
