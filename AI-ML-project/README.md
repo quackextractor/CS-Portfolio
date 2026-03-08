@@ -1,3 +1,6 @@
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/quackextractor/CS-Portfolio)
+
 # Miro Face Detector
 
 This repository contains the source code, data pipeline, and documentation generator for the Miro Face Detector. This is a custom machine learning computer vision application capable of detecting a specific person in a live camera feed and distinguishing them from other individuals.
@@ -28,7 +31,7 @@ The project uses several external Python libraries for data scraping, image proc
    `python -m venv venv`
 3. Activate the virtual environment:
    `venv\Scripts\activate`
-4. Install the required packages. To run the documentation generator, you need matplotlib. For the full project pipeline, you will need the rest of the computer vision stack:
+4. Install the required packages:
    `pip install matplotlib mediapipe opencv-python requests pandas`
 
 ## Generating the Documentation
@@ -39,7 +42,6 @@ The documentation is generated dynamically using a Python script that builds tra
 2. Run the generator script:
    `python gen-docs.py`
 3. The final compiled PDF will be located in the `docs/` directory.
-
 
 ## Repository Structure
 
