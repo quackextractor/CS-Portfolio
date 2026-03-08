@@ -33,7 +33,7 @@ def _build_face_detector(model_path: str):
     if not os.path.isfile(model_path):
         raise FileNotFoundError(
             f"Face detector model not found at '{model_path}'. "
-            "Download it by running: python setup_models.py  "
+            "Download it by running: python vendor/setup_models.py  "
             "or see the README for manual download instructions."
         )
 

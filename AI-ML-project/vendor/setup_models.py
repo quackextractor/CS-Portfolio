@@ -4,7 +4,7 @@ setup_models.py - Download required MediaPipe model files.
 Model URLs and destinations are sourced from config.yaml (models.downloads).
 
 Run this once after installing dependencies:
-    python setup_models.py
+    python vendor/setup_models.py
     # or via the unified CLI:
     python main.py setup
 """

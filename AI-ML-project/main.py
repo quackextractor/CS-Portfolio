@@ -1,19 +1,18 @@
 import os
+import argparse
+import sys
+import importlib.util
 
 # Suppress TensorFlow informational logs and oneDNN warnings
 os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 
-import argparse 
-import sys 
-import importlib.util 
-
 # Import the core functions from your existing modules
-from src.app import main as run_inference 
-from src.build_dataset import build_dataset 
-from src.pexels_scraper import download_pexels_images 
-from src.video_extractor import extract_frames 
-from setup_models import download_models 
+from src.app import main as run_inference  # noqa: E402
+from src.build_dataset import build_dataset  # noqa: E402
+from src.pexels_scraper import download_pexels_images  # noqa: E402
+from src.video_extractor import extract_frames  # noqa: E402
+from vendor.setup_models import download_models  # noqa: E402
 
 
 def generate_docs():

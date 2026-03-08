@@ -1,5 +1,5 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Version](https://img.shields.io/badge/version-1.5.0-blue.svg)](https://github.com/quackextractor/CS-Portfolio)
+[![Version](https://img.shields.io/badge/version-1.5.1-blue.svg)](https://github.com/quackextractor/CS-Portfolio)
 
 # Miro Face Detector
 
@@ -67,7 +67,7 @@ The documentation is generated dynamically using a Python script that builds tra
 * `models/`: Exported weights of the trained neural network and the downloaded MediaPipe face detector model.
 * `docs/`: Generated PDF project documentation.
 * `out/`: Temporary build folder for LaTeX compilation and graph generation.
-* `setup_models.py`: Helper module that downloads required MediaPipe model files (invoked via `python main.py setup`).
+* `vendor/setup_models.py`: Helper module that downloads required MediaPipe model files (invoked via `python main.py setup`).
 * `setup.bat`: Windows batch script that creates a virtual environment, installs dependencies, and downloads models in one step.
 
 ## Deployment and Execution Instructions
