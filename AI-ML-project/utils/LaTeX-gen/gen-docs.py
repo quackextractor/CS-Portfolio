@@ -73,12 +73,12 @@ def generate_latex_content():
 
     {\Large \textbf{Miro Face Detector}} \\
     \vspace{0.5cm}
-    Rozpoznávání obličeje \\
+    Face detection \\
 
     \vfill
 
     {\large Miro Slezák} \\
-    {\large Informační technologie} \\
+    {\large Information Technology} \\
     {\large 2026} \\
 
     \vspace*{1cm}
