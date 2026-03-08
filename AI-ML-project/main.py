@@ -4,20 +4,20 @@ import os
 os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 
-import argparse  # noqa: E402
-import sys  # noqa: E402
-import importlib.util  # noqa: E402
+import argparse 
+import sys 
+import importlib.util 
 
 # Import the core functions from your existing modules
-from src.app import main as run_inference  # noqa: E402
-from src.build_dataset import build_dataset  # noqa: E402
-from src.pexels_scraper import download_pexels_images  # noqa: E402
-from src.video_extractor import extract_frames  # noqa: E402
-from setup_models import download_models  # noqa: E402
+from src.app import main as run_inference 
+from src.build_dataset import build_dataset 
+from src.pexels_scraper import download_pexels_images 
+from src.video_extractor import extract_frames 
+from setup_models import download_models 
 
 
 def generate_docs():
-    script_path = os.path.join("utils", "LaTeX-gen", "gen-docs.py")
+    script_path = os.path.join("vendor", "utils", "LaTeX-gen", "gen-docs.py")
     if not os.path.exists(script_path):
         print(f"Error: Documentation script not found at {script_path}")
         return

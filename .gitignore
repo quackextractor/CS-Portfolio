@@ -241,3 +241,4 @@ P2P/src/BankNode.App/accounts.json
 /AI-ML-project/.coverage
 /AI-ML-project/htmlcov/
 /AI-ML-project/models
+/AI-ML-project/vendor/utils/LaTeX-gen/out
