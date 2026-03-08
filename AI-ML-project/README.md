@@ -47,6 +47,7 @@ The project is operated entirely through a unified CLI managed by `main.py`. Onc
 * `python main.py extract <video_path>`: Extract frames from personal videos for the positive class.
 * `python main.py build`: Clean, crop, and normalize raw images to build the dataset CSV.
 * `python main.py run`: Launch the live webcam face detection application.
+  * Optionally, use `python main.py run --video <video_path>` to run inference on a local video file with playback controls (`Space` to pause, `a`/`d` to skip).
 * `python main.py docs`: Generate the LaTeX project documentation PDF.
 
 ## Generating the Documentation

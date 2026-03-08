@@ -136,9 +136,9 @@ To ensure the final cleaned dataset meets the strict requirement of at least 150
 The processed \texttt{data/} directory and the \texttt{dataset.csv} file are uploaded to Google Drive. A Google Colab Jupyter Notebook mounts the drive, loads the preprocessed true data, and trains the CNN. The final trained model weights are exported as a \texttt{.keras} file and downloaded back to the local project folder.
 
 \subsection{Phase 4: Real World Application (Inference)}
-The final software is a Python script executable via the command line on the school PC. It requires an external USB webcam connected to the computer. It accesses the host computer webcam using OpenCV, continuously extracts faces from the live feed, and passes the cropped faces to the trained CNN.
+The final software is a Python script executable via the command line on the school PC. It requires an external USB webcam connected to the computer, or alternatively, a pre-recorded video file passed via the \texttt{--video} argument. It accesses the video stream using OpenCV, continuously extracts faces, and passes the cropped faces to the trained CNN.
 
-The application draws a bounding box on the live video feed, labeling the face as either "Miro" or "Unknown". The exact confidence threshold for positive classification is customizable via \texttt{config.yaml} to ensure adaptability in diverse lighting environments. The user safely terminates the camera feed by pressing the "q" key.
+The application draws a bounding box on the live video feed, labeling the face as either "Miro" or "Unknown". The exact confidence threshold for positive classification is customizable via \texttt{config.yaml} to ensure adaptability in diverse lighting environments. The user safely terminates the camera feed by pressing the "q" key. When watching a pre-recorded video, the user can also press the Spacebar to pause/resume or use "a" and "d" to skip back and forth.
 
 \section{Maintainability and Quality Assurance}
 To ensure the project is perfectly maintainable, readable, and adheres to strict software engineering standards, the following practices and architectures are implemented.
@@ -223,7 +223,7 @@ To deploy the application on the target school computer without an IDE, the user
     \item \texttt{python -m venv venv}
     \item \texttt{venv\textbackslash Scripts\textbackslash activate}
     \item \texttt{pip install -r requirements.txt}
-    \item \texttt{python src/app.py}
+    \item \texttt{python main.py run} (Use \texttt{--video path.mp4} for video files)
 \end{enumerate}
 
 \end{document}

@@ -141,8 +141,10 @@ With the model trained and loaded, you can launch the live webcam inference appl
 \textbf{Application Operation:}
 \begin{itemize}
     \item The app accesses your primary webcam (configurable via \texttt{camera: index} in \texttt{config.yaml}).
+    \item \textbf{Video Mode:} You can also run inference on a local video file by executing \texttt{python main.py run --video path/to/video.mp4}.
     \item It draws bounding boxes in real-time, classifying faces as "Miro" (green) or "Unknown" (red).
-    \item \textbf{Thresholding:} If the detection is overly strict or too lenient, adjust the \texttt{threshold} parameter in \texttt{config.yaml} (default is 0.65).
+    \item \textbf{thresholding:} If the detection is overly strict or too lenient, adjust the \texttt{threshold} parameter in \texttt{config.yaml} (default is 0.65).
+    \item \textbf{Video Controls:} When in video mode, press the Spacebar to pause/resume playback. You can skip forward and backward 30 frames using the "d" and "a" keys respectfully, or use the interactive slider at the top of the window.
     \item \textbf{Quitting:} Press the \textbf{"q"} key to instantly safely terminate the camera stream and close the application.
 \end{itemize}
 

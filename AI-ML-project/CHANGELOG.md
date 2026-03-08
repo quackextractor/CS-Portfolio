@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.4] - 2026-03-08
+### Added
+- Added a `--video` parameter to `python main.py run` to allow passing a local video file (`.mp4`) for model inference instead of using the live webcam stream.
+- Added playback controls (Spacebar for pause/resume, 'a' and 'd' for skipping backward and forward 30 frames) to the video interface in `src/app.py`.
+- Added a dynamic interactive progress trackbar for video playback and seeking.
+
 ## [1.6.3] - 2026-03-08
 ### Changed
 - Updated `config.yaml`, `src/app.py`, and tests to enforce and use `.keras` model format instead of `.h5`.

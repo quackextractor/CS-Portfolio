@@ -56,9 +56,12 @@ def main():
     )
 
     # Command: run
-    subparsers.add_parser(
+    parser_run = subparsers.add_parser(
         "run",
-        help="Launch the live webcam face detection application",
+        help="Launch the live webcam face detection application or run on a video",
+    )
+    parser_run.add_argument(
+        "--video", type=str, default=None, help="Path to a video file for inference"
     )
 
     # Command: build
@@ -113,7 +116,7 @@ def main():
     if args.command == "setup":
         download_models()
     elif args.command == "run":
-        run_inference()
+        run_inference(args.video)
     elif args.command == "build":
         build_dataset()
     elif args.command == "scrape":

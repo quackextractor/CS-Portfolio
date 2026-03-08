@@ -52,7 +52,7 @@ def _build_face_detector(model_path: str):
         ) from e
 
 
-def main():
+def main(video_path: str = None):
     import mediapipe as mp
 
     config = load_config()
@@ -84,82 +84,135 @@ def main():
 
     face_detector = _build_face_detector(face_model_path)
 
-    print(f"Opening camera {camera_index}...")
-    cap = cv2.VideoCapture(camera_index)
+    if video_path:
+        if not os.path.exists(video_path):
+            print(f"Error: Video file not found at {video_path}")
+            face_detector.close()
+            return
+        print(f"Opening video {video_path}...")
+        cap = cv2.VideoCapture(video_path)
+    else:
+        print(f"Opening camera {camera_index}...")
+        cap = cv2.VideoCapture(camera_index)
 
     if not cap.isOpened():
-        print("Error: Could not open camera.")
+        print("Error: Could not open video source.")
         face_detector.close()
         return
 
-    print("Camera opened successfully. Press 'q' to quit.")
+    window_name = "Miro Face Detector"
+    cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
+
+    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT)) if video_path else 0
+    paused = False
+    force_read = False
+    updating_trackbar = False
+
+    if video_path and total_frames > 0:
+        def on_trackbar(val):
+            nonlocal force_read
+            if not updating_trackbar:
+                cap.set(cv2.CAP_PROP_POS_FRAMES, val)
+                force_read = True
+
+        cv2.createTrackbar("Progress", window_name, 0, total_frames, on_trackbar)
+        print("Video opened successfully. Controls:")
+        print("  [Space] Pause/Resume")
+        print("  [a] / [d] Skip 30 frames backward/forward")
+        print("  [q] or [ESC] to quit")
+    else:
+        print("Camera opened successfully. Press 'q' to quit.")
+
     frame_index = 0
 
     while True:
-        ret, frame = cap.read()
-        if not ret:
-            print("Failed to grab frame")
+        if not paused or force_read:
+            ret, frame = cap.read()
+            if not ret:
+                if video_path:
+                    print("End of video reached.")
+                else:
+                    print("Failed to grab frame")
+                break
+
+            force_read = False
+
+            # Convert BGR frame to RGB mp.Image for the Tasks API
+            rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb_frame)
+
+            detection_result = face_detector.detect(mp_image)
+            frame_index += 1
+
+            if detection_result.detections:
+                ih, iw, _ = frame.shape
+                for detection in detection_result.detections:
+                    # BoundingBox is absolute pixels in the Tasks API
+                    bbox = detection.bounding_box
+                    x = bbox.origin_x
+                    y = bbox.origin_y
+                    w = bbox.width
+                    h = bbox.height
+
+                    # Margin for cropping
+                    margin_x = int(w * 0.1)
+                    margin_y = int(h * 0.1)
+
+                    x_min = max(0, x - margin_x)
+                    y_min = max(0, y - margin_y)
+                    x_max = min(iw, x + w + margin_x)
+                    y_max = min(ih, y + h + margin_y)
+
+                    cropped_face = frame[y_min:y_max, x_min:x_max]
+
+                    if cropped_face.size > 0:
+                        # Preprocess for classifier model
+                        resized_face = cv2.resize(cropped_face, (img_size, img_size))
+                        rgb_face = cv2.cvtColor(resized_face, cv2.COLOR_BGR2RGB)
+                        normalized_face = rgb_face / 255.0
+                        input_face = np.expand_dims(normalized_face, axis=0)
+
+                        prediction = model.predict(input_face, verbose=0)[0][0]
+
+                        if prediction >= threshold:
+                            label = f"Miro ({prediction:.2f})"
+                            color = (0, 255, 0)  # Green
+                        else:
+                            label = f"Unknown ({prediction:.2f})"
+                            color = (0, 0, 255)  # Red
+
+                        cv2.rectangle(frame, (x_min, y_min), (x_max, y_max), color, 2)
+                        cv2.putText(
+                            frame,
+                            label,
+                            (x_min, y_min - 10),
+                            cv2.FONT_HERSHEY_SIMPLEX,
+                            0.9,
+                            color,
+                            2,
+                        )
+
+            if video_path and total_frames > 0:
+                current_frame = int(cap.get(cv2.CAP_PROP_POS_FRAMES))
+                updating_trackbar = True
+                cv2.setTrackbarPos("Progress", window_name, current_frame)
+                updating_trackbar = False
+
+            cv2.imshow(window_name, frame)
+
+        key = cv2.waitKey(1 if not paused else 30) & 0xFF
+        if key == ord("q") or key == 27:
             break
-
-        # Convert BGR frame to RGB mp.Image for the Tasks API
-        rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb_frame)
-
-        detection_result = face_detector.detect(mp_image)
-        frame_index += 1
-
-        if detection_result.detections:
-            ih, iw, _ = frame.shape
-            for detection in detection_result.detections:
-                # BoundingBox is absolute pixels in the Tasks API
-                bbox = detection.bounding_box
-                x = bbox.origin_x
-                y = bbox.origin_y
-                w = bbox.width
-                h = bbox.height
-
-                # Margin for cropping
-                margin_x = int(w * 0.1)
-                margin_y = int(h * 0.1)
-
-                x_min = max(0, x - margin_x)
-                y_min = max(0, y - margin_y)
-                x_max = min(iw, x + w + margin_x)
-                y_max = min(ih, y + h + margin_y)
-
-                cropped_face = frame[y_min:y_max, x_min:x_max]
-
-                if cropped_face.size > 0:
-                    # Preprocess for classifier model
-                    resized_face = cv2.resize(cropped_face, (img_size, img_size))
-                    rgb_face = cv2.cvtColor(resized_face, cv2.COLOR_BGR2RGB)
-                    normalized_face = rgb_face / 255.0
-                    input_face = np.expand_dims(normalized_face, axis=0)
-
-                    prediction = model.predict(input_face, verbose=0)[0][0]
-
-                    if prediction >= threshold:
-                        label = f"Miro ({prediction:.2f})"
-                        color = (0, 255, 0)  # Green
-                    else:
-                        label = f"Unknown ({prediction:.2f})"
-                        color = (0, 0, 255)  # Red
-
-                    cv2.rectangle(frame, (x_min, y_min), (x_max, y_max), color, 2)
-                    cv2.putText(
-                        frame,
-                        label,
-                        (x_min, y_min - 10),
-                        cv2.FONT_HERSHEY_SIMPLEX,
-                        0.9,
-                        color,
-                        2,
-                    )
-
-        cv2.imshow("Miro Face Detector", frame)
-
-        if cv2.waitKey(1) & 0xFF == ord("q"):
-            break
+        elif key == ord(" ") and video_path:
+            paused = not paused
+        elif key == ord("a") and video_path:
+            current_frame = cap.get(cv2.CAP_PROP_POS_FRAMES)
+            cap.set(cv2.CAP_PROP_POS_FRAMES, max(0, current_frame - 30))
+            force_read = True
+        elif key == ord("d") and video_path:
+            current_frame = cap.get(cv2.CAP_PROP_POS_FRAMES)
+            cap.set(cv2.CAP_PROP_POS_FRAMES, min(total_frames, current_frame + 30))
+            force_read = True
 
     cap.release()
     face_detector.close()

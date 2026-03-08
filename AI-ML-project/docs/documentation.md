@@ -62,7 +62,7 @@ The processed `data/` directory and the `dataset.csv` file are uploaded to Googl
 
 ## 3.4 Phase 4: Real World Application (Inference)
 
-The final software is a Python script executable via the command line on the school PC. It requires an external USB webcam connected to the computer. It accesses the host computer webcam using OpenCV, continuously extracts faces from the live feed, and passes the cropped faces to the trained CNN. The application draws a bounding box on the live video feed, labeling the face as either "Miro" or "Unknown". The exact confidence threshold for positive classification is customizable via `config.yaml` to ensure adaptability in diverse lighting environments. The user safely terminates the camera feed by pressing the "q" key.
+The final software is a Python script executable via the command line on the school PC. It can access the host computer webcam using OpenCV, or process a pre-recorded video file provided by the user via the `--video` flag. It continuously extracts faces from the video stream and passes the cropped faces to the trained CNN. The application draws a bounding box on the live video feed, labeling the face as either "Miro" or "Unknown". The exact confidence threshold for positive classification is customizable via `config.yaml` to ensure adaptability in diverse lighting environments. The user safely terminates the camera feed by pressing the "q" key. When watching a pre-recorded video, the user can also press the Spacebar to pause/resume or use "a" and "d" to skip back and forth.
 
 # 4 Maintainability and Quality Assurance
 
@@ -130,5 +130,7 @@ To deploy the application on the target school computer without an IDE, the user
 python -m venv venv
 venv\Scripts\activate
 pip install -r requirements.txt
-python src/app.py
+python main.py run
+# Or use a video file:
+# python main.py run --video test_video.mp4
 ```
