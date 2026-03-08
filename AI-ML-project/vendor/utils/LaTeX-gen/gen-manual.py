@@ -1,4 +1,3 @@
-# vendor/utils/LaTeX-gen/gen-manual.py
 import os
 import subprocess
 import shutil
@@ -82,6 +81,7 @@ You must record a video of yourself to generate the positive dataset.
 \textbf{Tips for High-Quality Video Recording:}
 \begin{itemize}
     \item \textbf{Lighting:} Ensure your face is evenly lit.  Avoid heavy shadows or severe backlighting which can obscure facial features.
+    \item \textbf{Lighting:} Ensure your face is evenly lit. Avoid heavy shadows or severe backlighting which can obscure facial features.
     \item \textbf{Angles:} Slowly move your head to capture different angles (front, slight left, slight right, looking slightly up and down).
     \item \textbf{Background:} A neutral, uncluttered background is preferred but not strictly required, as the preprocessing pipeline will crop the background out.
     \item \textbf{Obstructions:} Do not cover your face with hands or accessories during the recording.
@@ -95,7 +95,7 @@ Once recorded, place your video file in the project directory. Run the extractio
 
 \textbf{Parameters:}
 \begin{itemize}
-    \item \texttt{--frame\_rate}: Controls how many frames are skipped. The default is 5 (extracts 1 frame every 5 frames). Adjust this based on your video length to yield approximately 800 images.
+    \item \texttt{--frame\_rate}: Controls how many frames are skipped. The default is 5 (extracts 1 frame every 5 frames). Adjust this based on your video length to yield approximately 1438 images.
     \item \texttt{--output\_dir}: The target folder, which defaults to \texttt{data/raw/positive}.
 \end{itemize}
 
@@ -108,13 +108,11 @@ The application requires images of other people to learn who you are not. Downlo
 This command will populate the \texttt{data/raw/negative} directory.
 
 \section{Step 3: Preprocessing and Building the Dataset}
+The raw data must be cleaned, cropped, and normalized using MediaPipe. Run the build command:
 
-The raw data must be cleaned, cropped, and normalized using MediaPipe. 
-
-Run the build command:
 \texttt{python main.py build}
 
-This process evaluates all images in the \texttt{raw/} directory, discards images with zero or multiple faces, crops valid faces, resizes them to 128x128 pixels, and saves them to \texttt{data/processed/} alongside a generated \texttt{dataset.csv}. 
+This process evaluates all images in the \texttt{raw/} directory, discards images with zero or multiple faces, crops valid faces, resizes them to 128x128 pixels, and saves them to \texttt{data/processed/} alongside a generated \texttt{dataset.csv}.
 
 \textbf{Configuration Parameters (\texttt{config.yaml}):}
 Before training, you may adjust variables in the \texttt{config.yaml} file:
@@ -124,14 +122,14 @@ Before training, you may adjust variables in the \texttt{config.yaml} file:
 \end{itemize}
 
 \section{Step 4: Model Training}
+The model is trained using Google Colab.
 
-The model is trained using Google Colab. 
 \begin{enumerate}
     \item Upload the \texttt{notebooks/model\_training.ipynb} file to Google Colab.
-    \item Upload your \texttt{config.yaml} and dataset (the \texttt{data/processed/} folder and \texttt{dataset.csv}) to your Google Drive. 
+    \item Upload your \texttt{config.yaml} and dataset (the \texttt{data/processed/} folder and \texttt{dataset.csv}) to your Google Drive.
     \item Example: drive mounted fine and the location of the dataset is at\\ \texttt{/content/drive/MyDrive/processed}. Ensure your \texttt{config.yaml} reflects these paths.
     \item Execute the cells within the notebook sequentially to train the Convolutional Neural Network (CNN).
-    \item Once training is complete, the final weights will be exported as \texttt{miro\_detector.h5}. Download this file and place it in the \texttt{models/} directory within your local project.
+    \item Once training is complete, the final weights will be exported as \texttt{miro\_detector.keras}. Download this file and place it in the \texttt{models/} directory within your local project.
 \end{enumerate}
 
 \section{Step 5: Running the Application}
@@ -165,9 +163,8 @@ def build_pdf(filename="user_manual"):
 
     with open(tex_filename, "w", encoding="utf-8") as f:
         f.write(latex_content)
-    
-    print("Compiling PDF with pdflatex...")
 
+    print("Compiling PDF with pdflatex...")
     try:
         # Run pdflatex twice to resolve TOC references
         subprocess.run(["pdflatex", f"{filename}.tex"], cwd=OUT_DIR, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -187,4 +184,5 @@ def build_pdf(filename="user_manual"):
 
 
 if __name__ == "__main__":
+    build_pdf()
     build_pdf()

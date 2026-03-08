@@ -10,7 +10,7 @@ Střední průmyslová škola elektrotechnická, Praha 2, Ječná 30
 Informační technologie
 2026
 
----
+***
 
 # 1 Project Overview
 
@@ -45,12 +45,12 @@ The architecture is divided into a data generation pipeline, a cloud based train
 
 To ensure the final cleaned dataset meets the strict requirement of at least 1500 records, the collection scripts oversample data.
 
-* **Positive Class (Miro):** A custom script captures frames from multiple videos of the target under varying lighting conditions, generating 800 initial images saved to the raw data directory. The original unmodified video files are preserved as verifiable proof of non-simulated real data collection.
+* **Positive Class (Miro):** A custom script captures frames from multiple videos of the target under varying lighting conditions, generating 1438 initial images saved to the raw data directory. The original unmodified video files are preserved as verifiable proof of non-simulated real data collection.
 * **Negative Class (Random):** A script queries the Pexels API for portrait photos and downloads 1200 images into the raw data directory.
 
 ## 3.2 Phase 2: Preprocessing and Attribute Extraction
 
-* All 2000 raw images are passed through the MediaPipe Face Detector.
+* All raw images are passed through the MediaPipe Face Detector.
 * Images containing zero faces or multiple faces are automatically discarded by the script to ensure data cleanliness.
 * Valid faces are cropped using the generated bounding boxes and resized to a strict 128x128 resolution.
 * **The Data Attributes:** The data loader indexes the images using a `dataset.csv` file. However, the actual training data attributes (parts) utilized by the CNN are the image matrices themselves. Each 128x128x3 RGB image contains 49,152 distinct pixel attributes that the network learns from.
@@ -58,7 +58,7 @@ To ensure the final cleaned dataset meets the strict requirement of at least 150
 
 ## 3.3 Phase 3: Model Training (Google Colab)
 
-The processed `data/` directory and the `dataset.csv` file are uploaded to Google Drive. A Google Colab Jupyter Notebook mounts the drive, loads the preprocessed true data, and trains the CNN. The final trained model weights are exported as an `.h5` file and downloaded back to the local project folder.
+The processed `data/` directory and the `dataset.csv` file are uploaded to Google Drive. A Google Colab Jupyter Notebook mounts the drive, loads the preprocessed true data, and trains the CNN. The final trained model weights are exported as a `.keras` file and downloaded back to the local project folder.
 
 ## 3.4 Phase 4: Real World Application (Inference)
 
@@ -109,25 +109,19 @@ To strictly adhere to code authorship requirements, the repository is structured
 * `app.py`: The final webcam application launched by the user.
 * **Rule of Authorship:** Absolutely zero lines of foreign code are present in this directory. All logic is authored by hand.
 
-
 2. `vendor/` (Foreign Code)
 * Contains any third party helper libraries, complex boilerplate configurations, snippets explicitly downloaded that was not written by hand. This completely isolates foreign code from the core application logic.
 * `video_extractor.py`: Custom script to extract frames from personal videos. Moved to vendor to separate data collection utilities from core application logic.
-
 
 3. `data/`
 * `raw/`: Contains the unmodified downloaded images and video frames.
 * `processed/`: Contains the cropped 128x128 faces and the `dataset.csv`.
 
-
 4. `notebooks/`
 * `model_training.ipynb`: The Jupyter Notebook executed in Google Colab documenting the CNN creation, training, and evaluation.
 
-
 5. `models/`
-* `miro_detector.h5`: The exported weights of the trained neural network.
-
-
+* `miro_detector.keras`: The exported weights of the trained neural network.
 
 **Deployment and Execution Instructions:**
 To deploy the application on the target school computer without an IDE, the user must connect an external webcam and execute the following steps in the command line:
@@ -137,5 +131,4 @@ python -m venv venv
 venv\Scripts\activate
 pip install -r requirements.txt
 python src/app.py
-
 ```

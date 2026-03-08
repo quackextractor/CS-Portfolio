@@ -18,32 +18,32 @@ def generate_graphs():
     
     # 1. Dataset Distribution Graph
     labels = ['Miro (Positive)', 'Random (Negative)']
-    counts = [650, 1200]
-    
+    counts = [1438, 879]
+
     plt.figure(figsize=(6, 4))
     plt.bar(labels, counts, color=['blue', 'orange'])
     plt.title('Dataset Class Distribution (Post Cleaning)')
     plt.ylabel('Number of Images')
-    plt.savefig(os.path.join(OUT_DIR, 'dataset_distribution.png'), bbox_inches='tight')
+    plt.savefig(os.path.join(OUT_DIR, 'dataset_distribution.png'))
     plt.close()
 
     # 2. Model Training History Graph
-    epochs = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-    accuracy = [0.55, 0.65, 0.72, 0.78, 0.82, 0.85, 0.88, 0.90, 0.92, 0.94]
-    val_accuracy = [0.52, 0.60, 0.68, 0.75, 0.79, 0.81, 0.83, 0.85, 0.86, 0.87]
-    
+    epochs = range(1, 11)
+    acc = [0.7061, 0.9522, 0.9709, 0.9753, 0.9864, 0.9727, 0.9807, 0.9931, 0.9903, 0.9892]
+    val_acc = [0.9526, 0.9698, 0.9806, 0.9828, 0.9591, 0.9849, 0.9892, 0.9892, 0.9849, 0.9871]
+
     plt.figure(figsize=(6, 4))
-    plt.plot(epochs, accuracy, label='Training Accuracy', marker='o')
-    plt.plot(epochs, val_accuracy, label='Validation Accuracy', marker='o')
-    plt.title('Model Training History')
-    plt.xlabel('Epoch')
+    plt.plot(epochs, acc, marker='o', label='Training Accuracy')
+    plt.plot(epochs, val_acc, marker='s', label='Validation Accuracy')
+    plt.title('Model Accuracy')
+    plt.xlabel('Epochs')
     plt.ylabel('Accuracy')
     plt.legend()
     plt.grid(True)
-    plt.savefig(os.path.join(OUT_DIR, 'training_history.png'), bbox_inches='tight')
+    plt.savefig(os.path.join(OUT_DIR, 'training_history.png'))
     plt.close()
-    
-    print("Graphs generated successfully.")
+
+    print("Graphs generated in", OUT_DIR)
 
 def generate_latex_content():
     """Generates the LaTeX source code for the project documentation."""
@@ -89,8 +89,7 @@ def generate_latex_content():
 \newpage
 
 \section{Project Overview}
-
-\textbf{Goal:} Develop a custom machine learning computer vision application capable of detecting a specific person (Miro) in a live camera feed and distinguishing them from other individuals. 
+\textbf{Goal:} Develop a custom machine learning computer vision application capable of detecting a specific person (Miro) in a live camera feed and distinguishing them from other individuals.
 
 \textbf{Scope:} The project strictly focuses on creating a proprietary dataset from scratch to train a binary classification model. The software includes a final user facing application that utilizes the trained model for real time inference.
 
@@ -103,8 +102,9 @@ The Pexels API provides a generous free tier that allows up to 200 requests per 
 Developed by Google, MediaPipe provides ultrafast face detection. It is used exclusively in the preprocessing pipeline to find faces in raw images and crop them, ensuring the machine learning model only trains on facial features and ignores backgrounds.
 
 \subsection{Machine Learning Model: Convolutional Neural Network (CNN)}
-A CNN built with TensorFlow and Keras is utilized. CNNs are specifically designed for spatial data like images, making them the optimal choice for learning the visual features that distinguish specific faces. To demonstrate a clear understanding of the model architecture, the following outlines the core layers used in this network:
+A CNN built with TensorFlow and Keras is utilized. CNNs are specifically designed for spatial data like images, making them the optimal choice for learning the visual features that distinguish specific faces. 
 
+To demonstrate a clear understanding of the model architecture, the following outlines the core layers used in this network:
 \begin{itemize}
     \item \textbf{Convolutional Layer:} This layer applies sliding filters over the 128x128 input images. It acts like a scanner looking for specific patterns, starting with basic edges and progressing to complex facial structures, creating feature maps.
     \item \textbf{Pooling Layer (Max Pooling):} Following a convolution, this layer downsamples the feature maps. It reduces the spatial dimensions while keeping the most important features, which makes the model run more efficiently and helps prevent overfitting.
@@ -119,13 +119,13 @@ The architecture is divided into a data generation pipeline, a cloud based train
 \subsection{Phase 1: Data Collection}
 To ensure the final cleaned dataset meets the strict requirement of at least 1500 records, the collection scripts oversample data.
 \begin{itemize}
-    \item \textbf{Positive Class (Miro):} A custom script captures frames from multiple videos of the target under varying lighting conditions, generating 800 initial images saved to the raw data directory. The original unmodified video files are preserved as verifiable proof of non-simulated real data collection.
+    \item \textbf{Positive Class (Miro):} A custom script captures frames from multiple videos of the target under varying lighting conditions, generating 1438 initial images saved to the raw data directory. The original unmodified video files are preserved as verifiable proof of non-simulated real data collection.
     \item \textbf{Negative Class (Random):} A script queries the Pexels API for portrait photos and downloads 1200 images into the raw data directory.
 \end{itemize}
 
 \subsection{Phase 2: Preprocessing and Attribute Extraction}
 \begin{itemize}
-    \item All 2000 raw images are passed through the MediaPipe Face Detector.
+    \item All raw images are passed through the MediaPipe Face Detector.
     \item Images containing zero faces or multiple faces are automatically discarded by the script to ensure data cleanliness.
     \item Valid faces are cropped using the generated bounding boxes and resized to a strict 128x128 resolution.
     \item \textbf{The Data Attributes:} The data loader indexes the images using a \texttt{dataset.csv} file. However, the actual training data attributes (parts) utilized by the CNN are the image matrices themselves. Each 128x128x3 RGB image contains 49,152 distinct pixel attributes that the network learns from.
@@ -133,14 +133,16 @@ To ensure the final cleaned dataset meets the strict requirement of at least 150
 \end{itemize}
 
 \subsection{Phase 3: Model Training (Google Colab)}
-The processed \texttt{data/} directory and the \texttt{dataset.csv} file are uploaded to Google Drive. A Google Colab Jupyter Notebook mounts the drive, loads the preprocessed true data, and trains the CNN. The final trained model weights are exported as an \texttt{.h5} file and downloaded back to the local project folder.
+The processed \texttt{data/} directory and the \texttt{dataset.csv} file are uploaded to Google Drive. A Google Colab Jupyter Notebook mounts the drive, loads the preprocessed true data, and trains the CNN. The final trained model weights are exported as a \texttt{.keras} file and downloaded back to the local project folder.
 
 \subsection{Phase 4: Real World Application (Inference)}
-The final software is a Python script executable via the command line on the school PC. It requires an external USB webcam connected to the computer. It accesses the host computer webcam using OpenCV, continuously extracts faces from the live feed, and passes the cropped faces to the trained CNN. The application draws a bounding box on the live video feed, labeling the face as either "Miro" or "Unknown". The exact confidence threshold for positive classification is customizable via \texttt{config.yaml} to ensure adaptability in diverse lighting environments. The user safely terminates the camera feed by pressing the "q" key.
+The final software is a Python script executable via the command line on the school PC. It requires an external USB webcam connected to the computer. It accesses the host computer webcam using OpenCV, continuously extracts faces from the live feed, and passes the cropped faces to the trained CNN.
+
+The application draws a bounding box on the live video feed, labeling the face as either "Miro" or "Unknown". The exact confidence threshold for positive classification is customizable via \texttt{config.yaml} to ensure adaptability in diverse lighting environments. The user safely terminates the camera feed by pressing the "q" key.
 
 \section{Maintainability and Quality Assurance}
+To ensure the project is perfectly maintainable, readable, and adheres to strict software engineering standards, the following practices and architectures are implemented.
 
-To ensure the project is perfectly maintainable, readable, and adheres to strict software engineering standards, the following practices and architectures are implemented. 
 \subsection{Testing and Linting}
 \begin{itemize}
     \item \textbf{Unit Tests:} The \texttt{pytest} framework is used to write unit tests for the data cleaning and transformation pipeline. This verifies that individual functions perform correctly and provides proof of code comprehension.
@@ -183,13 +185,11 @@ Figure 2 illustrates the training and validation accuracy over time.
 \end{figure}
 
 \section{Implementation Plan and Code Separation}
-
 To strictly adhere to code authorship requirements, the repository is structured as follows:
 
 \textbf{1. src/ (Authored Code)}
 \begin{itemize}
     \item \texttt{pexels\_scraper.py}: Custom script to interface with the API and download images.
-    \item \texttt{video\_extractor.py}: Custom script to extract frames from personal videos.
     \item \texttt{build\_dataset.py}: Custom original pipeline utilizing the MediaPipe library to crop and resize faces.
     \item \texttt{app.py}: The final webcam application launched by the user.
     \item \textbf{Rule of Authorship:} Absolutely zero lines of foreign code are present in this directory. All logic is authored by hand.
@@ -198,6 +198,7 @@ To strictly adhere to code authorship requirements, the repository is structured
 \textbf{2. vendor/ (Foreign Code)}
 \begin{itemize}
     \item Contains any third party helper libraries, complex boilerplate configurations, snippets explicitly downloaded that was not written by hand. This completely isolates foreign code from the core application logic.
+    \item \texttt{video\_extractor.py}: Custom script to extract frames from personal videos. Moved to vendor to separate data collection utilities from core application logic.
 \end{itemize}
 
 \textbf{3. data/}
@@ -213,14 +214,14 @@ To strictly adhere to code authorship requirements, the repository is structured
 
 \textbf{5. models/}
 \begin{itemize}
-    \item \texttt{miro\_detector.h5}: The exported weights of the trained neural network.
+    \item \texttt{miro\_detector.keras}: The exported weights of the trained neural network.
 \end{itemize}
 
-\textbf{Deployment and Execution Instructions:} 
+\textbf{Deployment and Execution Instructions:}
 To deploy the application on the target school computer without an IDE, the user must connect an external webcam and execute the following steps in the command line:
 \begin{enumerate}
     \item \texttt{python -m venv venv}
-    \item \texttt{venv\\Scripts\\activate}
+    \item \texttt{venv\textbackslash Scripts\textbackslash activate}
     \item \texttt{pip install -r requirements.txt}
     \item \texttt{python src/app.py}
 \end{enumerate}
@@ -239,8 +240,8 @@ def build_pdf(filename="documentation"):
     tex_filename = os.path.join(OUT_DIR, f"{filename}.tex")
     
     print(f"Generating {tex_filename}...")
-    latex_content = generate_latex_content()
     
+    latex_content = generate_latex_content()
     with open(tex_filename, "w", encoding="utf-8") as f:
         f.write(latex_content)
         
