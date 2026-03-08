@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.2] - 2026-03-08
+### Added
+- Added instructions on `config.yaml` positioning and content to the `create_notebook.py` generation output.
+- Included `config.yaml` requirements in the generated `docs/user_manual.pdf` via `gen-manual.py`.
+
+### Fixed
+- Fixed Python 3.12+ compatibility in unit tests by migrating from the deprecated `imp` module to `importlib`.
+
+## [1.6.1] - 2026-03-08
+### Fixed
+- Resolved `TypeError` in `vendor/create_notebook.py` by fixing the `open()` call and adding the missing `os` import.
+- Added `os.makedirs` check in `vendor/create_notebook.py` to ensure the `notebooks/` directory exists before writing.
+
 ## [1.6.0] - 2026-03-08
 ### Added
 - New unit tests for the video extraction module in `tests/test_video_extractor.py`.

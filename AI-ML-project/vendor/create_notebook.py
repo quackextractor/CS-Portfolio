@@ -1,4 +1,5 @@
 import json
+import os
 
 notebook = {
  "cells": [
@@ -8,7 +9,29 @@ notebook = {
    "source": [
     "# Miro Face Detector - CNN Model Training\n",
     "\n",
-    "This notebook trains a Convolutional Neural Network (CNN) to classify images as either 'Miro' (1) or 'Random' (0). The data should be preprocessed by `src/build_dataset.py` before running this notebook. It is designed to be executable in Google Colab as requested."
+    "This notebook trains a Convolutional Neural Network (CNN) to classify images as either "
+    "'Miro' (1) or 'Random' (0). The data should be preprocessed by `src/build_dataset.py` "
+    "before running this notebook. It is designed to be executable in Google Colab as requested."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Configuration\n",
+    "\n",
+    "Ensure your `config.yaml` file is properly positioned before training. "
+    "For example, if the drive mounted fine and the location of the dataset is at "
+    "`/content/drive/MyDrive/processed`, place the config file there or at the project root.\n",
+    "\n",
+    "Example `config.yaml` content:\n",
+    "```yaml\n",
+    "model:\n",
+    "  img_size: 128\n",
+    "  output_path: /content/drive/MyDrive/processed/models/miro_detector.h5\n",
+    "data:\n",
+    "  dataset_csv: /content/drive/MyDrive/processed/dataset.csv\n",
+    "```"
    ]
   },
   {
@@ -88,7 +111,8 @@ notebook = {
    "source": [
     "## 2. Model Architecture\n",
     "\n",
-    "Building a custom CNN following the assignment specification: Convolutional -> Max Pooling -> Flatten -> Dense."
+    "Building a custom CNN following the assignment specification: "
+    "Convolutional -> Max Pooling -> Flatten -> Dense."
    ]
   },
   {
@@ -204,5 +228,7 @@ notebook = {
  "nbformat_minor": 4
 }
 
-with open("notebooks/model_training.ipynb", "w") as f:
+notebook_path = os.path.join("..", "notebooks", "model_training.ipynb")
+os.makedirs(os.path.dirname(notebook_path), exist_ok=True)
+with open(notebook_path, "w") as f:
     json.dump(notebook, f, indent=1)
