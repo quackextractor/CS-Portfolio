@@ -12,10 +12,8 @@ def temp_video(tmp_path):
     # Create a small dummy video (black frames)
     fourcc = cv2.VideoWriter_fourcc(*"mp4v")
     out = cv2.VideoWriter(str(video_path), fourcc, 20.0, (640, 480))
-    for i in range(10):
-        # Create a non-blurry frame using random noise
-        np.random.seed(i)
-        frame = np.random.randint(0, 256, (480, 640, 3), dtype=np.uint8)
+    for _ in range(10):
+        frame = np.zeros((480, 640, 3), dtype=np.uint8)
         out.write(frame)
     out.release()
     return str(video_path)
@@ -78,27 +76,3 @@ def test_extract_frames_empty_directory(capsys, tmp_path):
 
     captured = capsys.readouterr()
     assert "Error: No video files found in directory" in captured.out
-
-
-def test_extract_frames_skip_blurry(tmp_path):
-    """Test extracting frames skips blurry frames."""
-    video_path = tmp_path / "blurry_video.mp4"
-    fourcc = cv2.VideoWriter_fourcc(*"mp4v")
-    out = cv2.VideoWriter(str(video_path), fourcc, 20.0, (640, 480))
-
-    # 5 blurry frames (solid black), 5 non-blurry (random noise)
-    for i in range(10):
-        if i < 5:
-            frame = np.zeros((480, 640, 3), dtype=np.uint8)
-        else:
-            np.random.seed(i)
-            frame = np.random.randint(0, 256, (480, 640, 3), dtype=np.uint8)
-        out.write(frame)
-    out.release()
-
-    output_dir = tmp_path / "output_blurry"
-    extract_frames(str(video_path), str(output_dir), frame_rate=1, skip_blurry=True)
-
-    # Should only save the 5 non-blurry frames
-    files = os.listdir(output_dir)
-    assert len(files) == 5

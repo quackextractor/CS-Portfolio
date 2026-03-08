@@ -112,7 +112,13 @@ The raw data must be cleaned, cropped, and normalized using MediaPipe. Run the b
 
 \texttt{python main.py build}
 
-This process evaluates all images in the \texttt{raw/} directory, discards images with zero or multiple faces, crops valid faces, resizes them to 128x128 pixels, and saves them to \texttt{data/processed/} alongside a generated \texttt{dataset.csv}.
+This process evaluates all images in the \texttt{raw/} directory, discards images with zero or multiple faces, crops valid faces, evaluates the sharpness to discard heavily blurred faces, resizes them to 128x128 pixels, and saves them to \texttt{data/processed/} alongside a generated \texttt{dataset.csv}.
+
+\textbf{Optional Build Parameters:}
+\begin{itemize}
+    \item \texttt{--no\_skip\_blurry}: Disables the automatic blur filtration.
+    \item \texttt{--blur\_threshold <float>}: Adjusts the sensitivity of the blur detection (default is 100.0).
+\end{itemize}
 
 \textbf{Configuration Parameters (\texttt{config.yaml}):}
 Before training, you may adjust variables in the \texttt{config.yaml} file:

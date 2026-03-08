@@ -128,6 +128,7 @@ To ensure the final cleaned dataset meets the strict requirement of at least 150
     \item All raw images are passed through the MediaPipe Face Detector.
     \item Images containing zero faces or multiple faces are automatically discarded by the script to ensure data cleanliness.
     \item Valid faces are cropped using the generated bounding boxes and resized to a strict 128x128 resolution.
+    \item After cropping, the faces are evaluated for sharpness using the Variance of Laplacian method. Any blurry faces below the threshold are automatically excluded from the dataset to prevent false positives.
     \item \textbf{The Data Attributes:} The data loader indexes the images using a \texttt{dataset.csv} file. However, the actual training data attributes (parts) utilized by the CNN are the image matrices themselves. Each 128x128x3 RGB image contains 49,152 distinct pixel attributes that the network learns from.
     \item \textbf{Data Splitting:} The final cleaned dataset is split into portions for training and strictly reserved for testing. The split ratio and random state are centrally managed via \texttt{config.yaml} (\texttt{test\_split\_size} and \texttt{random\_seed}) to ensure adaptability.
 \end{itemize}

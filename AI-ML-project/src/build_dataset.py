@@ -12,6 +12,15 @@ def load_config(config_path: str = "config.yaml") -> dict:
         return yaml.safe_load(f)
 
 
+def is_blurry(image, threshold: float = 100.0) -> bool:
+    """Returns True if the image is considered blurry."""
+    if len(image.shape) == 3:
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    else:
+        gray = image
+    return cv2.Laplacian(gray, cv2.CV_64F).var() < threshold
+
+
 def _build_face_detector(model_path: str):
     """
     Construct a MediaPipe Tasks FaceDetector using the Tasks API
@@ -62,6 +71,8 @@ def process_images(
     label: int,
     img_size: int,
     model_path: str = "models/blaze_face_short_range.task",
+    skip_blurry: bool = True,
+    blur_threshold: float = 100.0,
 ) -> list:
     """
     Processes images in a directory: detects faces, crops, resizes, and saves them.
@@ -125,6 +136,10 @@ def process_images(
             discarded_count += 1
             continue
 
+        if skip_blurry and is_blurry(cropped_face, blur_threshold):
+            discarded_count += 1
+            continue
+
         resized_face = cv2.resize(cropped_face, (img_size, img_size))
 
         filename = os.path.basename(img_path)
@@ -143,7 +158,7 @@ def process_images(
     return records
 
 
-def build_dataset() -> None:
+def build_dataset(skip_blurry: bool = True, blur_threshold: float = 100.0) -> None:
     config = load_config()
     raw_positive_dir = config["data"]["raw_positive_dir"]
     raw_negative_dir = config["data"]["raw_negative_dir"]
@@ -166,6 +181,8 @@ def build_dataset() -> None:
         label=1,
         img_size=img_size,
         model_path=model_path,
+        skip_blurry=skip_blurry,
+        blur_threshold=blur_threshold,
     )
 
     print("Processing negative class (Random)...")
@@ -175,6 +192,8 @@ def build_dataset() -> None:
         label=0,
         img_size=img_size,
         model_path=model_path,
+        skip_blurry=skip_blurry,
+        blur_threshold=blur_threshold,
     )
 
     all_records = pos_records + neg_records
@@ -208,5 +227,17 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Clean, crop, and normalize raw images using MediaPipe."
     )
-    parser.parse_args()
-    build_dataset()
+    parser.add_argument(
+        "--no_skip_blurry",
+        action="store_false",
+        dest="skip_blurry",
+        help="Do not skip blurry faces",
+    )
+    parser.add_argument(
+        "--blur_threshold",
+        type=float,
+        default=100.0,
+        help="Variance of Laplacian threshold for blur detection",
+    )
+    args = parser.parse_args()
+    build_dataset(args.skip_blurry, args.blur_threshold)

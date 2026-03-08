@@ -46,8 +46,8 @@ The project is operated entirely through a unified CLI managed by `main.py`. Onc
 * `python main.py scrape`: Download portrait images from Pexels for the negative class.
 * `python main.py extract <video_path>`: Extract frames from personal videos for the positive class.
   * Optionally, use `python main.py extract <directory_path> --batch` to process all videos in a specified folder.
-  * Optionally, use `--no_skip_blurry` to retain blurry frames and `--blur_threshold <value>` to adjust the sensitivity.
 * `python main.py build`: Clean, crop, and normalize raw images to build the dataset CSV.
+  * Optionally, use `--no_skip_blurry` to retain blurry faces and `--blur_threshold <value>` to adjust the sensitivity.
 * `python main.py run`: Launch the live webcam face detection application.
   * Optionally, use `python main.py run --video <video_path>` to run inference on a local video file with playback controls (`Space` to pause, `a`/`d` to skip).
   * Optionally, use `python main.py run --screen` to run inference on your primary screen directly.

@@ -7,9 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.8.0] - 2026-03-08
 ### Added
-- Added blur detection functionality to the video extraction process to automatically skip blurry frames.
-- Integrated variance of Laplacian method to evaluate frame sharpness before saving.
-- Added `--blur_threshold` and `--no_skip_blurry` CLI arguments to `python main.py extract`.
+- Added blur detection functionality to the data pipeline (`src/build_dataset.py`) to automatically skip blurry faces during processing.
+- Integrated variance of Laplacian method to evaluate face sharpness before saving the cropped images.
+- Added `--blur_threshold` and `--no_skip_blurry` CLI arguments to `python main.py build`.
 
 ## [1.7.0] - 2026-03-08
 ### Added
