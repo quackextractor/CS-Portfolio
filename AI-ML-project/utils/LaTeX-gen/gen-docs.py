@@ -138,6 +138,29 @@ The processed \texttt{data/} directory and the \texttt{dataset.csv} file are upl
 \subsection{Phase 4: Real World Application (Inference)}
 The final software is a Python script executable via the command line on the school PC. It accesses the host computer webcam using OpenCV, continuously extracts faces from the live feed, and passes the cropped faces to the trained CNN. The application draws a bounding box on the live video feed, labeling the face as either "Miro" or "Unknown". The user safely terminates the camera feed by pressing the "q" key.
 
+\section{Maintainability and Quality Assurance}
+
+To ensure the project is perfectly maintainable, readable, and adheres to strict software engineering standards, the following practices and architectures are implemented. 
+\subsection{Testing and Linting}
+\begin{itemize}
+    \item \textbf{Unit Tests:} The \texttt{pytest} framework is used to write unit tests for the data cleaning and transformation pipeline. This verifies that individual functions perform correctly and provides proof of code comprehension.
+    \item \textbf{Linting:} \texttt{flake8} and \texttt{black} are utilized to enforce strict PEP 8 formatting conventions across all authored files in the \texttt{src/} directory. This ensures maximum readability.
+\end{itemize}
+
+\subsection{Configuration and Documentation}
+\begin{itemize}
+    \item \textbf{Configuration Management:} A \texttt{config.yaml} file centralizes all project parameters, such as model hyperparameters, API endpoints, and dataset paths. Sensitive information like API keys are stored in a local \texttt{.env} file, which is strictly excluded from version control.
+    \item \textbf{README:} A comprehensive \texttt{README.md} is provided. It includes step by step instructions for setting up the environment, installing dependencies, and launching the software without an IDE.
+    \item \textbf{Project Documentation:} The codebase is thoroughly documented using standard Python docstrings. This generated PDF serves as the primary technical documentation detailing the architecture, data origin, and machine learning pipeline.
+\end{itemize}
+
+\subsection{Versioning and Workflows}
+\begin{itemize}
+    \item \textbf{Semantic Versioning:} All releases are tagged using the MAJOR.MINOR.PATCH format (e.g., 1.0.0) to clearly communicate the nature of changes.
+    \item \textbf{Changelog:} A \texttt{CHANGELOG.md} file is maintained. It categorizes all project updates into Added, Changed, Deprecated, and Removed sections for every version iteration.
+    \item \textbf{Automated Workflows (CI/CD):} GitHub Actions are configured to trigger automatically on every pull request. The workflow executes the \texttt{pytest} suite and runs \texttt{flake8} linting. If any tests fail or formatting rules are broken, the merge is blocked, guaranteeing code quality.
+\end{itemize}
+
 \section{Data Analysis and Evaluation}
 
 \subsection{Dataset Distribution}
