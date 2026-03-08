@@ -90,10 +90,11 @@ You must record a video of yourself to generate the positive dataset.
 
 Once recorded, place your video file in the project directory. Run the extraction command via the unified CLI.
 
-\texttt{python main.py extract <video\_path> -{}-frame\_rate 5}
+\texttt{python main.py extract <video\_path>}
 
 \textbf{Parameters:}
 \begin{itemize}
+    \item \texttt{--batch}: If your \texttt{<video\_path>} is a directory instead of a single file, adding this flag will automatically process every video file inside that folder.
     \item \texttt{--frame\_rate}: Controls how many frames are skipped. The default is 5 (extracts 1 frame every 5 frames). Adjust this based on your video length to yield approximately 1438 images.
     \item \texttt{--output\_dir}: The target folder, which defaults to \texttt{data/raw/positive}.
 \end{itemize}

@@ -99,6 +99,9 @@ def main():
     parser_extract.add_argument(
         "--frame_rate", type=int, default=5, help="Extract 1 frame every N frames"
     )
+    parser_extract.add_argument(
+        "--batch", action="store_true", help="Process all videos in a given directory"
+    )
 
     # Command: docs
     subparsers.add_parser(
@@ -122,7 +125,8 @@ def main():
     elif args.command == "scrape":
         download_pexels_images(args.query, args.total, args.output_dir)
     elif args.command == "extract":
-        extract_frames(args.video_path, args.output_dir, args.frame_rate)
+        batch_mode = getattr(args, "batch", False)
+        extract_frames(args.video_path, args.output_dir, args.frame_rate, batch_mode)
     elif args.command == "docs":
         generate_docs()
 

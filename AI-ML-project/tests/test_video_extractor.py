@@ -42,6 +42,21 @@ def test_extract_frames_directory(temp_video, tmp_path):
     assert len(files) == 2
 
 
+def test_extract_frames_directory_batch(temp_video, tmp_path):
+    """Test extracting frames from multiple videos when batch is True."""
+    import shutil
+
+    video2 = tmp_path / "test_video2.mp4"
+    shutil.copy(temp_video, video2)
+
+    output_dir = tmp_path / "output_batch"
+    extract_frames(str(tmp_path), str(output_dir), frame_rate=5, batch=True)
+
+    # 10 frames per video -> 2 videos -> 4 frames total
+    files = os.listdir(output_dir)
+    assert len(files) == 4
+
+
 def test_extract_frames_invalid_path(capsys, tmp_path):
     """Test behavior with an invalid path."""
     invalid_path = tmp_path / "nonexistent.mp4"
