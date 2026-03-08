@@ -16,16 +16,22 @@ from vendor.setup_models import download_models  # noqa: E402
 
 
 def generate_docs():
-    script_path = os.path.join("vendor", "utils", "LaTeX-gen", "gen-docs.py")
-    if not os.path.exists(script_path):
-        print(f"Error: Documentation script not found at {script_path}")
-        return
+    scripts = [
+        ("gen_docs", os.path.join("vendor", "utils", "LaTeX-gen", "gen-docs.py")),
+        ("gen_manual", os.path.join("vendor", "utils", "LaTeX-gen", "gen-manual.py")),
+    ]
 
-    spec = importlib.util.spec_from_file_location("gen_docs", script_path)
-    gen_docs_module = importlib.util.module_from_spec(spec)
-    sys.modules["gen_docs"] = gen_docs_module
-    spec.loader.exec_module(gen_docs_module)
-    gen_docs_module.build_pdf()
+    for module_name, script_path in scripts:
+        if not os.path.exists(script_path):
+            print(f"Warning: Script not found at {script_path}")
+            continue
+
+        print(f"Executing {module_name}...")
+        spec = importlib.util.spec_from_file_location(module_name, script_path)
+        module = importlib.util.module_from_spec(spec)
+        sys.modules[module_name] = module
+        spec.loader.exec_module(module)
+        module.build_pdf()
 
 
 def main():

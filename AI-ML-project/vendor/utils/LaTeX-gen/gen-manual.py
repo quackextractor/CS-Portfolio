@@ -91,7 +91,7 @@ You must record a video of yourself to generate the positive dataset.
 
 Once recorded, place your video file in the project directory. Run the extraction command via the unified CLI.
 
-\texttt{python main.py extract <video\_path> --frame\_rate 5}
+\texttt{python main.py extract <video\_path> -{}-frame\_rate 5}
 
 \textbf{Parameters:}
 \begin{itemize}
@@ -103,7 +103,7 @@ Once recorded, place your video file in the project directory. Run the extractio
 
 The application requires images of other people to learn who you are not. Download these via the Pexels API. Ensure your \texttt{.env} file contains your \texttt{PEXELS\_API\_KEY}.
 
-\texttt{python main.py scrape --total 1200}
+\texttt{python main.py scrape -{}-total 1200}
 
 This command will populate the \texttt{data/raw/negative} directory.
 
@@ -156,33 +156,34 @@ def build_pdf(filename="user_manual"):
     """Writes the LaTeX code to a file and compiles it using pdflatex."""
     os.makedirs(OUT_DIR, exist_ok=True)
     os.makedirs(DOCS_DIR, exist_ok=True)
-    
+
     tex_filename = os.path.join(OUT_DIR, f"{filename}.tex")
-    
+
     print(f"Generating {tex_filename}...")
     latex_content = generate_latex_content()
-    
+
     with open(tex_filename, "w", encoding="utf-8") as f:
         f.write(latex_content)
-        
-    print("Compiling PDF with pdflatex...")
     
+    print("Compiling PDF with pdflatex...")
+
     try:
         # Run pdflatex twice to resolve TOC references
         subprocess.run(["pdflatex", f"{filename}.tex"], cwd=OUT_DIR, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         subprocess.run(["pdflatex", f"{filename}.tex"], cwd=OUT_DIR, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        
+    
         # Move the final compiled PDF to the docs directory safely
         compiled_pdf = os.path.join(OUT_DIR, f"{filename}.pdf")
         if os.path.exists(FINAL_PDF_PATH):
             os.remove(FINAL_PDF_PATH)
         shutil.move(compiled_pdf, FINAL_PDF_PATH)
-        
+    
         print(f"Successfully generated PDF at {FINAL_PDF_PATH}")
     except subprocess.CalledProcessError:
         print("Error: Compilation failed. Please ensure you have a LaTeX distribution installed.")
     except FileNotFoundError:
         print("Error: pdflatex command not found.")
+
 
 if __name__ == "__main__":
     build_pdf()
