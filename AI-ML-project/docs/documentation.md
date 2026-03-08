@@ -105,7 +105,6 @@ To strictly adhere to code authorship requirements, the repository is structured
 
 1. `src/` (Authored Code)
 * `pexels_scraper.py`: Custom script to interface with the API and download images.
-* `video_extractor.py`: Custom script to extract frames from personal videos.
 * `build_dataset.py`: Custom original pipeline utilizing the MediaPipe library to crop and resize faces.
 * `app.py`: The final webcam application launched by the user.
 * **Rule of Authorship:** Absolutely zero lines of foreign code are present in this directory. All logic is authored by hand.
@@ -113,6 +112,7 @@ To strictly adhere to code authorship requirements, the repository is structured
 
 2. `vendor/` (Foreign Code)
 * Contains any third party helper libraries, complex boilerplate configurations, snippets explicitly downloaded that was not written by hand. This completely isolates foreign code from the core application logic.
+* `video_extractor.py`: Custom script to extract frames from personal videos. Moved to vendor to separate data collection utilities from core application logic.
 
 
 3. `data/`

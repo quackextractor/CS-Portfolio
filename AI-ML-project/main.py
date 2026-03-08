@@ -11,7 +11,7 @@ os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 from src.app import main as run_inference  # noqa: E402
 from src.build_dataset import build_dataset  # noqa: E402
 from src.pexels_scraper import download_pexels_images  # noqa: E402
-from src.video_extractor import extract_frames  # noqa: E402
+from vendor.utils.video_extractor import extract_frames  # noqa: E402
 from vendor.setup_models import download_models  # noqa: E402
 
 
