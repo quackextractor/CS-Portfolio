@@ -7,11 +7,11 @@ echo ============================================
 echo.
 
 REM --- Create virtual environment ---
-if exist venv (
+if exist .venv (
     echo Virtual environment already exists, skipping creation.
 ) else (
     echo Creating virtual environment...
-    python -m venv venv
+    python -m venv .venv
     if errorlevel 1 (
         echo ERROR: Failed to create virtual environment.
         echo Make sure Python 3.8+ is installed and on your PATH.
@@ -25,7 +25,7 @@ echo.
 
 REM --- Activate and install dependencies ---
 echo Installing dependencies from requirements.txt...
-call venv\Scripts\activate.bat
+call .venv\Scripts\activate.bat
 pip install -r requirements.txt
 if errorlevel 1 (
     echo ERROR: pip install failed.
@@ -45,11 +45,13 @@ if errorlevel 1 (
 )
 
 echo.
+
 echo ============================================
 echo  Setup complete.
 echo  To activate the environment later, run:
-echo    venv\Scripts\activate
+echo    .venv\Scripts\activate
 echo  Then use: python main.py ^<command^>
 echo ============================================
 echo.
+
 pause
