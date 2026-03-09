@@ -8,12 +8,7 @@ import yaml
 os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 
-# Import the core functions from your existing modules
-from src.app import main as run_inference  # noqa: E402
-from src.build_dataset import build_dataset  # noqa: E402
-from src.pexels_scraper import download_pexels_images  # noqa: E402
-from vendor.utils.video_extractor import extract_frames  # noqa: E402
-from vendor.setup_models import download_models  # noqa: E402
+# Import the core functions from your existing modules on demand
 
 
 def generate_docs():
@@ -66,7 +61,6 @@ def main():
         help="Download required MediaPipe model files (run once after pip install)",
     )
 
-    # Command: run
     parser_run = subparsers.add_parser(
         "run",
         help="Launch the live webcam face detection application, run on a video, or screenshare",
@@ -75,7 +69,9 @@ def main():
         "--video", type=str, default=None, help="Path to a video file for inference"
     )
     parser_run.add_argument(
-        "--screen", action="store_true", help="Capture and run inference on your primary screen"
+        "--screen",
+        action="store_true",
+        help="Capture and run inference on your primary screen",
     )
     parser_run.add_argument(
         "--gradcam", action="store_true", help="Enable Grad-CAM heatmaps by default"
@@ -167,8 +163,10 @@ def main():
     args = parser.parse_args()
 
     if args.command == "setup":
+        from vendor.setup_models import download_models
         download_models()
     elif args.command == "run":
+        from src.app import main as run_inference
         screen_mode = getattr(args, "screen", False)
         gradcam_mode = getattr(args, "gradcam", False)
         heatmap_sensitivity = getattr(args, "heatmap_sensitivity", 5.0)
@@ -179,12 +177,15 @@ def main():
             heatmap_sensitivity=heatmap_sensitivity,
         )
     elif args.command == "build":
+        from src.build_dataset import build_dataset
         skip_blurry = getattr(args, "skip_blurry", True)
         blur_threshold = getattr(args, "blur_threshold", 10.0)
         build_dataset(skip_blurry, blur_threshold)
     elif args.command == "scrape":
+        from src.pexels_scraper import download_pexels_images
         download_pexels_images(args.query, args.total, args.output_dir)
     elif args.command == "extract":
+        from vendor.utils.video_extractor import extract_frames
         batch_mode = getattr(args, "batch", False)
         extract_frames(args.video_path, args.output_dir, args.frame_rate, batch_mode)
     elif args.command == "docs":

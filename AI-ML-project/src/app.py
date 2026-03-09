@@ -22,7 +22,7 @@ def make_gradcam_heatmap(img_array, model, last_conv_layer_name=None, pred_index
             if "Conv2D" in layer.__class__.__name__:
                 last_conv_layer_name = layer.name
                 break
-    
+
     if last_conv_layer_name is None:
         return np.zeros((img_array.shape[1], img_array.shape[2]))
 
@@ -37,7 +37,7 @@ def make_gradcam_heatmap(img_array, model, last_conv_layer_name=None, pred_index
             x = layer(x)
             if layer.name == last_conv_layer_name:
                 last_conv_layer_output = x
-        
+
         preds = x
         if pred_index is None:
             pred_index = tf.argmax(preds[0])
@@ -89,11 +89,11 @@ def display_gradcam(frame, heatmap, bbox, alpha=0.6, sensitivity=1.0):
     jet = cv2.resize(jet, (w, h))
 
     # Create an overlay by combining the original ROI and the colorized heatmap
-    roi = frame[y : y + h, x : x + w]
+    roi = frame[y: y + h, x: x + w]
     overlay = cv2.addWeighted(roi, 1 - alpha, jet, alpha, 0)
 
     # Replace the ROI in the original frame
-    frame[y : y + h, x : x + w] = overlay
+    frame[y: y + h, x: x + w] = overlay
     return frame
 
 

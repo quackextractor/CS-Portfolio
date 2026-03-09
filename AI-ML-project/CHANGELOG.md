@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.11.3] - 2026-03-09
+### Fixed
+- Fixed `main.py` loading time by utilizing lazy imports, significantly improving startup time for simple commands like `main.py --help`.
+
 ## [1.11.2] - 2026-03-09
 ### Fixed
 - Fixed a bug where the Grad-CAM heatmap would appear "totally dark" or cold. This was caused by hardcoding the target convolutional layer to `"conv2d_5"`, which would fail silently on models with a different structure. `src/app.py` now dynamically detects the last `Conv2D` layer.
