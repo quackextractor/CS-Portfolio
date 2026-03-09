@@ -10,12 +10,21 @@ def load_config(config_path: str = "config.yaml") -> dict:
         return yaml.safe_load(f)
 
 
-def make_gradcam_heatmap(img_array, model, last_conv_layer_name, pred_index=None):
+def make_gradcam_heatmap(img_array, model, last_conv_layer_name=None, pred_index=None):
     """
     Computes a Grad-CAM heatmap for a given image and model.
     """
     # Ensure input is a tensor
     img_tensor = tf.cast(img_array, tf.float32)
+
+    if last_conv_layer_name is None:
+        for layer in reversed(model.layers):
+            if "Conv2D" in layer.__class__.__name__:
+                last_conv_layer_name = layer.name
+                break
+    
+    if last_conv_layer_name is None:
+        return np.zeros((img_array.shape[1], img_array.shape[2]))
 
     with tf.GradientTape() as tape:
         tape.watch(img_tensor)
@@ -61,11 +70,14 @@ def make_gradcam_heatmap(img_array, model, last_conv_layer_name, pred_index=None
     return heatmap.numpy()
 
 
-def display_gradcam(frame, heatmap, bbox, alpha=0.4):
+def display_gradcam(frame, heatmap, bbox, alpha=0.6, sensitivity=1.0):
     """
     Overlays the Grad-CAM heatmap on the detected face in the frame.
     """
     x, y, w, h = bbox
+
+    # Apply sensitivity multiplier
+    heatmap = np.clip(heatmap * sensitivity, 0.0, 1.0)
 
     # Rescale heatmap to a range 0-255
     heatmap = np.uint8(255 * heatmap)
@@ -127,7 +139,12 @@ def _build_face_detector(model_path: str):
         ) from e
 
 
-def main(video_path: str = None, screen: bool = False, use_gradcam: bool = False):
+def main(
+    video_path: str = None,
+    screen: bool = False,
+    use_gradcam: bool = False,
+    heatmap_sensitivity: float = 5.0,
+):
     import mediapipe as mp
     import mss
 
@@ -192,6 +209,8 @@ def main(video_path: str = None, screen: bool = False, use_gradcam: bool = False
     force_read = False
     updating_trackbar = False
     gradcam_active = use_gradcam
+    current_sensitivity = heatmap_sensitivity
+    mirrored = False
 
     if video_path and total_frames > 0:
         def on_trackbar(val):
@@ -205,12 +224,16 @@ def main(video_path: str = None, screen: bool = False, use_gradcam: bool = False
         print("  [Space] Pause/Resume")
         print("  [a] / [d] Skip 30 frames backward/forward")
         print("  [g] Toggle Grad-CAM heatmap")
+        print("  [m] Toggle Mirror Mode")
+        print("  [[] / []] Adjust heatmap sensitivity")
         print("  [q] or [ESC] to quit")
     elif screen:
         print("Screen capture started. Press 'q' to quit.")
     else:
         print("Camera opened successfully. Controls:")
         print("  [g] Toggle Grad-CAM heatmap")
+        print("  [m] Toggle Mirror Mode")
+        print("  [[] / []] Adjust heatmap sensitivity")
         print("  [q] or [ESC] to quit")
 
     frame_index = 0
@@ -232,6 +255,9 @@ def main(video_path: str = None, screen: bool = False, use_gradcam: bool = False
                 break
 
             force_read = False
+
+            if mirrored:
+                frame = cv2.flip(frame, 1)
 
             # Convert BGR frame to RGB mp.Image for the Tasks API
             rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -278,9 +304,13 @@ def main(video_path: str = None, screen: bool = False, use_gradcam: bool = False
                             color = (0, 0, 255)  # Red
 
                         if gradcam_active:
-                            heatmap = make_gradcam_heatmap(input_face, model, "conv2d_5")
+                            heatmap = make_gradcam_heatmap(input_face, model)
                             display_gradcam(
-                                frame, heatmap, (x_min, y_min, x_max - x_min, y_max - y_min)
+                                frame,
+                                heatmap,
+                                (x_min, y_min, x_max - x_min, y_max - y_min),
+                                alpha=0.6,
+                                sensitivity=current_sensitivity,
                             )
 
                         cv2.rectangle(frame, (x_min, y_min), (x_max, y_max), color, 2)
@@ -318,6 +348,15 @@ def main(video_path: str = None, screen: bool = False, use_gradcam: bool = False
         elif key == ord("g"):
             gradcam_active = not gradcam_active
             print(f"Grad-CAM: {'ON' if gradcam_active else 'OFF'}")
+        elif key == ord("m"):
+            mirrored = not mirrored
+            print(f"Mirror Mode: {'ON' if mirrored else 'OFF'}")
+        elif key == ord("["):
+            current_sensitivity = max(1.0, current_sensitivity - 1.0)
+            print(f"Heatmap Sensitivity: {current_sensitivity:.1f}x")
+        elif key == ord("]"):
+            current_sensitivity = min(20.0, current_sensitivity + 1.0)
+            print(f"Heatmap Sensitivity: {current_sensitivity:.1f}x")
 
     if cap:
         cap.release()

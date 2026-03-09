@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.11.2] - 2026-03-09
+### Fixed
+- Fixed a bug where the Grad-CAM heatmap would appear "totally dark" or cold. This was caused by hardcoding the target convolutional layer to `"conv2d_5"`, which would fail silently on models with a different structure. `src/app.py` now dynamically detects the last `Conv2D` layer.
+
+## [1.11.1] - 2026-03-09
+### Changed
+- Modified the `[` and `]` keyboard shortcuts to control the heatmap's underlying pixel intensity (sensitivity multiplier) rather than its visual transparency (alpha).
+- Renamed the `--heatmap_alpha` CLI parameter and config key to `--heatmap_sensitivity`, defaulting to `5.0`.
+
+## [1.11.0] - 2026-03-09
+### Added
+- Implemented Grad-CAM heatmap sensitivity (alpha) adjustment using `[` and `]` keyboard shortcuts.
+- Centralized all CLI argument defaults in `config.yaml` under the `defaults` section for easy user customization.
+- Added a `--heatmap_alpha` parameter to the `run` command.
+
+### Changed
+- Increased the initial default heatmap alpha from `0.4` to `0.6` for better visibility.
+
+## [1.10.0] - 2026-03-09
+### Added
+- Implemented horizontal camera/stream mirroring with the 'm' keyboard shortcut.
+- Mirroring affects both the live display and the model inference, providing a consistent "selfie" view.
+
 ## [1.9.1] - 2026-03-09
 ### Fixed
 - Added explicit activation instructions for Git Bash on Windows to `README.md` and `setup.bat`.

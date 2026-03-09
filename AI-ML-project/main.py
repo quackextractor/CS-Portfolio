@@ -2,6 +2,7 @@ import os
 import argparse
 import sys
 import importlib.util
+import yaml
 
 # Suppress TensorFlow informational logs and oneDNN warnings
 os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
@@ -35,6 +36,16 @@ def generate_docs():
 
 
 def main():
+    config_path = "config.yaml"
+    if not os.path.exists(config_path):
+        print(f"Error: Config file not found at {config_path}")
+        sys.exit(1)
+
+    with open(config_path, "r") as f:
+        config = yaml.safe_load(f)
+
+    defaults = config.get("defaults", {})
+
     parser = argparse.ArgumentParser(
         description=(
             "Miro Face Detector - Unified CLI Tool\n\n"
@@ -69,6 +80,12 @@ def main():
     parser_run.add_argument(
         "--gradcam", action="store_true", help="Enable Grad-CAM heatmaps by default"
     )
+    parser_run.add_argument(
+        "--heatmap_sensitivity",
+        type=float,
+        default=defaults.get("run", {}).get("heatmap_sensitivity", 5.0),
+        help="Initial sensitivity multiplier for Grad-CAM heatmap",
+    )
 
     # Command: build
     parser_build = subparsers.add_parser(
@@ -84,7 +101,7 @@ def main():
     parser_build.add_argument(
         "--blur_threshold",
         type=float,
-        default=10.0,
+        default=defaults.get("build", {}).get("blur_threshold", 10.0),
         help="Variance of Laplacian threshold for blur detection",
     )
 
@@ -94,13 +111,22 @@ def main():
         help="Download portrait images from Pexels for the negative class",
     )
     parser_scrape.add_argument(
-        "--query", type=str, default="portrait face", help="Search query for Pexels"
+        "--query",
+        type=str,
+        default=defaults.get("scrape", {}).get("query", "portrait face"),
+        help="Search query for Pexels",
     )
     parser_scrape.add_argument(
-        "--total", type=int, default=1200, help="Total number of images to download"
+        "--total",
+        type=int,
+        default=defaults.get("scrape", {}).get("total", 1200),
+        help="Total number of images to download",
     )
     parser_scrape.add_argument(
-        "--output_dir", type=str, default="data/raw/negative", help="Output directory"
+        "--output_dir",
+        type=str,
+        default=defaults.get("scrape", {}).get("output_dir", "data/raw/negative"),
+        help="Output directory",
     )
 
     # Command: extract
@@ -112,10 +138,16 @@ def main():
         "video_path", type=str, help="Path to the source video file"
     )
     parser_extract.add_argument(
-        "--output_dir", type=str, default="data/raw/positive", help="Output directory"
+        "--output_dir",
+        type=str,
+        default=defaults.get("extract", {}).get("output_dir", "data/raw/positive"),
+        help="Output directory",
     )
     parser_extract.add_argument(
-        "--frame_rate", type=int, default=5, help="Extract 1 frame every N frames"
+        "--frame_rate",
+        type=int,
+        default=defaults.get("extract", {}).get("frame_rate", 5),
+        help="Extract 1 frame every N frames",
     )
     parser_extract.add_argument(
         "--batch", action="store_true", help="Process all videos in a given directory"
@@ -139,7 +171,13 @@ def main():
     elif args.command == "run":
         screen_mode = getattr(args, "screen", False)
         gradcam_mode = getattr(args, "gradcam", False)
-        run_inference(video_path=args.video, screen=screen_mode, use_gradcam=gradcam_mode)
+        heatmap_sensitivity = getattr(args, "heatmap_sensitivity", 5.0)
+        run_inference(
+            video_path=args.video,
+            screen=screen_mode,
+            use_gradcam=gradcam_mode,
+            heatmap_sensitivity=heatmap_sensitivity,
+        )
     elif args.command == "build":
         skip_blurry = getattr(args, "skip_blurry", True)
         blur_threshold = getattr(args, "blur_threshold", 10.0)

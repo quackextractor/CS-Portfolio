@@ -1,5 +1,5 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Version](https://img.shields.io/badge/version-1.9.1-blue.svg)](https://github.com/quackextractor/CS-Portfolio)
+[![Version](https://img.shields.io/badge/version-1.11.2-blue.svg)](https://github.com/quackextractor/CS-Portfolio)
 
 # Miro Face Detector
 
@@ -119,3 +119,13 @@ python main.py run
 
 5. **Quit:**
 Press the `q` key on your keyboard to instantly quit the application and release the camera stream.
+
+### Controls
+| Key | Action |
+| --- | --- |
+| `q` / `Esc` | Quit |
+| `Space` | Pause/Resume (Video only) |
+| `a` / `d` | Skip backward/forward (Video only) |
+| `g` | Toggle Grad-CAM |
+| `[` / `]` | Decrease/Increase Heatmap Sensitivity |
+| `m` | Toggle Horizontal Mirror |

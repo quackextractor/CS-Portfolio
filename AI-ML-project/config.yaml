@@ -12,6 +12,19 @@ model:
   threshold: 0.65
 camera:
   index: 0
+defaults:
+  scrape:
+    query: "portrait face"
+    total: 1200
+    output_dir: "data/raw/negative"
+  extract:
+    output_dir: "data/raw/positive"
+    frame_rate: 5
+  build:
+    skip_blurry: true
+    blur_threshold: 10.0
+  run:
+    heatmap_sensitivity: 1.0
 models:
   downloads:
     - description: "BlazeFace short-range face detector (MediaPipe Tasks)"
