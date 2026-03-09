@@ -1,5 +1,5 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Version](https://img.shields.io/badge/version-1.11.3-blue.svg)](https://github.com/quackextractor/CS-Portfolio)
+[![Version](https://img.shields.io/badge/version-1.12.0-blue.svg)](https://github.com/quackextractor/CS-Portfolio)
 
 # Miro Face Detector
 
@@ -52,6 +52,8 @@ The project is operated entirely through a unified CLI managed by `main.py`. Onc
 * `python main.py run`: Launch the live webcam face detection application.
   * Optionally, use `python main.py run --video <video_path>` to run inference on a local video file with playback controls (`Space` to pause, `a`/`d` to skip).
   * Optionally, use `python main.py run --screen` to run inference on your primary screen directly.
+* `python main.py visualize`: Generate an activation maximization image showing what the model has learned.
+  * Optionally, use `--iterations <int>` and `--lr <float>` to tune the visualization process.
 * `python main.py docs`: Generate the LaTeX project documentation PDF.
 
 ## Generating the Documentation

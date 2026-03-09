@@ -61,6 +61,7 @@ def main():
         help="Download required MediaPipe model files (run once after pip install)",
     )
 
+    # Command: run
     parser_run = subparsers.add_parser(
         "run",
         help="Launch the live webcam face detection application, run on a video, or screenshare",
@@ -155,6 +156,33 @@ def main():
         help="Generate the LaTeX project documentation PDF",
     )
 
+    # Command: visualize
+    parser_visualize = subparsers.add_parser(
+        "visualize",
+        help="Generate an activation maximization image of the target class",
+    )
+    parser_visualize.add_argument(
+        "--model", type=str, default=config.get("model", {}).get("output_path", "vendor/models/miro_detector.keras"), help="Path to the trained model file"
+    )
+    parser_visualize.add_argument(
+        "--output_dir",
+        type=str,
+        default=defaults.get("visualize", {}).get("output_dir", "data/processed"),
+        help="Directory to save the generated image",
+    )
+    parser_visualize.add_argument(
+        "--iterations",
+        type=int,
+        default=defaults.get("visualize", {}).get("iterations", 100),
+        help="Number of gradient ascent iterations",
+    )
+    parser_visualize.add_argument(
+        "--lr",
+        type=float,
+        default=defaults.get("visualize", {}).get("lr", 0.1),
+        help="Learning rate for gradient ascent",
+    )
+
     # Check if no arguments were passed, print help and exit
     if len(sys.argv) == 1:
         parser.print_help(sys.stderr)
@@ -190,6 +218,9 @@ def main():
         extract_frames(args.video_path, args.output_dir, args.frame_rate, batch_mode)
     elif args.command == "docs":
         generate_docs()
+    elif args.command == "visualize":
+        from vendor.utils.generate_activation_max import generate_activation_image
+        generate_activation_image(args.model, args.output_dir, args.iterations, args.lr)
 
 
 if __name__ == "__main__":

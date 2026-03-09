@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.12.0] - 2026-03-09
+### Added
+- New `visualize` command that performs activation maximization to generate an image representing what features the model is looking for in a face (e.g., the 'Miro' class).
+- Integrated `vendor/utils/generate_activation_max.py` to handle gradient ascent on random noise images to maximize model activation.
+
 ## [1.11.3] - 2026-03-09
 ### Fixed
 - Fixed `main.py` loading time by utilizing lazy imports, significantly improving startup time for simple commands like `main.py --help`.
