@@ -3,7 +3,7 @@ import cv2
 import numpy as np
 import tensorflow as tf
 
-def generate_activation_image(model_path, output_dir, iterations=100, learning_rate=0.1):
+def generate_activation_image(model_path, output_dir, iterations=300, learning_rate=1.0):
     if not os.path.exists(model_path):
         print(f"Error: Model not found at {model_path}")
         return
@@ -14,20 +14,26 @@ def generate_activation_image(model_path, output_dir, iterations=100, learning_r
     # Extract the expected image size from the model's input layer
     img_size = model.input_shape[1]
     
-    # Initialize an image with random noise, centered around a neutral gray
-    img = tf.random.normal((1, img_size, img_size, 3), mean=0.5, stddev=0.1)
+    # Initialize an image with a flat gray background and slight random noise
+    img = tf.random.uniform((1, img_size, img_size, 3), minval=0.4, maxval=0.6)
     img = tf.Variable(img)
 
-    print(f"Running gradient ascent for {iterations} iterations...")
+    print(f"Running gradient ascent for {iterations} iterations with TV Regularization...")
     for i in range(iterations):
         with tf.GradientTape() as tape:
             tape.watch(img)
             # Pass the image through the model
             predictions = model(img)
             # The model outputs a single sigmoid probability for the 'Miro' class
-            loss = predictions[0, 0] 
+            confidence = predictions[0, 0] 
 
-        # Calculate how each pixel affects the confidence score
+            # Calculate Total Variation to measure high-frequency noise
+            tv_loss = tf.image.total_variation(img)
+            
+            # Maximize confidence while penalizing noise
+            loss = confidence - (0.005 * tv_loss[0])
+
+        # Calculate how each pixel affects the combined loss function
         gradients = tape.gradient(loss, img)
         
         # Normalize the gradients for smooth updates
@@ -40,7 +46,7 @@ def generate_activation_image(model_path, output_dir, iterations=100, learning_r
         img.assign(tf.clip_by_value(img, 0.0, 1.0))
 
         if (i + 1) % 20 == 0:
-            print(f"Iteration {i + 1}/{iterations}, Confidence: {loss.numpy():.4f}")
+            print(f"Iteration {i + 1}/{iterations}, Confidence: {confidence.numpy():.4f}")
 
     os.makedirs(output_dir, exist_ok=True)
     
