@@ -3,7 +3,7 @@ import cv2
 import numpy as np
 import tensorflow as tf
 
-def generate_activation_image(model_path, output_dir, iterations=300, learning_rate=1.0):
+def generate_activation_image(model_path, output_dir, iterations_per_octave=150, learning_rate=1.0, octaves=3, octave_scale=1.4):
     if not os.path.exists(model_path):
         print(f"Error: Model not found at {model_path}")
         return
@@ -11,50 +11,62 @@ def generate_activation_image(model_path, output_dir, iterations=300, learning_r
     print(f"Loading model from {model_path}...")
     model = tf.keras.models.load_model(model_path)
     
-    # Extract the expected image size from the model's input layer
-    img_size = model.input_shape[1]
+    base_size = model.input_shape[1]
     
-    # Initialize an image with a flat gray background and slight random noise
-    img = tf.random.uniform((1, img_size, img_size, 3), minval=0.4, maxval=0.6)
-    img = tf.Variable(img)
+    # Start with a smaller resolution image
+    current_size = int(base_size / (octave_scale ** (octaves - 1)))
+    
+    img = tf.random.uniform((1, current_size, current_size, 3), minval=0.45, maxval=0.55)
+    
+    print(f"Running gradient ascent with {octaves} octaves...")
+    for octave in range(octaves):
+        print(f"Processing Octave {octave + 1}/{octaves} (Size: {current_size}x{current_size})...")
+        
+        img = tf.Variable(img)
+        
+        for i in range(iterations_per_octave):
+            shift_x = tf.random.uniform(shape=[], minval=-4, maxval=5, dtype=tf.int32)
+            shift_y = tf.random.uniform(shape=[], minval=-4, maxval=5, dtype=tf.int32)
+            img_shifted = tf.roll(tf.roll(img, shift_x, axis=1), shift_y, axis=2)
 
-    print(f"Running gradient ascent for {iterations} iterations with TV Regularization...")
-    for i in range(iterations):
-        with tf.GradientTape() as tape:
-            tape.watch(img)
-            # Pass the image through the model
-            predictions = model(img)
-            # The model outputs a single sigmoid probability for the 'Miro' class
-            confidence = predictions[0, 0] 
+            with tf.GradientTape() as tape:
+                tape.watch(img_shifted)
+                
+                # Resize temporarily to the model's expected input size for the prediction
+                img_resized = tf.image.resize(img_shifted, (base_size, base_size))
+                
+                predictions = model(img_resized)
+                confidence = predictions[0, 0] 
 
-            # Calculate Total Variation to measure high-frequency noise
-            tv_loss = tf.image.total_variation(img)
+                tv_loss = tf.image.total_variation(img_shifted)
+                loss = confidence - (0.008 * tv_loss[0])
+
+            gradients = tape.gradient(loss, img_shifted)
+            gradients = tf.roll(tf.roll(gradients, -shift_x, axis=1), -shift_y, axis=2)
+            gradients /= (tf.math.reduce_std(gradients) + 1e-8)
             
-            # Maximize confidence while penalizing noise
-            loss = confidence - (0.005 * tv_loss[0])
+            img.assign_add(gradients * learning_rate)
+            img.assign(tf.clip_by_value(img, 0.0, 1.0))
 
-        # Calculate how each pixel affects the combined loss function
-        gradients = tape.gradient(loss, img)
-        
-        # Normalize the gradients for smooth updates
-        gradients /= (tf.math.reduce_std(gradients) + 1e-8)
-        
-        # Add the gradients to the image to increase the confidence score
-        img.assign_add(gradients * learning_rate)
-        
-        # Clip pixel values to ensure they remain in the valid [0, 1] range
-        img.assign(tf.clip_by_value(img, 0.0, 1.0))
+            if (i + 1) % 50 == 0:
+                numpy_img = img.numpy()[0]
+                blurred_img = cv2.GaussianBlur(numpy_img, (3, 3), 0.5)
+                blurred_img = blurred_img.astype(np.float32)
+                img.assign(tf.expand_dims(blurred_img, axis=0))
 
-        if (i + 1) % 20 == 0:
-            print(f"Iteration {i + 1}/{iterations}, Confidence: {confidence.numpy():.4f}")
+        # If not the last octave, scale the image up for the next pass
+        if octave < octaves - 1:
+            current_size = int(current_size * octave_scale)
+            img_numpy = img.numpy()
+            img = tf.image.resize(img_numpy, (current_size, current_size))
+
+    # Final resize to ensure it perfectly matches the model output expectations
+    img = tf.image.resize(img, (base_size, base_size))
 
     os.makedirs(output_dir, exist_ok=True)
     
-    # Convert the resulting tensor back into a standard image format
     final_img = img.numpy()[0]
     final_img = (final_img * 255).astype(np.uint8)
-    
-    # Convert from RGB to BGR for OpenCV to save correctly
     final_img_bgr = cv2.cvtColor(final_img, cv2.COLOR_RGB2BGR)
     
     output_path = os.path.join(output_dir, "miro_activation_maximization.png")
