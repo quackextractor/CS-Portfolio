@@ -35,11 +35,17 @@ def generate_activation_image(model_path, output_dir, iterations_per_octave=150,
                 # Resize temporarily to the model's expected input size for the prediction
                 img_resized = tf.image.resize(img_shifted, (base_size, base_size))
                 
-                predictions = model(img_resized)
-                confidence = predictions[0, 0] 
+                # Explicitly set training=False to bypass Random augmentation layers
+                predictions = model(img_resized, training=False)
+                
+                # Convert the sigmoid output back to logits to prevent vanishing gradients
+                p = tf.clip_by_value(predictions[0, 0], 1e-7, 1.0 - 1e-7)
+                logit_confidence = tf.math.log(p / (1.0 - p))
 
                 tv_loss = tf.image.total_variation(img_shifted)
-                loss = confidence - (0.008 * tv_loss[0])
+                
+                # Optimize based on the logit rather than the saturated sigmoid probability
+                loss = logit_confidence - (0.008 * tv_loss[0])
 
             gradients = tape.gradient(loss, img_shifted)
             gradients = tf.roll(tf.roll(gradients, -shift_x, axis=1), -shift_y, axis=2)
