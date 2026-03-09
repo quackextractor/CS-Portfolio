@@ -2,82 +2,91 @@ import os
 import cv2
 import numpy as np
 import tensorflow as tf
+import math
 
-def generate_activation_image(model_path, output_dir, iterations_per_octave=150, learning_rate=1.0, octaves=3, octave_scale=1.4):
-    if not os.path.exists(model_path):
-        print(f"Error: Model not found at {model_path}")
-        return
+def run_gradient_ascent(target_model, initial_img, base_size, iterations, learning_rate, octaves, octave_scale, loss_mode="output", filter_idx=None):
+    img = initial_img
+    current_size = img.shape[1]
 
-    print(f"Loading model from {model_path}...")
-    model = tf.keras.models.load_model(model_path)
-    
-    base_size = model.input_shape[1]
-    
-    # Start with a smaller resolution image
-    current_size = int(base_size / (octave_scale ** (octaves - 1)))
-    
-    img = tf.random.uniform((1, current_size, current_size, 3), minval=0.45, maxval=0.55)
-    
-    print(f"Running gradient ascent with {octaves} octaves...")
     for octave in range(octaves):
-        print(f"Processing Octave {octave + 1}/{octaves} (Size: {current_size}x{current_size})...")
-        
         img = tf.Variable(img)
-        
-        for i in range(iterations_per_octave):
+        for i in range(iterations):
             shift_x = tf.random.uniform(shape=[], minval=-4, maxval=5, dtype=tf.int32)
             shift_y = tf.random.uniform(shape=[], minval=-4, maxval=5, dtype=tf.int32)
             img_shifted = tf.roll(tf.roll(img, shift_x, axis=1), shift_y, axis=2)
 
             with tf.GradientTape() as tape:
                 tape.watch(img_shifted)
-                
-                # Resize temporarily to the model's expected input size for the prediction
                 img_resized = tf.image.resize(img_shifted, (base_size, base_size))
+                outputs = target_model(img_resized, training=False)
                 
-                # Explicitly set training=False to bypass Random augmentation layers
-                predictions = model(img_resized, training=False)
-                
-                # Convert the sigmoid output back to logits to prevent vanishing gradients
-                p = tf.clip_by_value(predictions[0, 0], 1e-7, 1.0 - 1e-7)
-                logit_confidence = tf.math.log(p / (1.0 - p))
-
-                tv_loss = tf.image.total_variation(img_shifted)
-                
-                # Optimize based on the logit rather than the saturated sigmoid probability
-                loss = logit_confidence - (0.008 * tv_loss[0])
+                if loss_mode == "output":
+                    p = tf.clip_by_value(outputs[0, 0], 1e-7, 1.0 - 1e-7)
+                    logit_confidence = tf.math.log(p / (1.0 - p))
+                    tv_loss = tf.image.total_variation(img_shifted)
+                    loss = logit_confidence - (0.008 * tv_loss[0])
+                else:
+                    loss = tf.reduce_mean(outputs[0, :, :, filter_idx])
 
             gradients = tape.gradient(loss, img_shifted)
+            std_grad = tf.math.reduce_std(gradients)
+            gradients = tf.cond(std_grad > 0, lambda: gradients / (std_grad + 1e-8), lambda: gradients)
             gradients = tf.roll(tf.roll(gradients, -shift_x, axis=1), -shift_y, axis=2)
-            gradients /= (tf.math.reduce_std(gradients) + 1e-8)
             
             img.assign_add(gradients * learning_rate)
             img.assign(tf.clip_by_value(img, 0.0, 1.0))
 
             if (i + 1) % 50 == 0:
                 numpy_img = img.numpy()[0]
-                blurred_img = cv2.GaussianBlur(numpy_img, (3, 3), 0.5)
-                blurred_img = blurred_img.astype(np.float32)
+                blurred_img = cv2.GaussianBlur(numpy_img, (3, 3), 0.5).astype(np.float32)
                 img.assign(tf.expand_dims(blurred_img, axis=0))
 
-        # If not the last octave, scale the image up for the next pass
         if octave < octaves - 1:
             current_size = int(current_size * octave_scale)
-            img_numpy = img.numpy()
-            img = tf.image.resize(img_numpy, (current_size, current_size))
+            img = tf.image.resize(img.numpy(), (current_size, current_size))
+            
+    return tf.image.resize(img, (base_size, base_size))
 
-    # Final resize to ensure it perfectly matches the model output expectations
-    img = tf.image.resize(img, (base_size, base_size))
+def generate_output_maximization(model, output_dir, base_size, iterations, learning_rate):
+    print("Generating output activation maximization...")
+    initial_img = tf.random.uniform((1, int(base_size / (1.4 ** 2)), int(base_size / (1.4 ** 2)), 3), minval=0.45, maxval=0.55)
+    img_final = run_gradient_ascent(model, initial_img, base_size, iterations, learning_rate, octaves=3, octave_scale=1.4, loss_mode="output")
+    final_img_np = (img_final.numpy()[0] * 255).astype(np.uint8)
+    cv2.imwrite(os.path.join(output_dir, "miro_activation_maximization.png"), cv2.cvtColor(final_img_np, cv2.COLOR_RGB2BGR))
 
+def generate_filter_grid(model, output_dir, base_size, iterations, learning_rate, filters_to_visualize=4):
+    print("Generating filter visualization grid...")
+    conv_layers = [layer for layer in model.layers if isinstance(layer, tf.keras.layers.Conv2D)]
+    target_layer = conv_layers[-1]
+    feature_extractor = tf.keras.Model(inputs=model.inputs, outputs=target_layer.output)
+    
+    total_filters = target_layer.output.shape[-1]
+    filter_indices = np.linspace(0, total_filters - 1, filters_to_visualize, dtype=int)
+    grid_images = []
+    
+    for filter_idx in filter_indices:
+        initial_img = tf.random.uniform((1, int(base_size / (1.4 ** 2)), int(base_size / (1.4 ** 2)), 3), minval=0.0, maxval=1.0)
+        img_final = run_gradient_ascent(feature_extractor, initial_img, base_size, iterations, learning_rate, octaves=3, octave_scale=1.4, loss_mode="filter", filter_idx=filter_idx)
+        img_np = (img_final.numpy()[0] * 255).astype(np.uint8)
+        img_bgr = cv2.cvtColor(img_np, cv2.COLOR_RGB2BGR)
+        cv2.putText(img_bgr, f"Filter {filter_idx}", (5, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1, cv2.LINE_AA)
+        grid_images.append(img_bgr)
+
+    grid_cols = math.ceil(math.sqrt(filters_to_visualize))
+    grid_rows = math.ceil(filters_to_visualize / grid_cols)
+    while len(grid_images) < grid_cols * grid_rows:
+        grid_images.append(np.zeros((base_size, base_size, 3), dtype=np.uint8))
+    
+    rows = [np.hstack(grid_images[r*grid_cols : (r+1)*grid_cols]) for r in range(grid_rows)]
+    cv2.imwrite(os.path.join(output_dir, "miro_filter_grid.png"), np.vstack(rows))
+
+def generate_activation_image(model_path, output_dir, iterations=150, learning_rate=1.0):
+    if not os.path.exists(model_path):
+        print(f"Error: Model not found at {model_path}")
+        return
+    model = tf.keras.models.load_model(model_path)
+    base_size = model.input_shape[1]
     os.makedirs(output_dir, exist_ok=True)
-    
-    final_img = img.numpy()[0]
-    final_img = (final_img * 255).astype(np.uint8)
-    final_img_bgr = cv2.cvtColor(final_img, cv2.COLOR_RGB2BGR)
-    
-    output_path = os.path.join(output_dir, "miro_activation_maximization.png")
-    cv2.imwrite(output_path, final_img_bgr)
-    print(f"Image saved successfully to {output_path}")
-
-if __name__ == "__main__":
-    generate_activation_image("../../vendor/models/miro_detector.keras", "../../data/processed")
+    generate_output_maximization(model, output_dir, base_size, iterations, learning_rate)
+    generate_filter_grid(model, output_dir, base_size, iterations, learning_rate)
+    print(f"Visualization results saved to {output_dir}")

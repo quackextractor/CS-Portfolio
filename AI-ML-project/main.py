@@ -8,9 +8,6 @@ import yaml
 os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 
-# Import the core functions from your existing modules on demand
-
-
 def generate_docs():
     scripts = [
         ("gen_docs", os.path.join("vendor", "utils", "LaTeX-gen", "gen-docs.py")),
@@ -27,8 +24,8 @@ def generate_docs():
         module = importlib.util.module_from_spec(spec)
         sys.modules[module_name] = module
         spec.loader.exec_module(module)
-        module.build_pdf()
-
+        if hasattr(module, "build_pdf"):
+            module.build_pdf()
 
 def main():
     config_path = "config.yaml"
@@ -159,7 +156,7 @@ def main():
     # Command: visualize
     parser_visualize = subparsers.add_parser(
         "visualize",
-        help="Generate an activation maximization image of the target class",
+        help="Generate activation maximization and filter grid images",
     )
     parser_visualize.add_argument(
         "--model", type=str, default=config.get("model", {}).get("output_path", "vendor/models/miro_detector.keras"), help="Path to the trained model file"
@@ -168,18 +165,18 @@ def main():
         "--output_dir",
         type=str,
         default=defaults.get("visualize", {}).get("output_dir", "data/processed"),
-        help="Directory to save the generated image",
+        help="Directory to save the generated images",
     )
     parser_visualize.add_argument(
         "--iterations",
         type=int,
-        default=defaults.get("visualize", {}).get("iterations", 100),
-        help="Number of gradient ascent iterations",
+        default=defaults.get("visualize", {}).get("iterations", 150),
+        help="Number of gradient ascent iterations per octave",
     )
     parser_visualize.add_argument(
         "--lr",
         type=float,
-        default=defaults.get("visualize", {}).get("lr", 0.1),
+        default=defaults.get("visualize", {}).get("lr", 1.0),
         help="Learning rate for gradient ascent",
     )
 
@@ -221,7 +218,6 @@ def main():
     elif args.command == "visualize":
         from vendor.utils.generate_activation_max import generate_activation_image
         generate_activation_image(args.model, args.output_dir, args.iterations, args.lr)
-
 
 if __name__ == "__main__":
     main()
