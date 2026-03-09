@@ -1,5 +1,5 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Version](https://img.shields.io/badge/version-1.9.0-blue.svg)](https://github.com/quackextractor/CS-Portfolio)
+[![Version](https://img.shields.io/badge/version-1.9.1-blue.svg)](https://github.com/quackextractor/CS-Portfolio)
 
 # Miro Face Detector
 
@@ -30,7 +30,8 @@ The project uses several external Python libraries for data scraping, image proc
 2. Run the automated setup script:
    `setup.bat`
 3. Once the setup is complete, activate the virtual environment:
-   `.venv\Scripts\activate`
+   - Command Prompt: `.venv\Scripts\activate`
+   - Git Bash: `source .venv/Scripts/activate`
 
 If you are setting this up on Mac or Linux, you will need to run the steps manually:
 1. Create a virtual environment: `python -m venv .venv`
@@ -104,6 +105,7 @@ setup.bat
 3. **Activate the Virtual Environment:**
 * Windows (Command Prompt): `.venv\Scripts\activate.bat`
 * Windows (PowerShell): `.\.venv\Scripts\Activate.ps1`
+* Windows (Git Bash): `source .venv/Scripts/activate`
 * Mac/Linux: `source .venv/bin/activate`
 
 

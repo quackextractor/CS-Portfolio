@@ -49,7 +49,8 @@ echo.
 echo ============================================
 echo  Setup complete.
 echo  To activate the environment later, run:
-echo    .venv\Scripts\activate
+echo    CMD:      .venv\Scripts\activate
+echo    Git Bash: source .venv/Scripts/activate
 echo  Then use: python main.py ^<command^>
 echo ============================================
 echo.

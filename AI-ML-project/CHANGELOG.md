@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.1] - 2026-03-09
+### Fixed
+- Added explicit activation instructions for Git Bash on Windows to `README.md` and `setup.bat`.
+- Clarified that Git Bash requires the `source` command and forward slashes for virtual environment activation.
+
 ## [1.9.0] - 2026-03-08
 ### Added
 - Integrated Grad-CAM (Gradient-weighted Class Activation Mapping) for model interpretability, allowing users to visualize which facial features influence the model's decision.
