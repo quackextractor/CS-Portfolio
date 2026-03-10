@@ -4,7 +4,18 @@ import numpy as np
 import tensorflow as tf
 import math
 
-def run_gradient_ascent(target_model, initial_img, base_size, iterations, learning_rate, octaves, octave_scale, loss_mode="output", filter_idx=None):
+
+def run_gradient_ascent(
+    target_model,
+    initial_img,
+    base_size,
+    iterations,
+    learning_rate,
+    octaves,
+    octave_scale,
+    loss_mode="output",
+    filter_idx=None,
+):
     img = initial_img
     
     for octave in range(octaves):
@@ -57,16 +68,18 @@ def run_gradient_ascent(target_model, initial_img, base_size, iterations, learni
             img = tf.image.resize(img.numpy(), (new_size, new_size))
             img = tf.Variable(img)
             
+
     return tf.image.resize(img, (base_size, base_size))
 
 def find_target_layers(model):
     """Dynamically finds the last conv layer and the final output layer."""
-    conv_layers = [l for l in model.layers if isinstance(l, tf.keras.layers.Conv2D)]
+    conv_layers = [layer for layer in model.layers if isinstance(layer, tf.keras.layers.Conv2D)]
     if not conv_layers:
         raise ValueError("No Conv2D layers found in the model.")
     
     # We use the very last layer for class maximization and last conv for filters
     return conv_layers[-1], model.layers[-1]
+
 
 def generate_output_maximization(model, output_dir, base_size, iterations, learning_rate):
     print("Generating output activation maximization...")
@@ -80,9 +93,15 @@ def generate_output_maximization(model, output_dir, base_size, iterations, learn
     img_final = run_gradient_ascent(activation_model, initial_img, base_size, iterations, learning_rate, octaves=3, octave_scale=1.4, loss_mode="output")
     
     final_img_np = (img_final.numpy()[0] * 255).astype(np.uint8)
-    cv2.imwrite(os.path.join(output_dir, "miro_activation_maximization.png"), cv2.cvtColor(final_img_np, cv2.COLOR_RGB2BGR))
+    cv2.imwrite(
+        os.path.join(output_dir, "miro_activation_maximization.png"),
+        cv2.cvtColor(final_img_np, cv2.COLOR_RGB2BGR),
+    )
 
-def generate_filter_grid(model, output_dir, base_size, iterations, learning_rate, filters_to_visualize=4):
+
+def generate_filter_grid(
+    model, output_dir, base_size, iterations, learning_rate, filters_to_visualize=4
+):
     print("Generating filter visualization grid...")
     last_conv_layer, _ = find_target_layers(model)
     feature_extractor = tf.keras.Model(inputs=model.inputs, outputs=last_conv_layer.output)
@@ -93,7 +112,17 @@ def generate_filter_grid(model, output_dir, base_size, iterations, learning_rate
     
     for filter_idx in filter_indices:
         initial_img = tf.random.uniform((1, int(base_size / (1.4**2)), int(base_size / (1.4**2)), 3), minval=0.1, maxval=0.9)
-        img_final = run_gradient_ascent(feature_extractor, initial_img, base_size, iterations, learning_rate, octaves=3, octave_scale=1.4, loss_mode="filter", filter_idx=filter_idx)
+        img_final = run_gradient_ascent(
+            feature_extractor,
+            initial_img,
+            base_size,
+            iterations,
+            learning_rate,
+            octaves=3,
+            octave_scale=1.4,
+            loss_mode="filter",
+            filter_idx=filter_idx,
+        )
         
         img_np = (img_final.numpy()[0] * 255).astype(np.uint8)
         img_bgr = cv2.cvtColor(img_np, cv2.COLOR_RGB2BGR)
@@ -107,8 +136,12 @@ def generate_filter_grid(model, output_dir, base_size, iterations, learning_rate
     while len(grid_images) < grid_cols * grid_rows:
         grid_images.append(np.zeros((base_size, base_size, 3), dtype=np.uint8))
     
-    rows = [np.hstack(grid_images[r*grid_cols : (r+1)*grid_cols]) for r in range(grid_rows)]
+    rows = [
+        np.hstack(grid_images[r * grid_cols : (r + 1) * grid_cols])
+        for r in range(grid_rows)
+    ]
     cv2.imwrite(os.path.join(output_dir, "miro_filter_grid.png"), np.vstack(rows))
+
 
 def generate_activation_image(model_path, output_dir, iterations=150, learning_rate=0.05):
     if not os.path.exists(model_path):

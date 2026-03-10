@@ -8,6 +8,7 @@ import yaml
 os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 
+
 def generate_docs():
     scripts = [
         ("gen_docs", os.path.join("vendor", "utils", "LaTeX-gen", "gen-docs.py")),
@@ -26,6 +27,7 @@ def generate_docs():
         spec.loader.exec_module(module)
         if hasattr(module, "build_pdf"):
             module.build_pdf()
+
 
 def main():
     config_path = "config.yaml"
@@ -159,7 +161,10 @@ def main():
         help="Generate activation maximization and filter grid images",
     )
     parser_visualize.add_argument(
-        "--model", type=str, default=config.get("model", {}).get("output_path", "vendor/models/miro_detector.keras"), help="Path to the trained model file"
+        "--model",
+        type=str,
+        default=config.get("model", {}).get("output_path", "vendor/models/miro_detector.keras"),
+        help="Path to the trained model file",
     )
     parser_visualize.add_argument(
         "--output_dir",
@@ -218,6 +223,7 @@ def main():
     elif args.command == "visualize":
         from vendor.utils.generate_activation_max import generate_activation_image
         generate_activation_image(args.model, args.output_dir, args.iterations, args.lr)
+
 
 if __name__ == "__main__":
     main()

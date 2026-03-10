@@ -65,7 +65,20 @@ The documentation is generated dynamically using a Python script that builds tra
    `python main.py docs`
 3. The final compiled PDF will be located in the `docs/` directory.
 
-## Repository Structure
+### Model Visualization
+You can visualize what the model "sees" by running the activation maximization script.
+```bash
+python main.py visualize
+```
+This will generate images representing the features the model looks for:
+
+| Class Prototype | Filter Grid |
+| :---: | :---: |
+| ![Class Prototype](docs/activation_maximization_placeholder.png) | ![Filter Grid](docs/filter_grid_placeholder.png) |
+
+*(Note: The images above are placeholders. Run the command to generate real visualizations based on your trained model.)*
+
+## Project Structure
 
 * `src/`: Authored Python code including API scrapers, video extractors, data builders, and the final live application.
 * `vendor/`: Foreign code, third party libraries, and external snippets not authored by you.

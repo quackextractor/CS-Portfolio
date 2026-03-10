@@ -10,6 +10,7 @@ OUT_DIR = os.path.join(SCRIPT_DIR, "out")
 DOCS_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, "..", "..", "..", "docs"))
 FINAL_PDF_PATH = os.path.join(DOCS_DIR, "user_manual.pdf")
 
+
 def generate_latex_content():
     """Generates the LaTeX source code for the user manual."""
     latex_template = r"""\documentclass[12pt, a4paper]{article}
@@ -156,9 +157,25 @@ With the model trained and loaded, you can launch the live webcam inference appl
     \item \textbf{Quitting:} Press the \textbf{"q"} key to instantly safely terminate the camera stream and close the application.
 \end{itemize}
 
+\section{Step 6: Model Visualization}
+To understand what the model has learned, you can use the \texttt{visualize} command. This performs activation maximization to generate images of what "Miro" looks like to the CNN.
+
+\textbf{Command:}
+\texttt{python main.py visualize}
+
+\textbf{Optional Parameters:}
+\begin{itemize}
+    \item \texttt{--filter <index>}: Visualizes a specific filter instead of the entire class.
+    \item \texttt{--iterations <int>}: Number of gradient ascent steps (default 150).
+    \item \texttt{--lr <float>}: Learning rate for the optimization (default 1.0).
+\end{itemize}
+
+The generated images are saved in the project root as \texttt{activation\_maximization.png} or \texttt{filter\_grid.png}.
+
 \end{document}
 """
     return latex_template
+
 
 def build_pdf(filename="user_manual"):
     """Writes the LaTeX code to a file and compiles it using pdflatex."""

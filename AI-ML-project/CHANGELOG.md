@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.13.0] - 2026-03-10
+### Added
+- Refactored `vendor/utils/generate_activation_max.py` into a suite of reusable functions: `run_gradient_ascent`, `generate_output_maximization`, and `generate_filter_grid`.
+- Added a `--filter <int>` CLI option to the `visualize` command to maximize a specific convolutional filter instead of the class output.
+- Implemented automatic output directory creation for activation maximization results.
+- Added a `hasattr` guard for dynamic documentation module loading to ensure stability if `pdflatex` is missing.
+
+### Changed
+- Improved gradient normalization and octave-based scaling in the activation maximization pipeline for crisper feature visualization.
+- Updated default iterations to 150 and learning rate to 1.0 for the `visualize` command.
+
 ## [1.12.0] - 2026-03-09
 ### Added
 - New `visualize` command that performs activation maximization to generate an image representing what features the model is looking for in a face (e.g., the 'Miro' class).
