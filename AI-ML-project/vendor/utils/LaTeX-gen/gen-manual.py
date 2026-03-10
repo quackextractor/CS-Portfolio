@@ -63,7 +63,7 @@ Before collecting data, ensure your system is prepared.
 
 \begin{enumerate}
     \item \textbf{Windows Automated Setup:} Open your terminal in the project root and run \texttt{setup.bat}. This script automatically creates a virtual environment, installs dependencies from \texttt{requirements.txt}, and downloads the required MediaPipe Face Detector model.
-    \item \textbf{Manual Setup (Mac/Linux):} 
+    \item \textbf{Manual Setup (Mac/Linux):}
     \begin{itemize}
         \item Create and activate a virtual environment: \texttt{python -m venv .venv} and \texttt{source .venv/bin/activate}.
         \item Install packages: \texttt{pip install -r requirements.txt}.
@@ -192,16 +192,16 @@ def build_pdf(filename="user_manual"):
 
     print("Compiling PDF with pdflatex...")
     try:
-        # Run pdflatex twice to resolve TOC references
-        subprocess.run(["pdflatex", f"{filename}.tex"], cwd=OUT_DIR, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        subprocess.run(["pdflatex", f"{filename}.tex"], cwd=OUT_DIR, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    
+        # Run pdflatex twice with -interaction=nonstopmode to resolve TOC and prevent hanging
+        subprocess.run(["pdflatex", "-interaction=nonstopmode", f"{filename}.tex"], cwd=OUT_DIR, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        subprocess.run(["pdflatex", "-interaction=nonstopmode", f"{filename}.tex"], cwd=OUT_DIR, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
         # Move the final compiled PDF to the docs directory safely
         compiled_pdf = os.path.join(OUT_DIR, f"{filename}.pdf")
         if os.path.exists(FINAL_PDF_PATH):
             os.remove(FINAL_PDF_PATH)
         shutil.move(compiled_pdf, FINAL_PDF_PATH)
-    
+
         print(f"Successfully generated PDF at {FINAL_PDF_PATH}")
     except subprocess.CalledProcessError:
         print("Error: Compilation failed. Please ensure you have a LaTeX distribution installed.")

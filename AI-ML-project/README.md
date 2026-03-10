@@ -1,5 +1,5 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Version](https://img.shields.io/badge/version-1.12.0-blue.svg)](https://github.com/quackextractor/CS-Portfolio)
+[![Version](https://img.shields.io/badge/version-1.15.0-blue.svg)](https://github.com/quackextractor/CS-Portfolio)
 
 # Miro Face Detector
 
@@ -43,18 +43,18 @@ If you are setting this up on Mac or Linux, you will need to run the steps manua
 
 The project is operated entirely through a unified CLI managed by `main.py`. Once your virtual environment is active and dependencies are installed, you can use the following commands:
 
-* `python main.py setup`: Download required MediaPipe model files (already handled if you used setup.bat).
-* `python main.py scrape`: Download portrait images from Pexels for the negative class.
+* `python main.py setup`: Download required MediaPipe model files.
+* `python main.py scrape`: Download portrait images for the negative class (supports multiple hard negative queries in `config.yaml`).
 * `python main.py extract <video_path>`: Extract frames from personal videos for the positive class.
-  * Optionally, use `python main.py extract <directory_path> --batch` to process all videos in a specified folder.
+  * Optionally, use `--config <path.json>` for **Advanced Batch Extraction** (supports segment seeking and dynamic frame skipping).
+  * Optionally, use `--batch` to process all videos in a specified folder.
 * `python main.py build`: Clean, crop, and normalize raw images to build the dataset CSV.
-  * Optionally, use `--no_skip_blurry` to retain blurry faces and `--blur_threshold <value>` to adjust the sensitivity.
-* `python main.py run`: Launch the live webcam face detection application.
-  * Optionally, use `python main.py run --video <video_path>` to run inference on a local video file with playback controls (`Space` to pause, `a`/`d` to skip).
-  * Optionally, use `python main.py run --screen` to run inference on your primary screen directly.
-* `python main.py visualize`: Generate an activation maximization image showing what the model has learned.
-  * Optionally, use `--iterations <int>` and `--lr <float>` to tune the visualization process.
-* `python main.py docs`: Generate the LaTeX project documentation PDF.
+* `python main.py run`: Launch the live webcam face detection application. Supports `LIVE_STREAM` and `VIDEO` modes for high-performance processing.
+* `python main.py visualize`: Generate an activation maximization image (model vision).
+* `python main.py docs`: Generate the LaTeX documentation PDF (includes automated CNN architecture diagrams).
+
+## Logging and Troubleshooting
+The application implements global logging. Detailed logs are streamed to the console and saved to `out/app.log` with a rotating file handler.
 
 ## Generating the Documentation
 

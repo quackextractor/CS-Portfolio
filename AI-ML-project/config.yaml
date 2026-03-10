@@ -14,7 +14,7 @@ camera:
   index: 0
 defaults:
   scrape:
-    query: "portrait face"
+    queries: ["portrait face", "man with glasses", "woman with hat", "beard face"]
     total: 1200
     output_dir: "data/raw/negative"
   extract:

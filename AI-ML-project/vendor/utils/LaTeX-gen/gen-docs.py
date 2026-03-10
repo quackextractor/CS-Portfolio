@@ -2,6 +2,8 @@ import os
 import subprocess
 import matplotlib.pyplot as plt
 import shutil
+import yaml
+import tensorflow as tf
 
 # Dynamically find the script's directory
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -16,7 +18,7 @@ def generate_graphs():
     """Generates sample graphs for the documentation."""
     print("Generating graphs...")
     os.makedirs(OUT_DIR, exist_ok=True)
-    
+
     # 1. Dataset Distribution Graph
     labels = ['Miro (Positive)', 'Random (Negative)']
     counts = [1438, 879]
@@ -42,21 +44,64 @@ def generate_graphs():
     plt.legend()
     plt.grid(True)
     plt.savefig(os.path.join(OUT_DIR, 'training_history.png'))
-    # 3. Activation Maximization Placeholder
-    plt.figure(figsize=(6, 6))
-    plt.text(0.5, 0.5, 'Activation Maximization\n(Placeholder)', ha='center', va='center', fontsize=20)
-    plt.axis('off')
-    plt.savefig(os.path.join(OUT_DIR, 'activation_maximization.png'))
-    plt.close()
+    # 3. Activation Maximization and Filter Grid
+    # We no longer generate placeholders here as professional images 
+    # are already provided in the SCRIPT_DIR and referenced in LaTeX.
 
-    # 4. Filter Grid Placeholder
-    plt.figure(figsize=(6, 6))
-    plt.text(0.5, 0.5, 'Filter Grid Visualization\n(Placeholder)', ha='center', va='center', fontsize=20)
-    plt.axis('off')
-    plt.savefig(os.path.join(OUT_DIR, 'filter_grid.png'))
-    plt.close()
+    # 5. Model Architecture Diagram
+    generate_model_diagram()
 
     print("Graphs generated in", OUT_DIR)
+
+
+def generate_model_diagram():
+    """Generates a block diagram of the CNN architecture using plot_model.
+
+    Uses tf.keras.utils.plot_model which works reliably with any Keras model
+    loaded from disk. Falls back to a placeholder image if it fails.
+    """
+    print("Generating model architecture diagram...")
+    config_path = os.path.abspath(
+        os.path.join(SCRIPT_DIR, "..", "..", "..", "config.yaml")
+    )
+    diag_path = os.path.join(OUT_DIR, "model_architecture.png")
+
+    try:
+        with open(config_path, "r") as f:
+            config = yaml.safe_load(f)
+
+        model_path = os.path.abspath(
+            os.path.join(SCRIPT_DIR, "..", "..", "..", config["model"]["output_path"])
+        )
+
+        if not os.path.exists(model_path):
+            print(f"Model file not found at {model_path}, skipping diagram.")
+            return
+
+        model = tf.keras.models.load_model(model_path)
+        tf.keras.utils.plot_model(
+            model,
+            to_file=diag_path,
+            show_shapes=True,
+            show_layer_names=True,
+            dpi=96,
+        )
+        print(f"Model diagram saved to {diag_path}")
+        return
+
+    except Exception as e:
+        print(f"Could not generate model diagram: {e}")
+
+    # --- Final fallback: placeholder image ---
+    plt.figure(figsize=(8, 10))
+    plt.text(
+        0.5, 0.5,
+        "Model Architecture Diagram\n(Requires a trained model file)",
+        ha="center", va="center", fontsize=12,
+    )
+    plt.axis("off")
+    plt.savefig(diag_path)
+    plt.close()
 
 
 def generate_latex_content():
@@ -116,7 +161,7 @@ The Pexels API provides a generous free tier that allows up to 200 requests per 
 Developed by Google, MediaPipe provides ultrafast face detection. It is used exclusively in the preprocessing pipeline to find faces in raw images and crop them, ensuring the machine learning model only trains on facial features and ignores backgrounds.
 
 \subsection{Machine Learning Model: Convolutional Neural Network (CNN)}
-A CNN built with TensorFlow and Keras is utilized. CNNs are specifically designed for spatial data like images, making them the optimal choice for learning the visual features that distinguish specific faces. 
+A CNN built with TensorFlow and Keras is utilized. CNNs are specifically designed for spatial data like images, making them the optimal choice for learning the visual features that distinguish specific faces.
 
 To demonstrate a clear understanding of the model architecture, the following outlines the core layers used in this network:
 \begin{itemize}
@@ -127,7 +172,7 @@ To demonstrate a clear understanding of the model architecture, the following ou
 \end{itemize}
 
 \subsection{Model Explainability: Grad-CAM}
-To ensure transparency in the model's decision-making process, the application implements Gradient-weighted Class Activation Mapping (Grad-CAM). This technique uses the gradients of any target concept, flowing into the final convolutional layer to produce a coarse localization map highlighting the important regions in the image for predicting the concept. 
+To ensure transparency in the model's decision-making process, the application implements Gradient-weighted Class Activation Mapping (Grad-CAM). This technique uses the gradients of any target concept, flowing into the final convolutional layer to produce a coarse localization map highlighting the important regions in the image for predicting the concept.
 
 In this project, Grad-CAM allows the user to see exactly which facial features (e.g., eyes, nose, jawline) the CNN is using to identify "Miro", providing a layer of interpretability often missing in "black-box" neural networks.
 
@@ -135,6 +180,15 @@ In this project, Grad-CAM allows the user to see exactly which facial features (
 Beyond localizing features in specific images, the project utilizes Activation Maximization to synthesize images that represent the "ideal" input for specific neurons or classes. By performing gradient ascent on a noise image, we can visualize the specific patterns and textures the model has learned to associate with the "Miro" class.
 
 Furthermore, the tool allows for visualizing individual convolutional filters, revealing the hierarchy of features from simple edges in early layers to complex facial structures in deeper layers.
+
+\subsection{Model Architecture}
+The following diagram illustrates the topological structure of the Convolutional Neural Network developed for this project.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\textwidth]{model_architecture.png}
+    \caption{Layer-by-layer architectural visualization of the miro\_detector.keras model.}
+\end{figure}
 
 \section{Architecture and Pipeline}
 
@@ -214,13 +268,13 @@ Figure 3 displays the result of maximizing the output for the "Miro" class, repr
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.5\textwidth]{activation_maximization.png}
+    \includegraphics[width=0.5\textwidth]{../activation_maximization.png}
     \caption{Synthesized image maximizing model activation for the Miro class.}
 \end{figure}
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.7\textwidth]{filter_grid.png}
+    \includegraphics[width=0.7\textwidth]{../filter_grid.png}
     \caption{Grid of maximized filters from the convolutional layers.}
 \end{figure}
 
@@ -275,35 +329,47 @@ def build_pdf(filename="documentation"):
     """Writes the LaTeX code to a file and compiles it using pdflatex."""
     os.makedirs(OUT_DIR, exist_ok=True)
     os.makedirs(DOCS_DIR, exist_ok=True)
-    
+
     generate_graphs()
-    
+
     tex_filename = os.path.join(OUT_DIR, f"{filename}.tex")
-    
+
     print(f"Generating {tex_filename}...")
-    
+
     latex_content = generate_latex_content()
     with open(tex_filename, "w", encoding="utf-8") as f:
         f.write(latex_content)
-        
+
     print("Compiling PDF with pdflatex...")
-    
+
     try:
         # Run pdflatex with OUT_DIR as the working directory so it finds the images natively
-        subprocess.run(["pdflatex", f"{filename}.tex"], cwd=OUT_DIR, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        subprocess.run(["pdflatex", f"{filename}.tex"], cwd=OUT_DIR, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        
+        # Use -interaction=nonstopmode to prevent the process from hanging on errors or missing package prompts
+        subprocess.run(["pdflatex", "-interaction=nonstopmode", f"{filename}.tex"], cwd=OUT_DIR, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        subprocess.run(["pdflatex", "-interaction=nonstopmode", f"{filename}.tex"], cwd=OUT_DIR, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
         # Move the final compiled PDF to the docs directory safely
         compiled_pdf = os.path.join(OUT_DIR, f"{filename}.pdf")
         if os.path.exists(FINAL_PDF_PATH):
             os.remove(FINAL_PDF_PATH)
         shutil.move(compiled_pdf, FINAL_PDF_PATH)
-        
+
         print(f"Successfully generated PDF at {FINAL_PDF_PATH}")
     except subprocess.CalledProcessError:
-        print("Error: Compilation failed. Please ensure you have a LaTeX distribution installed.")
+        print(f"Error: Compilation of {filename}.tex failed.")
+        log_file = os.path.join(OUT_DIR, f"{filename}.log")
+        if os.path.exists(log_file):
+            print(f"Checking {log_file} for errors...")
+            with open(log_file, "r", encoding="utf-8", errors="replace") as f:
+                lines = f.readlines()
+                for line in lines[-20:]:  # Print last 20 lines of log
+                    print(line.strip())
     except FileNotFoundError:
-        print("Error: pdflatex command not found.")
+        print("Error: pdflatex command not found. Please ensure you have a LaTeX distribution installed.")
+    except PermissionError:
+        print(f"Error: Could not move {filename}.pdf to {DOCS_DIR}. Please ensure the file is NOT open in another application (like a PDF viewer) and try again.")
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
 
 
 if __name__ == "__main__":

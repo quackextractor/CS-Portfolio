@@ -5,6 +5,65 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.15.2] - 2026-03-10
+### Changed
+- Updated `gen-docs.py` to use existing professional Activation Maximization and Filter Grid visualizations instead of generating placeholders.
+- Updated the LaTeX documentation template with correct relative path references to the provided assets.
+
+## [1.15.1] - 2026-03-10
+### Fixed
+- Fixed `python main.py docs` crashing with `'RandomFlip' object has no attribute 'output_shape'`.
+  `visualkeras` cannot introspect layers of a Keras model loaded from disk because `output_shape`
+  is not populated until the model is called. The doc generator now uses `tf.keras.utils.plot_model`
+  directly, which works reliably for all model types. Removed the dead `visualkeras` path and
+  `_build_visualkeras_compatible_model` helper, and cleaned up an unused `pathlib.Path` import.
+
+## [1.15.0] - 2026-03-10
+### Changed
+- Removed the external Graphviz binary dependency for automated model architecture diagrams.
+- Replaced `tf.keras.utils.plot_model` with `visualkeras` for generating hierarchical, layered visualizations of the model architecture.
+- Updated `requirements.txt` to include `visualkeras` and `Pillow`.
+- Updated `README.md` to remove manual Graphviz installation instructions.
+
+## [1.14.2] - 2026-03-10
+### Fixed
+- Fixed corrupted UTF-8 characters in the `gen-docs.py` LaTeX template causing compilation failures.
+- Improved error handling in the documentation pipeline to report detailed LaTeX log errors and handle `PermissionError` (when PDF is open).
+
+### Changed
+- Updated `README.md` with explicit `winget` installation instructions for Graphviz on Windows.
+
+## [1.14.1] - 2026-03-10
+### Added
+- Added `pydot` and `graphviz` to `requirements.txt` to support automated model architecture diagrams.
+
+### Changed
+- Added `-interaction=nonstopmode` to `pdflatex` commands in `gen-docs.py` and `gen-manual.py` for more robust PDF generation.
+- Updated `README.md` to clarify the system-level Graphviz requirement.
+
+### Fixed
+- Fixed an issue where `pdflatex` compilation would wait for interactive input if packages were missing.
+
+## [1.14.0] - 2026-03-10
+### Added
+- Implemented Advanced Batch Extraction System (JSON-driven) in `vendor/utils/video_extractor.py`.
+- Added support for segment-based seeking (`HH:MM:SS` or seconds) and dynamic frame skipping.
+- Integrated automated CNN architecture diagrams into the documentation pipeline (`gen-docs.py`).
+- Added CLI integration tests in `tests/test_main.py` covering all major commands.
+- Implemented configuration schema validation in `main.py` for critical keys.
+
+### Changed
+- Transitioned MediaPipe FaceDetector to `VIDEO` and `LIVE_STREAM` modes in `src/app.py` for improved stability and performance.
+- Implemented global logging with console and rotating file handlers (`out/app.log`).
+- Refactored all path handling to use `pathlib` for robust cross-platform sanitization.
+- Enhanced `src/pexels_scraper.py` to support multiple search queries and distribute download targets for hard negative mining.
+- Updated `config.yaml` to support a list of search queries.
+
+### Fixed
+- Fixed `UnboundLocalError` in `main.py` related to early path resolution.
+- Resolved a critical runtime crash caused by Byte Order Mark (BOM) encoding in `config.yaml`.
+- Resolved various linting issues across the codebase to adhere to PEP 8 standards.
+
 ## [1.13.0] - 2026-03-10
 ### Added
 - Refactored `vendor/utils/generate_activation_max.py` into a suite of reusable functions: `run_gradient_ascent`, `generate_output_maximization`, and `generate_filter_grid`.

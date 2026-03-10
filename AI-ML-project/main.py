@@ -3,10 +3,35 @@ import argparse
 import sys
 import importlib.util
 import yaml
+import logging
+from logging.handlers import RotatingFileHandler
+from pathlib import Path
 
 # Suppress TensorFlow informational logs and oneDNN warnings
 os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
+
+
+def setup_logging():
+    """Sets up global logging with console and rotating file handlers."""
+    log_dir = Path("out")
+    log_dir.mkdir(exist_ok=True)
+    log_file = log_dir / "app.log"
+
+    logger = logging.getLogger()
+    logger.setLevel(logging.INFO)
+
+    # Console Handler
+    c_handler = logging.StreamHandler()
+    c_handler.setFormatter(logging.Formatter("%(levelname)s: %(message)s"))
+    logger.addHandler(c_handler)
+
+    # File Handler (Rotating)
+    f_handler = RotatingFileHandler(log_file, maxBytes=5 * 1024 * 1024, backupCount=2)
+    f_handler.setFormatter(
+        logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    )
+    logger.addHandler(f_handler)
 
 
 def generate_docs():
@@ -17,10 +42,10 @@ def generate_docs():
 
     for module_name, script_path in scripts:
         if not os.path.exists(script_path):
-            print(f"Warning: Script not found at {script_path}")
+            logging.warning(f"Script not found at {script_path}")
             continue
 
-        print(f"Executing {module_name}...")
+        logging.info(f"Executing {module_name}...")
         spec = importlib.util.spec_from_file_location(module_name, script_path)
         module = importlib.util.module_from_spec(spec)
         sys.modules[module_name] = module
@@ -30,13 +55,17 @@ def generate_docs():
 
 
 def main():
-    config_path = "config.yaml"
-    if not os.path.exists(config_path):
-        print(f"Error: Config file not found at {config_path}")
+    setup_logging()
+    config_path = Path("config.yaml")
+    if not config_path.exists():
+        logging.error(f"Config file not found at {config_path}")
         sys.exit(1)
 
     with open(config_path, "r") as f:
         config = yaml.safe_load(f)
+
+    validate_config(config)
+    sanitize_paths(config)
 
     defaults = config.get("defaults", {})
 
@@ -131,7 +160,16 @@ def main():
         help="Extract frames from personal videos for the positive class",
     )
     parser_extract.add_argument(
-        "video_path", type=str, help="Path to the source video file"
+        "video_path",
+        type=str,
+        nargs="?",
+        help="Path to the source video file (optional if --config is used)"
+    )
+    parser_extract.add_argument(
+        "--config",
+        type=str,
+        default=None,
+        help="Path to a JSON batch extraction configuration file"
     )
     parser_extract.add_argument(
         "--output_dir",
@@ -163,7 +201,9 @@ def main():
     parser_visualize.add_argument(
         "--model",
         type=str,
-        default=config.get("model", {}).get("output_path", "vendor/models/miro_detector.keras"),
+        default=config.get("model", {}).get(
+            "output_path", "vendor/models/miro_detector.keras"
+        ),
         help="Path to the trained model file",
     )
     parser_visualize.add_argument(
@@ -192,6 +232,10 @@ def main():
 
     args = parser.parse_args()
 
+    # Use resolve() for directories if they exist
+    if hasattr(args, "output_dir") and args.output_dir:
+        args.output_dir = str(Path(args.output_dir).resolve())
+
     if args.command == "setup":
         from vendor.setup_models import download_models
         download_models()
@@ -217,12 +261,69 @@ def main():
     elif args.command == "extract":
         from vendor.utils.video_extractor import extract_frames
         batch_mode = getattr(args, "batch", False)
-        extract_frames(args.video_path, args.output_dir, args.frame_rate, batch_mode)
+        if args.config:
+            extract_frames(
+                config_path=args.config,
+                output_dir=args.output_dir,
+                frame_rate=args.frame_rate,
+                batch=batch_mode
+            )
+        elif args.video_path:
+            extract_frames(
+                video_path=args.video_path,
+                output_dir=args.output_dir,
+                frame_rate=args.frame_rate,
+                batch=batch_mode
+            )
+        else:
+            print("Error: Either video_path or --config must be provided.")
+            sys.exit(1)
     elif args.command == "docs":
         generate_docs()
     elif args.command == "visualize":
         from vendor.utils.generate_activation_max import generate_activation_image
         generate_activation_image(args.model, args.output_dir, args.iterations, args.lr)
+
+
+def validate_config(config):
+    """Basic validation for critical configuration keys."""
+    required_keys = [
+        ("model.output_path", str),
+        ("model.img_size", int),
+        ("data.dataset_csv", str)
+    ]
+
+    for key_path, expected_type in required_keys:
+        keys = key_path.split('.')
+        val = config
+        for k in keys:
+            if isinstance(val, dict) and k in val:
+                val = val[k]
+            else:
+                logging.error(f"Missing critical config key: {key_path}")
+                sys.exit(1)
+
+        if not isinstance(val, expected_type):
+            logging.error(f"Config key {key_path} must be of type {expected_type.__name__}")
+            sys.exit(1)
+
+
+def sanitize_paths(config):
+    """Recursively wraps string paths in Path objects where appropriate."""
+    path_keys = ["output_path", "dataset_csv", "output_dir", "video_path"]
+
+    def _walk(d):
+        if isinstance(d, dict):
+            for k, v in d.items():
+                if k in path_keys and isinstance(v, str):
+                    d[k] = Path(v)
+                else:
+                    _walk(v)
+        elif isinstance(d, list):
+            for i in range(len(d)):
+                _walk(d[i])
+
+    _walk(config)
 
 
 if __name__ == "__main__":
