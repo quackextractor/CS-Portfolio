@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.17.0] - 2026-03-10
+### Added
+- New `status` command to display dataset statistics, including frame counts, storage size in MB, and percentage differences between raw and processed data.
+- Automated grouping of positive frames by their video source video with individual subtotals.
+- Unit tests for the status calculation logic and filename parsing.
+
 ## [1.16.0] - 2026-03-10
 ### Added
 - Integrated `tqdm` progress bars into `build`, `extract`, and `scrape` commands for real-time processing feedback.

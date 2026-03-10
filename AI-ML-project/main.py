@@ -225,6 +225,12 @@ def main():
         help="Learning rate for gradient ascent",
     )
 
+    # Command: status
+    subparsers.add_parser(
+        "status",
+        help="Show dataset statistics (counts and sizes)",
+    )
+
     # Check if no arguments were passed, print help and exit
     if len(sys.argv) == 1:
         parser.print_help(sys.stderr)
@@ -283,6 +289,9 @@ def main():
     elif args.command == "visualize":
         from vendor.utils.generate_activation_max import generate_activation_image
         generate_activation_image(args.model, args.output_dir, args.iterations, args.lr)
+    elif args.command == "status":
+        from src.dataset_status import print_status
+        print_status(config)
 
 
 def validate_config(config):

@@ -1,5 +1,5 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Version](https://img.shields.io/badge/version-1.15.0-blue.svg)](https://github.com/quackextractor/CS-Portfolio)
+[![Version](https://img.shields.io/badge/version-1.17.0-blue.svg)](https://github.com/quackextractor/CS-Portfolio)
 
 # Miro Face Detector
 
@@ -51,6 +51,7 @@ The project is operated entirely through a unified CLI managed by `main.py`. Onc
 * `python main.py build`: Clean, crop, and normalize raw images to build the dataset CSV.
 * `python main.py run`: Launch the live webcam face detection application. Supports `LIVE_STREAM` and `VIDEO` modes for high-performance processing.
 * `python main.py visualize`: Generate an activation maximization image (model vision).
+* `python main.py status`: Show dataset statistics (counts, MB, and video subtotals).
 * `python main.py docs`: Generate the LaTeX documentation PDF (includes automated CNN architecture diagrams).
 
 ## Logging and Troubleshooting
