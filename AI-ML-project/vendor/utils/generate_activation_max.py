@@ -6,13 +6,13 @@ import math
 
 def run_gradient_ascent(target_model, initial_img, base_size, iterations, learning_rate, octaves, octave_scale, loss_mode="output", filter_idx=None):
     img = initial_img
-    current_size = img.shape[1]
-
+    
     for octave in range(octaves):
         img = tf.Variable(img)
         for i in range(iterations):
-            shift_x = tf.random.uniform(shape=[], minval=-4, maxval=5, dtype=tf.int32)
-            shift_y = tf.random.uniform(shape=[], minval=-4, maxval=5, dtype=tf.int32)
+            # Stochastic jitter to prevent the model from focusing on specific pixel locations
+            shift_x = tf.random.uniform(shape=[], minval=-8, maxval=9, dtype=tf.int32)
+            shift_y = tf.random.uniform(shape=[], minval=-8, maxval=9, dtype=tf.int32)
             img_shifted = tf.roll(tf.roll(img, shift_x, axis=1), shift_y, axis=2)
 
             with tf.GradientTape() as tape:
@@ -24,26 +24,35 @@ def run_gradient_ascent(target_model, initial_img, base_size, iterations, learni
                     p = tf.clip_by_value(outputs[0, 0], 1e-7, 1.0 - 1e-7)
                     logit_confidence = tf.math.log(p / (1.0 - p))
                     tv_loss = tf.image.total_variation(img_shifted)
-                    loss = logit_confidence - (0.008 * tv_loss[0])
+                    loss = logit_confidence - (0.01 * tv_loss[0]) # Adjusted weight
                 else:
-                    loss = tf.reduce_mean(outputs[0, :, :, filter_idx])
+                    # Filter visualization: Maximize mean activation + penalize noise
+                    filter_activation = tf.reduce_mean(outputs[0, :, :, filter_idx])
+                    tv_loss = tf.image.total_variation(img_shifted)
+                    loss = filter_activation - (0.005 * tv_loss[0])
 
             gradients = tape.gradient(loss, img_shifted)
-            std_grad = tf.math.reduce_std(gradients)
-            gradients = tf.cond(std_grad > 0, lambda: gradients / (std_grad + 1e-8), lambda: gradients)
+            # Normalize gradients
+            gradients /= (tf.math.reduce_std(gradients) + 1e-8)
+            
+            # Undo jitter
             gradients = tf.roll(tf.roll(gradients, -shift_x, axis=1), -shift_y, axis=2)
             
             img.assign_add(gradients * learning_rate)
             img.assign(tf.clip_by_value(img, 0.0, 1.0))
 
-            if (i + 1) % 50 == 0:
+            # Apply gentle smoothing more frequently to suppress high-frequency noise
+            if (i + 1) % 5 == 0:
                 numpy_img = img.numpy()[0]
-                blurred_img = cv2.GaussianBlur(numpy_img, (3, 3), 0.5).astype(np.float32)
+                # Very light blur
+                blurred_img = cv2.GaussianBlur(numpy_img, (0, 0), 0.3).astype(np.float32)
                 img.assign(tf.expand_dims(blurred_img, axis=0))
 
         if octave < octaves - 1:
-            current_size = int(current_size * octave_scale)
-            img = tf.image.resize(img.numpy(), (current_size, current_size))
+            # Upscale for the next octave
+            new_size = int(img.shape[1] * octave_scale)
+            img = tf.image.resize(img.numpy(), (new_size, new_size))
+            img = tf.Variable(img)
             
     return tf.image.resize(img, (base_size, base_size))
 
