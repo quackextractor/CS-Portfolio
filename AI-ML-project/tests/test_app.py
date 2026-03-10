@@ -29,20 +29,25 @@ def test_load_app_config(dummy_app_config):
     assert config["camera"]["index"] == 2
 
 
-@patch("src.app.os.path.exists")
 @patch("src.app.load_config")
-def test_main_missing_model_graceful_exit(mock_load_config, mock_exists, capsys):
-    # Test that gracefully exits if model doesn't exist
-    mock_load_config.return_value = {
-        "model": {"output_path": "fake/path.keras", "img_size": 128, "threshold": 0.5},
-        "camera": {"index": 0},
+@patch("src.app.cv2.VideoCapture")
+@patch("src.app._build_face_detector")
+def test_main_missing_model_graceful_exit(mock_build, mock_cap, mock_load, caplog):
+    # Mock config
+    mock_load.return_value = {
+        "model": {"output_path": "fake/path.keras", "img_size": 128},
+        "camera": {"index": 0}
     }
-    mock_exists.return_value = False
+    # Mock cap setup
+    mock_cap.return_value.isOpened.return_value = True
 
-    main()
+    # Run main
+    from src.app import main
+    with caplog.at_level("ERROR"):
+        main()
 
-    captured = capsys.readouterr()
-    assert "Error: Model file not found at fake/path.keras" in captured.out
+    # Assert that the error was logged
+    assert "Model file not found at fake/path.keras" in caplog.text
 
 
 @patch("src.app.cv2.VideoCapture")

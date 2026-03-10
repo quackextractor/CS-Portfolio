@@ -1,0 +1,26 @@
+[
+  {
+    "video_path": "C://Github//portfolio-root//CS-Portfolio//AI-ML-project//data//raw//fine//veletrh_2024_edit.mp4",
+    "frame_rate": 2,
+    "segments": [
+      {
+        "start": "00:00:05",
+        "end": "00:00:15"
+      },
+      {
+        "start": "00:01:00",
+        "end": 75
+      }
+    ]
+  },
+  {
+    "video_path": "data/videos/video2.mkv",
+    "frame_rate": 1,
+    "segments": [
+      {
+        "start": 10,
+        "end": 20
+      }
+    ]
+  }
+]

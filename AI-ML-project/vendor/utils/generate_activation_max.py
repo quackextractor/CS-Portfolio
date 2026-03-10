@@ -7,12 +7,12 @@ from tqdm import tqdm
 
 def run_gradient_ascent(target_model, initial_img, base_size, iterations, learning_rate, octaves, octave_scale, loss_mode="output", filter_idx=None):
     img = initial_img
-    
+
     # Progress bar for Octaves
     octave_pbar = tqdm(range(octaves), desc=f"  Octaves", leave=False)
     for octave in octave_pbar:
         img = tf.Variable(img)
-        
+
         # Progress bar for Iterations
         iter_pbar = tqdm(range(iterations), desc=f"    Scaling {img.shape[1]}x{img.shape[2]}", leave=False)
         for i in iter_pbar:
@@ -23,20 +23,20 @@ def run_gradient_ascent(target_model, initial_img, base_size, iterations, learni
             with tf.GradientTape() as tape:
                 tape.watch(img_shifted)
                 img_resized = tf.image.resize(img_shifted, (base_size, base_size))
-                
+
                 # training=False is required to use frozen BatchNormalization stats
                 outputs = target_model(img_resized, training=False)
-                
+
                 if loss_mode == "output":
                     # Maximize raw logit score to avoid sigmoid saturation
                     loss = tf.reduce_mean(outputs)
                 else:
                     loss = tf.reduce_mean(outputs[0, :, :, filter_idx])
-                
+
                 loss -= 1e-3 * tf.reduce_sum(tf.square(img_shifted))
 
             gradients = tape.gradient(loss, img_shifted)
-            
+
             # Blur gradients to suppress high-frequency noise
             gradients_np = gradients.numpy()[0]
             sigma = max(0.5, 1.5 * (1 - i / iterations))
@@ -45,7 +45,7 @@ def run_gradient_ascent(target_model, initial_img, base_size, iterations, learni
 
             grad_norm = tf.math.sqrt(tf.reduce_mean(tf.square(gradients))) + 1e-8
             gradients /= grad_norm
-            
+
             gradients = tf.roll(tf.roll(gradients, -shift_x, axis=1), -shift_y, axis=2)
             img.assign_add(gradients * learning_rate)
             img.assign(tf.clip_by_value(img, 0.0, 1.0))
@@ -54,7 +54,7 @@ def run_gradient_ascent(target_model, initial_img, base_size, iterations, learni
             new_size = int(img.shape[1] * octave_scale)
             img = tf.image.resize(img.numpy(), (new_size, new_size))
             img = tf.Variable(img)
-            
+
     return tf.image.resize(img, (base_size, base_size))
 
 def get_inference_submodel(model, target="output"):
@@ -62,7 +62,7 @@ def get_inference_submodel(model, target="output"):
     # Find the index of the first Conv2D layer to skip RandomFlip/Rotation/Zoom
     first_conv_idx = next(i for i, l in enumerate(model.layers) if isinstance(l, tf.keras.layers.Conv2D))
     input_layer = tf.keras.layers.Input(shape=model.input_shape[1:])
-    
+
     x = input_layer
     for i in range(first_conv_idx, len(model.layers)):
         layer = model.layers[i]
@@ -75,7 +75,7 @@ def get_inference_submodel(model, target="output"):
         x = layer(x)
         if target == "conv" and isinstance(layer, tf.keras.layers.Conv2D):
             last_conv_output = x
-            
+
     return tf.keras.Model(inputs=input_layer, outputs=last_conv_output if target == "conv" else x)
 
 def generate_output_maximization(model, output_dir, base_size, iterations, learning_rate):
@@ -92,7 +92,7 @@ def generate_filter_grid(model, output_dir, base_size, iterations, learning_rate
     total_filters = feature_extractor.output.shape[-1]
     filter_indices = np.linspace(0, total_filters - 1, filters_to_visualize, dtype=int)
     grid_images = []
-    
+
     for idx, filter_idx in enumerate(filter_indices):
         print(f"  Visualizing Filter {filter_idx} ({idx+1}/{filters_to_visualize})")
         initial_img = tf.random.uniform((1, int(base_size / 2), int(base_size / 2), 3), minval=0.4, maxval=0.6)
