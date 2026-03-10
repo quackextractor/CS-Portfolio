@@ -2,6 +2,7 @@ import os
 import requests
 import argparse
 import logging
+from tqdm import tqdm
 from dotenv import load_dotenv
 from typing import List, Union
 
@@ -29,6 +30,8 @@ def download_pexels_images(
 
     headers = {"Authorization": api_key}
     total_new_downloads = 0
+
+    pbar = tqdm(total=total_images, desc="  Downloading images", leave=False)
 
     for query in queries:
         logging.info(f"Processing query: '{query}' (Target: {target_per_query})")
@@ -70,8 +73,7 @@ def download_pexels_images(
                             f.write(img_data)
                         query_collected += 1
                         total_new_downloads += 1
-                        if total_new_downloads % 20 == 0:
-                            logging.info(f"Downloaded {total_new_downloads} images so far...")
+                        pbar.update(1)
                     except Exception as e:
                         logging.warning(f"Failed to download photo {photo['id']}: {e}")
 
@@ -80,6 +82,7 @@ def download_pexels_images(
                 logging.error(f"Request error for query '{query}': {e}")
                 break
 
+    pbar.close()
     logging.info(f"Finished. Total new images downloaded: {total_new_downloads}")
 
 

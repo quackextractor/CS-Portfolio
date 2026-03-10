@@ -2,6 +2,7 @@ import cv2
 import os
 import argparse
 import json
+from tqdm import tqdm
 from pathlib import Path
 from typing import Optional, List, Dict, Union
 
@@ -101,6 +102,10 @@ def extract_frames(
             # Seek to start
             cap.set(cv2.CAP_PROP_POS_MSEC, start_sec * 1000)
 
+            # Estimate steps for the segment
+            seg_frames = int((end_sec - start_sec) * fps)
+            pbar = tqdm(total=seg_frames, desc=f"  Extracting {video_name}", leave=False)
+
             current_frame_idx = 0
             while True:
                 ret, frame = cap.read()
@@ -119,6 +124,8 @@ def extract_frames(
                     saved_count += 1
 
                 current_frame_idx += 1
+                pbar.update(1)
+            pbar.close()
 
         cap.release()
         print(f"Extracted {saved_count} frames from {video_name} into {output_dir}")

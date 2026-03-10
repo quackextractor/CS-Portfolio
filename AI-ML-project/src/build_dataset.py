@@ -4,6 +4,7 @@ import yaml
 import glob
 import pandas as pd
 import argparse
+from tqdm import tqdm
 from sklearn.model_selection import train_test_split
 
 
@@ -93,11 +94,13 @@ def process_images(
     processed_count = 0
     discarded_count = 0
 
-    for img_path in image_paths:
+    pbar = tqdm(image_paths, desc=f"  Label {label}", leave=False)
+    for img_path in pbar:
         img_bgr = cv2.imread(img_path)
         if img_bgr is None:
             discarded_count += 1
-            print(f"Failed to read image: {img_path}")
+            # logging.warning or print is fine, but avoid cluttering tqdm
+            # print(f"Failed to read image: {img_path}")
             continue
 
         # Tasks API requires an mp.Image in RGB format
