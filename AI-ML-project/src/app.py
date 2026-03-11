@@ -241,7 +241,15 @@ def main(
                 ret, frame = cap.read()
 
             if not ret:
-                break
+                if video_path:
+                    # End of video reached: pause and step back one frame
+                    paused = True
+                    current_pos = cap.get(cv2.CAP_PROP_POS_FRAMES)
+                    cap.set(cv2.CAP_PROP_POS_FRAMES, max(0, current_pos - 1))
+                    force_read = True
+                    continue
+                else:
+                    break
 
             force_read = False
             if mirrored:
