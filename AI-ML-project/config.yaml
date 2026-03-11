@@ -7,7 +7,7 @@ data:
   random_seed: 42
 model:
   output_path: "vendor/models/target_detector.keras"
-  face_detector_model_path: "vendor/models/blaze_face_full_range.task"
+  face_detector_model_path: "vendor/models/blaze_face_short_range.tflite"
   img_size: 128
   threshold: 0.65
 camera:
@@ -31,6 +31,6 @@ defaults:
     output_dir: "data/processed"
 models:
   downloads:
-    - description: "BlazeFace full-range face detector (MediaPipe Tasks)"
-      url: "https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_full_range/float16/latest/blaze_face_full_range.tflite"
-      dest: "vendor/models/blaze_face_full_range.task"
+    - description: "BlazeFace short-range face detector (MediaPipe Tasks)"
+      url: "https://github.com/google/mediapipe/raw/master/mediapipe/modules/face_detection/face_detection_full_range.tflite"
+      dest: "vendor/models/blaze_face_short_range.tflite"

@@ -24,14 +24,10 @@ def get_grad_model(model, last_conv_layer_name=None):
     if last_conv_layer_name is None:
         return None
 
-    # Ensure the model is built and output properties are defined.
-    # Sequential models may require a call before .output is accessible.
-    if not model.built:
-        dummy_input = tf.zeros((1, *model.input_shape[1:]))
-        model(dummy_input)
-
+    # Use layer references to avoid Sequential API missing attribute errors
     return tf.keras.Model(
-        model.inputs, [model.get_layer(last_conv_layer_name).output, model.output]
+        inputs=model.layers[0].input, 
+        outputs=[model.get_layer(last_conv_layer_name).output, model.layers[-1].output]
     )
 
 
