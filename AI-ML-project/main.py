@@ -71,7 +71,7 @@ def main():
 
     parser = argparse.ArgumentParser(
         description=(
-            "Miro Face Detector - Unified CLI Tool\n\n"
+            "Target Face Detector - Unified CLI Tool\n\n"
             "Typical first-time setup:\n"
             "  python main.py setup   # download required model files\n"
             "  python main.py build   # process raw images into dataset CSV\n"
@@ -202,7 +202,7 @@ def main():
         "--model",
         type=str,
         default=config.get("model", {}).get(
-            "output_path", "vendor/models/miro_detector.keras"
+            "output_path", "vendor/models/target_detector.keras"
         ),
         help="Path to the trained model file",
     )

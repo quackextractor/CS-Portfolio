@@ -2,7 +2,7 @@
 setlocal
 
 echo ============================================
-echo  Miro Face Detector - Environment Setup
+echo  Target Face Detector - Environment Setup
 echo ============================================
 echo.
 

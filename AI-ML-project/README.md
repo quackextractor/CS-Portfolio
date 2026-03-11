@@ -1,9 +1,9 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Version](https://img.shields.io/badge/version-1.17.0-blue.svg)](https://github.com/quackextractor/CS-Portfolio)
+[![Version](https://img.shields.io/badge/version-1.18.0-blue.svg)](https://github.com/quackextractor/CS-Portfolio)
 
-# Miro Face Detector
+# Target Face Detector
 
-This repository contains the source code, data pipeline, and documentation generator for the Miro Face Detector. This is a custom machine learning computer vision application capable of detecting a specific person in a live camera feed and distinguishing them from other individuals.
+This repository contains the source code, data pipeline, and documentation generator for the Target Face Detector. This is a custom machine learning computer vision application capable of detecting a specific target person in a live camera feed and distinguishing them from other individuals.
 
 ## Prerequisites
 
@@ -71,7 +71,7 @@ You can visualize what the model "sees" by running the activation maximization s
 ```bash
 python main.py visualize
 ```
-This will generate images representing the features the model looks for:
+This will generate images representing the features the model looks for (e.g., the 'Target' class):
 
 | Class Prototype | Filter Grid |
 | :---: | :---: |

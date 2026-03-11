@@ -36,7 +36,7 @@ def generate_latex_content():
 
     \vspace{8cm}
 
-    {\Large \textbf{Miro Face Detector}} \\
+    {\Large \textbf{Target Face Detector}} \\
     \vspace{0.5cm}
     {\Large User Manual} \\
 
@@ -55,7 +55,7 @@ def generate_latex_content():
 
 \section{Introduction}
 
-This manual provides a comprehensive, step-by-step guide to operating the Miro Face Detector. It covers the entire pipeline, from recording your initial training data to running the real-time webcam inference application.
+This manual provides a comprehensive, step-by-step guide to operating the Target Face Detector. It covers the entire pipeline, from recording your initial training data to running the real-time webcam inference application.
 
 \section{Step 1: Environment Setup}
 

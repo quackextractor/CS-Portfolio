@@ -2,7 +2,7 @@
 **Informační technologie**
 Střední průmyslová škola elektrotechnická, Praha 2, Ječná 30
 
-# Miro Face Detector
+# Target Face Detector
 
 ## Rozpoznávání obličeje
 
@@ -14,7 +14,7 @@ Informační technologie
 
 # 1 Project Overview
 
-**Goal:** Develop a custom machine learning computer vision application capable of detecting a specific person (Miro) in a live camera feed and distinguishing them from other individuals.
+**Goal:** Develop a custom machine learning computer vision application capable of detecting a specific target person in a live camera feed and distinguishing them from other individuals.
 
 **Scope:** The project strictly focuses on creating a proprietary dataset from scratch to train a binary classification model. The software includes a final user facing application that utilizes the trained model for real time inference.
 
@@ -35,7 +35,7 @@ A CNN built with TensorFlow and Keras is utilized. CNNs are specifically designe
 * **Convolutional Layer:** This layer applies sliding filters over the 128x128 input images. It acts like a scanner looking for specific patterns, starting with basic edges and progressing to complex facial structures, creating feature maps.
 * **Pooling Layer (Max Pooling):** Following a convolution, this layer downsamples the feature maps. It reduces the spatial dimensions while keeping the most important features, which makes the model run more efficiently and helps prevent overfitting.
 * **Flatten Layer:** This layer takes the 2D feature maps created by the convolutional layers and unrolls them into a single 1D vector so the data can be read by a standard neural network.
-* **Dense (Fully Connected) Layer:** This is the final classification stage. It takes the unrolled spatial features and calculates the final prediction to determine if the face is Miro (1) or Random (0).
+* **Dense (Fully Connected) Layer:** This is the final classification stage. It takes the unrolled spatial features and calculates the final prediction to determine if the face is Target (1) or Random (0).
 
 # 3 Architecture and Pipeline
 
@@ -45,7 +45,7 @@ The architecture is divided into a data generation pipeline, a cloud based train
 
 To ensure the final cleaned dataset meets the strict requirement of at least 1500 records, the collection scripts oversample data.
 
-* **Positive Class (Miro):** A custom script captures frames from multiple videos of the target under varying lighting conditions, generating 1438 initial images saved to the raw data directory. The original unmodified video files are preserved as verifiable proof of non-simulated real data collection.
+* **Positive Class (Target):** A custom script captures frames from multiple videos of the target under varying lighting conditions, generating 1438 initial images saved to the raw data directory. The original unmodified video files are preserved as verifiable proof of non-simulated real data collection.
 * **Negative Class (Random):** A script queries the Pexels API for portrait photos and downloads 1200 images into the raw data directory.
 
 ## 3.2 Phase 2: Preprocessing and Attribute Extraction
@@ -62,7 +62,7 @@ The processed `data/` directory and the `dataset.csv` file are uploaded to Googl
 
 ## 3.4 Phase 4: Real World Application (Inference)
 
-The final software is a Python script executable via the command line on the school PC. It can access the host computer webcam using OpenCV, or process a pre-recorded video file provided by the user via the `--video` flag. It continuously extracts faces from the video stream and passes the cropped faces to the trained CNN. The application draws a bounding box on the live video feed, labeling the face as either "Miro" or "Unknown". The exact confidence threshold for positive classification is customizable via `config.yaml` to ensure adaptability in diverse lighting environments. The user safely terminates the camera feed by pressing the "q" key. When watching a pre-recorded video, the user can also press the Spacebar to pause/resume or use "a" and "d" to skip back and forth.
+The final software is a Python script executable via the command line on the school PC. It can access the host computer webcam using OpenCV, or process a pre-recorded video file provided by the user via the `--video` flag. It continuously extracts faces from the video stream and passes the cropped faces to the trained CNN. The application draws a bounding box on the live video feed, labeling the face as either "Target" or "Unknown". The exact confidence threshold for positive classification is customizable via `config.yaml` to ensure adaptability in diverse lighting environments. The user safely terminates the camera feed by pressing the "q" key. When watching a pre-recorded video, the user can also press the Spacebar to pause/resume or use "a" and "d" to skip back and forth.
 
 # 4 Maintainability and Quality Assurance
 
@@ -121,7 +121,7 @@ To strictly adhere to code authorship requirements, the repository is structured
 * `model_training.ipynb`: The Jupyter Notebook executed in Google Colab documenting the CNN creation, training, and evaluation.
 
 5. `models/`
-* `miro_detector.keras`: The exported weights of the trained neural network.
+* `target_detector.keras`: The exported weights of the trained neural network.
 
 **Deployment and Execution Instructions:**
 To deploy the application on the target school computer without an IDE, the user must connect an external webcam and execute the following steps in the command line:

@@ -209,7 +209,7 @@ def main(
         face_detector.close()
         return
 
-    window_name = "Miro Face Detector"
+    window_name = "Target Face Detector"
     cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
 
     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT)) if video_path else 0
@@ -276,9 +276,9 @@ def main(
                         input_face = np.expand_dims(rgb_face / 255.0, axis=0)
 
                         prediction = model.predict(input_face, verbose=0)[0][0]
-                        is_miro = prediction >= threshold
-                        label = f"{'Miro' if is_miro else 'Unknown'} ({prediction:.2f})"
-                        color = (0, 255, 0) if is_miro else (0, 0, 255)
+                        is_target = prediction >= threshold
+                        label = f"{'Target' if is_target else 'Unknown'} ({prediction:.2f})"
+                        color = (0, 255, 0) if is_target else (0, 0, 255)
 
                         if gradcam_active:
                             heatmap = make_gradcam_heatmap(input_face, model)

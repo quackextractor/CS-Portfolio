@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.18.0] - 2026-03-11
+### Changed
+- Renamed project focus from "Miro" to "Target" across configuration, source code, notebooks, and documentation.
+- Renamed model files: `miro_detector.keras` -> `target_detector.keras`, `miro_detector-old.keras` -> `target_detector-old.keras`.
+- Renamed visualization assets: `miro_activation_maximization.png` -> `target_activation_maximization.png`, `miro_filter_grid.png` -> `target_filter_grid.png`.
+
 ## [1.17.0] - 2026-03-10
 ### Added
 - New `status` command to display dataset statistics, including frame counts, storage size in MB, and percentage differences between raw and processed data.
@@ -88,7 +94,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.12.0] - 2026-03-09
 ### Added
-- New `visualize` command that performs activation maximization to generate an image representing what features the model is looking for in a face (e.g., the 'Miro' class).
+- New `visualize` command that performs activation maximization to generate an image representing what features the model is looking for in a face (e.g., the 'Target' class).
 - Integrated `vendor/utils/generate_activation_max.py` to handle gradient ascent on random noise images to maximize model activation.
 
 ## [1.11.3] - 2026-03-09

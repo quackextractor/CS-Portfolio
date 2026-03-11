@@ -84,7 +84,7 @@ def generate_output_maximization(model, output_dir, base_size, iterations, learn
     initial_img = tf.random.uniform((1, int(base_size / 2), int(base_size / 2), 3), minval=0.48, maxval=0.52)
     img_final = run_gradient_ascent(activation_model, initial_img, base_size, iterations, learning_rate, octaves=3, octave_scale=1.4, loss_mode="output")
     final_img_np = (img_final.numpy()[0] * 255).astype(np.uint8)
-    cv2.imwrite(os.path.join(output_dir, "miro_activation_maximization.png"), cv2.cvtColor(final_img_np, cv2.COLOR_RGB2BGR))
+    cv2.imwrite(os.path.join(output_dir, "target_activation_maximization.png"), cv2.cvtColor(final_img_np, cv2.COLOR_RGB2BGR))
 
 def generate_filter_grid(model, output_dir, base_size, iterations, learning_rate, filters_to_visualize=4):
     print(f"\n[2/2] Generating {filters_to_visualize} Conv Filters...")
@@ -105,7 +105,7 @@ def generate_filter_grid(model, output_dir, base_size, iterations, learning_rate
     grid_cols = math.ceil(math.sqrt(filters_to_visualize))
     grid_rows = math.ceil(filters_to_visualize / grid_cols)
     rows = [np.hstack(grid_images[r*grid_cols : (r+1)*grid_cols]) for r in range(grid_rows)]
-    cv2.imwrite(os.path.join(output_dir, "miro_filter_grid.png"), np.vstack(rows))
+    cv2.imwrite(os.path.join(output_dir, "target_filter_grid.png"), np.vstack(rows))
 
 def generate_activation_image(model_path, output_dir, iterations=150, learning_rate=0.05):
     if not os.path.exists(model_path):

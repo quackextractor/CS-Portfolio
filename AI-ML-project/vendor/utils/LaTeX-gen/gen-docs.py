@@ -20,7 +20,7 @@ def generate_graphs():
     os.makedirs(OUT_DIR, exist_ok=True)
 
     # 1. Dataset Distribution Graph
-    labels = ['Miro (Positive)', 'Random (Negative)']
+    labels = ['Target (Positive)', 'Random (Negative)']
     counts = [1438, 879]
 
     plt.figure(figsize=(6, 4))
@@ -130,7 +130,7 @@ def generate_latex_content():
 
     \vspace{8cm}
 
-    {\Large \textbf{Miro Face Detector}} \\
+    {\Large \textbf{Target Face Detector}} \\
     \vspace{0.5cm}
     Rozpoznávání obličeje \\
 
@@ -148,7 +148,7 @@ def generate_latex_content():
 \newpage
 
 \section{Project Overview}
-\textbf{Goal:} Develop a custom machine learning computer vision application capable of detecting a specific person (Miro) in a live camera feed and distinguishing them from other individuals.
+\textbf{Goal:} Develop a custom machine learning computer vision application capable of detecting a specific person (Target) in a live camera feed and distinguishing them from other individuals.
 
 \textbf{Scope:} The project strictly focuses on creating a proprietary dataset from scratch to train a binary classification model. The software includes a final user facing application that utilizes the trained model for real time inference.
 
@@ -174,10 +174,10 @@ To demonstrate a clear understanding of the model architecture, the following ou
 \subsection{Model Explainability: Grad-CAM}
 To ensure transparency in the model's decision-making process, the application implements Gradient-weighted Class Activation Mapping (Grad-CAM). This technique uses the gradients of any target concept, flowing into the final convolutional layer to produce a coarse localization map highlighting the important regions in the image for predicting the concept.
 
-In this project, Grad-CAM allows the user to see exactly which facial features (e.g., eyes, nose, jawline) the CNN is using to identify "Miro", providing a layer of interpretability often missing in "black-box" neural networks.
+In this project, Grad-CAM allows the user to see exactly which facial features (e.g., eyes, nose, jawline) the CNN is using to identify "Target", providing a layer of interpretability often missing in "black-box" neural networks.
 
 \subsection{Model Vision: Activation Maximization}
-Beyond localizing features in specific images, the project utilizes Activation Maximization to synthesize images that represent the "ideal" input for specific neurons or classes. By performing gradient ascent on a noise image, we can visualize the specific patterns and textures the model has learned to associate with the "Miro" class.
+Beyond localizing features in specific images, the project utilizes Activation Maximization to synthesize images that represent the "ideal" input for specific neurons or classes. By performing gradient ascent on a noise image, we can visualize the specific patterns and textures the model has learned to associate with the "Target" class.
 
 Furthermore, the tool allows for visualizing individual convolutional filters, revealing the hierarchy of features from simple edges in early layers to complex facial structures in deeper layers.
 
@@ -197,7 +197,7 @@ The architecture is divided into a data generation pipeline, a cloud based train
 \subsection{Phase 1: Data Collection}
 To ensure the final cleaned dataset meets the strict requirement of at least 1500 records, the collection scripts oversample data.
 \begin{itemize}
-    \item \textbf{Positive Class (Miro):} A custom script captures frames from multiple videos of the target under varying lighting conditions, generating 1438 initial images saved to the raw data directory. The original unmodified video files are preserved as verifiable proof of non-simulated real data collection.
+    \item \textbf{Positive Class (Target):} A custom script captures frames from multiple videos of the target under varying lighting conditions, generating 1438 initial images saved to the raw data directory. The original unmodified video files are preserved as verifiable proof of non-simulated real data collection.
     \item \textbf{Negative Class (Random):} A script queries the Pexels API for portrait photos and downloads 1200 images into the raw data directory.
 \end{itemize}
 
@@ -264,12 +264,12 @@ Figure 2 illustrates the training and validation accuracy over time.
 \end{figure}
 
 \subsection{Activation Maximization and Filter Grids}
-Figure 3 displays the result of maximizing the output for the "Miro" class, representing the model's internal prototype of the target face. Figure 4 shows a grid of various filters from the final convolutional layer, illustrating the diversity of features the model detects.
+Figure 3 displays the result of maximizing the output for the "Target" class, representing the model's internal prototype of the target face. Figure 4 shows a grid of various filters from the final convolutional layer, illustrating the diversity of features the model detects.
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.5\textwidth]{../activation_maximization.png}
-    \caption{Synthesized image maximizing model activation for the Miro class.}
+    \caption{Synthesized image maximizing model activation for the Target class.}
 \end{figure}
 
 \begin{figure}[H]

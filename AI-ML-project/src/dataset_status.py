@@ -10,6 +10,7 @@ def get_dir_stats(directory):
     total_size = sum(os.path.getsize(f) for f in files) / (1024 * 1024)
     return count, total_size, files
 
+
 def get_video_name(filename):
     """
     Extracts video name from filename.
@@ -25,12 +26,13 @@ def get_video_name(filename):
         return "_".join(parts[:-1])
     return "unknown"
 
+
 def print_status(config):
     """Calculates and prints the dataset status."""
     raw_pos_dir = config["data"]["raw_positive_dir"]
     raw_neg_dir = config["data"]["raw_negative_dir"]
     proc_dir = config["data"]["processed_dir"]
-    
+
     proc_pos_dir = os.path.join(proc_dir, "positive")
     proc_neg_dir = os.path.join(proc_dir, "negative")
 
@@ -43,28 +45,28 @@ def print_status(config):
     proc_neg_count, proc_neg_size, _ = get_dir_stats(proc_neg_dir)
 
     print("\n" + "="*40)
-    print(" MIRO DATASET STATUS REPORT ")
+    print(" TARGET DATASET STATUS REPORT ")
     print("="*40)
 
-    print(f"\nRAW DATA:")
+    print("\nRAW DATA:")
     print(f"  Positive:  {raw_pos_count:>5} frames  ({raw_pos_size:>7.2f} MB)")
     print(f"  Negative:  {raw_neg_count:>5} frames  ({raw_neg_size:>7.2f} MB)")
 
-    print(f"\nPROCESSED DATA:")
+    print("\nPROCESSED DATA:")
     print(f"  Positive:  {proc_pos_count:>5} frames  ({proc_pos_size:>7.2f} MB)")
     print(f"  Negative:  {proc_neg_count:>5} frames  ({proc_neg_size:>7.2f} MB)")
 
     # Calculations
     total_raw = raw_pos_count + raw_neg_count
     total_proc = proc_pos_count + proc_neg_count
-    
+
     if total_raw > 0:
         diff_pct = (total_proc - total_raw) / total_raw * 100
         print(f"\nTotal Diff:  {diff_pct:>+6.1f}% ({total_proc} vs {total_raw})")
 
     # Grouping by Video
     print("\nPOSITIVE FRAMES BY VIDEO (SUBTOTALS):")
-    
+
     def group_by_video(files):
         groups = defaultdict(int)
         for f in files:

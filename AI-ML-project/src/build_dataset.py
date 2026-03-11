@@ -177,7 +177,7 @@ def build_dataset(skip_blurry: bool = True, blur_threshold: float = 10.0) -> Non
     proc_pos_dir = os.path.join(processed_dir, "positive")
     proc_neg_dir = os.path.join(processed_dir, "negative")
 
-    print("Processing positive class (Miro)...")
+    print("Processing positive class (Target)...")
     pos_records = process_images(
         raw_positive_dir,
         proc_pos_dir,
