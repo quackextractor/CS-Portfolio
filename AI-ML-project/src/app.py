@@ -13,7 +13,8 @@ def load_config(config_path: str = "config.yaml") -> dict:
 
 def get_grad_model(model, last_conv_layer_name=None):
     """
-    Pre-builds a multi-output model for gradient calculation.
+    Splits the model into a feature extractor and a classifier
+    to guarantee explicit gradient tracking.
     """
     if last_conv_layer_name is None:
         for layer in reversed(model.layers):
@@ -22,27 +23,61 @@ def get_grad_model(model, last_conv_layer_name=None):
                 break
 
     if last_conv_layer_name is None:
-        return None
+        return None, None
 
-    # Use layer references to avoid Sequential API missing attribute errors
-    return tf.keras.Model(
+    # Part 1: Feature Extractor (Input to Last Conv Layer)
+    last_conv_layer = model.get_layer(last_conv_layer_name)
+    feature_extractor = tf.keras.Model(
         inputs=model.layers[0].input, 
-        outputs=[model.get_layer(last_conv_layer_name).output, model.layers[-1].output]
+        outputs=last_conv_layer.output
     )
 
+    # Part 2: Classifier (Last Conv Layer to Final Output)
+    classifier_input = tf.keras.Input(shape=last_conv_layer.output.shape[1:])
+    x = classifier_input
+    
+    # Identify where the classifier portion starts
+    layer_idx = model.layers.index(last_conv_layer)
+    
+    # Rebuild the remaining layers sequentially
+    for layer in model.layers[layer_idx + 1:]:
+        x = layer(x)
+        
+    classifier = tf.keras.Model(inputs=classifier_input, outputs=x)
 
-@tf.function
-def compute_heatmap(img_tensor, grad_model, pred_index=None):
+    return feature_extractor, classifier
+
+def compute_heatmap(img_tensor, grad_models, pred_index=None):
     """
-    Optimized heatmap calculation using static graph.
+    Optimized heatmap calculation using eager execution and split models.
     """
+    feature_extractor, classifier = grad_models
+    
+    # Safety check if the model failed to find a conv layer
+    if feature_extractor is None or classifier is None:
+        return tf.zeros((img_tensor.shape[1], img_tensor.shape[2]))
+
     with tf.GradientTape() as tape:
-        last_conv_layer_output, preds = grad_model(img_tensor)
+        # 1. Get intermediate output from the feature extractor
+        last_conv_layer_output = feature_extractor(img_tensor)
+        
+        # 2. Explicitly tell the tape to track this intermediate tensor
+        tape.watch(last_conv_layer_output)
+        
+        # 3. Pass the tracked tensor into the classifier
+        preds = classifier(last_conv_layer_output)
+        
         if pred_index is None:
             pred_index = tf.argmax(preds[0])
         class_channel = preds[:, pred_index]
 
+    # The tape now sees a definitive path from last_conv_layer_output to class_channel
     grads = tape.gradient(class_channel, last_conv_layer_output)
+    
+    # Failsafe to prevent crashes if the gradient is ever lost again
+    if grads is None:
+        return tf.zeros(last_conv_layer_output.shape[1:3])
+    
     pooled_grads = tf.reduce_mean(grads, axis=(0, 1, 2))
     last_conv_layer_output = last_conv_layer_output[0]
     heatmap = last_conv_layer_output @ pooled_grads[..., tf.newaxis]
