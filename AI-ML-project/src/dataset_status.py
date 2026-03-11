@@ -1,7 +1,7 @@
 import os
 import glob
-from pathlib import Path
 from collections import defaultdict
+
 
 def get_dir_stats(directory):
     """Calculates count and total size in MB of files in a directory."""

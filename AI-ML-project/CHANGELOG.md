@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.19.0] - 2026-03-11
+### Added
+- Pre-built multi-output gradient model in `src/app.py` for faster Grad-CAM inference.
+- Total Variation (TV) penalty and spatial jitter to activation maximization in `vendor/utils/generate_activation_max.py`.
+- Dataset caching and mixed precision support in `notebooks/model_training.ipynb` for accelerated training.
+
+### Changed
+- Migrated to `blaze_face_full_range.task` for improved face detection on high-resolution screens.
+- Implemented dynamic frame downscaling and coordinate re-mapping in the inference loop to handle 4K/high-res inputs efficiently.
+- Optimized Grad-CAM calculation with `@tf.function` and implemented 1:5 frame skipping/caching mechanism for higher FPS.
+- Enhanced Grad-CAM visibility with peak min-max normalization and non-linear power transformation (gamma 0.6).
+- Refactored activation maximization gradient ascent into specialized `@tf.function` steps for XLA-ready execution.
+- Periodic Gaussian blurring added to visualization cycles in `generate_activation_max.py` to destroy persistent high-frequency static.
+
+### Fixed
+- Resolved "The layer sequential has never been called" error in `src/app.py` by ensuring the model is built before creating the Grad-CAM sub-model.
+
+### Fixed
+- Resolved "The layer sequential has never been called" error in `src/app.py` by ensuring the model is built before creating the Grad-CAM sub-model.
+
 ## [1.18.0] - 2026-03-11
 ### Changed
 - Renamed project focus from "Miro" to "Target" across configuration, source code, notebooks, and documentation.

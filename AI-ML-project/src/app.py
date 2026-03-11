@@ -11,13 +11,10 @@ def load_config(config_path: str = "config.yaml") -> dict:
         return yaml.safe_load(f)
 
 
-def make_gradcam_heatmap(img_array, model, last_conv_layer_name=None, pred_index=None):
+def get_grad_model(model, last_conv_layer_name=None):
     """
-    Computes a Grad-CAM heatmap for a given image and model.
+    Pre-builds a multi-output model for gradient calculation.
     """
-    # Ensure input is a tensor
-    img_tensor = tf.cast(img_array, tf.float32)
-
     if last_conv_layer_name is None:
         for layer in reversed(model.layers):
             if "Conv2D" in layer.__class__.__name__:
@@ -25,49 +22,55 @@ def make_gradcam_heatmap(img_array, model, last_conv_layer_name=None, pred_index
                 break
 
     if last_conv_layer_name is None:
-        return np.zeros((img_array.shape[1], img_array.shape[2]))
+        return None
 
+    # Ensure the model is built and output properties are defined.
+    # Sequential models may require a call before .output is accessible.
+    if not model.built:
+        dummy_input = tf.zeros((1, *model.input_shape[1:]))
+        model(dummy_input)
+
+    return tf.keras.Model(
+        model.inputs, [model.get_layer(last_conv_layer_name).output, model.output]
+    )
+
+
+@tf.function
+def compute_heatmap(img_tensor, grad_model, pred_index=None):
+    """
+    Optimized heatmap calculation using static graph.
+    """
     with tf.GradientTape() as tape:
-        tape.watch(img_tensor)
-        x = img_tensor
-        last_conv_layer_output = None
-        for layer in model.layers:
-            # Skip InputLayer which is not callable and redundant here
-            if "InputLayer" in layer.__class__.__name__:
-                continue
-            x = layer(x)
-            if layer.name == last_conv_layer_name:
-                last_conv_layer_output = x
-
-        preds = x
+        last_conv_layer_output, preds = grad_model(img_tensor)
         if pred_index is None:
             pred_index = tf.argmax(preds[0])
         class_channel = preds[:, pred_index]
 
-    # Safety check if layer was not found or gradients are disconnected
-    if last_conv_layer_output is None:
-        return np.zeros((img_array.shape[1], img_array.shape[2]))
-
-    # This is the gradient of the output neuron (top predicted or chosen)
-    # with regard to the output feature map of the last conv layer
     grads = tape.gradient(class_channel, last_conv_layer_output)
-
-    if grads is None:
-        return np.zeros((img_array.shape[1], img_array.shape[2]))
-
-    # This is a vector where each entry is the mean intensity of the gradient
-    # over a specific feature map channel
     pooled_grads = tf.reduce_mean(grads, axis=(0, 1, 2))
-
-    # We multiply each channel in the feature map array
-    # by "how important this channel is" with regard to the top predicted class
-    # then sum all the channels to obtain the heatmap class activation
     last_conv_layer_output = last_conv_layer_output[0]
     heatmap = last_conv_layer_output @ pooled_grads[..., tf.newaxis]
     heatmap = tf.squeeze(heatmap)
 
-    # For visualization purpose, we will also normalize the heatmap between 0 & 1
-    heatmap = tf.maximum(heatmap, 0) / tf.math.reduce_max(heatmap)
+    # Normalization (Min-Max scaling for peak normalization)
+    heatmap_min = tf.reduce_min(heatmap)
+    heatmap_max = tf.reduce_max(heatmap)
+    heatmap = (heatmap - heatmap_min) / (heatmap_max - heatmap_min + 1e-8)
+
+    # Non-linear power transformation (gamma correction)
+    heatmap = tf.pow(heatmap, 0.6)
+    return heatmap
+
+
+def make_gradcam_heatmap(img_array, grad_model, pred_index=None):
+    """
+    Wrapper for compute_heatmap to handle numpy conversion.
+    """
+    if grad_model is None:
+        return np.zeros((img_array.shape[1], img_array.shape[2]))
+
+    img_tensor = tf.cast(img_array, tf.float32)
+    heatmap = compute_heatmap(img_tensor, grad_model, pred_index)
     return heatmap.numpy()
 
 
@@ -162,6 +165,7 @@ def main(
 
     try:
         model = tf.keras.models.load_model(model_path)
+        grad_model = get_grad_model(model)
     except Exception as e:
         logging.error(f"Error loading model: {e}")
         return
@@ -219,6 +223,8 @@ def main(
     gradcam_active = use_gradcam
     current_sensitivity = heatmap_sensitivity
     mirrored = False
+    frame_count = 0
+    cached_heatmap_data = {}  # {face_id: heatmap}
 
     if video_path and total_frames > 0:
         def on_trackbar(val):
@@ -245,7 +251,16 @@ def main(
             if mirrored:
                 frame = cv2.flip(frame, 1)
 
-            rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            # Phase 1: Dynamic Frame Downscaling for detection
+            ih, iw, _ = frame.shape
+            scale_factor = 1.0
+            if iw > 1280:
+                scale_factor = 1280 / iw
+                detection_frame = cv2.resize(frame, (1280, int(ih * scale_factor)))
+            else:
+                detection_frame = frame
+
+            rgb_frame = cv2.cvtColor(detection_frame, cv2.COLOR_BGR2RGB)
             mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb_frame)
 
             timestamp_ms = int(time.time() * 1000)
@@ -259,10 +274,13 @@ def main(
                 detection_result = face_detector.detect(mp_image)
 
             if detection_result and detection_result.detections:
-                ih, iw, _ = frame.shape
-                for detection in detection_result.detections:
+                for face_idx, detection in enumerate(detection_result.detections):
                     bbox = detection.bounding_box
-                    x, y, w, h = bbox.origin_x, bbox.origin_y, bbox.width, bbox.height
+                    # Map back to original resolution
+                    x = int(bbox.origin_x / scale_factor)
+                    y = int(bbox.origin_y / scale_factor)
+                    w = int(bbox.width / scale_factor)
+                    h = int(bbox.height / scale_factor)
 
                     # Margin for cropping
                     margin_x, margin_y = int(w * 0.1), int(h * 0.1)
@@ -281,7 +299,13 @@ def main(
                         color = (0, 255, 0) if is_target else (0, 0, 255)
 
                         if gradcam_active:
-                            heatmap = make_gradcam_heatmap(input_face, model)
+                            # Phase 2: Frame skipping and caching
+                            if frame_count % 5 == 0 or face_idx not in cached_heatmap_data:
+                                heatmap = make_gradcam_heatmap(input_face, grad_model)
+                                cached_heatmap_data[face_idx] = heatmap
+                            else:
+                                heatmap = cached_heatmap_data[face_idx]
+
                             display_gradcam(
                                 frame, heatmap, (x_min, y_min, x_max - x_min, y_max - y_min),
                                 sensitivity=current_sensitivity
@@ -292,6 +316,7 @@ def main(
                             frame, label, (x_min, y_min - 10),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.9, color, 2
                         )
+                frame_count += 1
 
             if video_path and total_frames > 0:
                 current_frame = int(cap.get(cv2.CAP_PROP_POS_FRAMES))

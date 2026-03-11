@@ -121,7 +121,9 @@ def test_make_gradcam_heatmap():
     model = tf.keras.Model(inputs, outputs)
 
     dummy_img = np.random.random((1, 128, 128, 3)).astype("float32")
-    heatmap = make_gradcam_heatmap(dummy_img, model, "conv2d_5")
+    from src.app import make_gradcam_heatmap, get_grad_model
+    grad_model = get_grad_model(model, "conv2d_5")
+    heatmap = make_gradcam_heatmap(dummy_img, grad_model)
 
     assert heatmap.shape == (126, 126)  # Output of 128x128 with 3x3 conv is 126x126
     assert np.min(heatmap) >= 0

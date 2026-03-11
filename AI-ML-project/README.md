@@ -1,9 +1,9 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Version](https://img.shields.io/badge/version-1.18.0-blue.svg)](https://github.com/quackextractor/CS-Portfolio)
+[![Version](https://img.shields.io/badge/version-1.19.0-blue.svg)](https://github.com/quackextractor/CS-Portfolio)
 
 # Target Face Detector
 
-This repository contains the source code, data pipeline, and documentation generator for the Target Face Detector. This is a custom machine learning computer vision application capable of detecting a specific target person in a live camera feed and distinguishing them from other individuals.
+This repository contains the source code, data pipeline, and documentation generator for the Target Face Detector. This version (1.19.0) features significant performance optimizations for high-resolution screens, accelerated Grad-CAM inference, and improved visualization quality via XLA-ready gradient ascent steps.
 
 ## Prerequisites
 
@@ -75,9 +75,9 @@ This will generate images representing the features the model looks for (e.g., t
 
 | Class Prototype | Filter Grid |
 | :---: | :---: |
-| ![Class Prototype](docs/activation_maximization_placeholder.png) | ![Filter Grid](docs/filter_grid_placeholder.png) |
+| ![Class Prototype](data/processed/target_activation_maximization.png) | ![Filter Grid](data/processed/target_filter_grid.png) |
 
-*(Note: The images above are placeholders. Run the command to generate real visualizations based on your trained model.)*
+*(Note: If you haven't run the visualization yet, these images may not be available. Run `python main.py visualize` to generate them.)*
 
 ## Project Structure
 
