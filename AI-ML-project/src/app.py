@@ -179,7 +179,7 @@ def main(
             face_model_path, running_mode=mode, result_callback=live_stream_callback
         )
     elif video_path:
-        mode = VisionRunningMode.VIDEO
+        mode = VisionRunningMode.IMAGE
         face_detector = _build_face_detector(face_model_path, running_mode=mode)
     else:
         mode = VisionRunningMode.IMAGE
