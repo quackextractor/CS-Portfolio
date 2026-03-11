@@ -114,7 +114,10 @@ def generate_output_maximization(model, output_dir, base_size, iterations, learn
     )
 
 
-def generate_filter_grid(model, output_dir, base_size, iterations, learning_rate, filters_to_visualize=4):
+def generate_filter_grid(
+    model, output_dir, base_size, iterations, learning_rate,
+    filters_to_visualize=4
+):
     print(f"\n[2/2] Generating {filters_to_visualize} Conv Filters...")
     feature_extractor = get_inference_submodel(model, target="conv")
     total_filters = feature_extractor.output.shape[-1]

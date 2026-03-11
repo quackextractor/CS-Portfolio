@@ -22,9 +22,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Resolved "The layer sequential has never been called" error in `src/app.py` by ensuring the model is built before creating the Grad-CAM sub-model.
 
-### Fixed
-- Resolved "The layer sequential has never been called" error in `src/app.py` by ensuring the model is built before creating the Grad-CAM sub-model.
-
 ## [1.18.0] - 2026-03-11
 ### Changed
 - Renamed project focus from "Miro" to "Target" across configuration, source code, notebooks, and documentation.
