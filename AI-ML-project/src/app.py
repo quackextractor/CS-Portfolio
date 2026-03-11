@@ -47,37 +47,28 @@ def get_grad_model(model, last_conv_layer_name=None):
 
     return feature_extractor, classifier
 
-def compute_heatmap(img_tensor, grad_models, pred_index=None):
-    """
-    Optimized heatmap calculation using eager execution and split models.
-    """
-    feature_extractor, classifier = grad_models
-    
-    # Safety check if the model failed to find a conv layer
-    if feature_extractor is None or classifier is None:
-        return tf.zeros((img_tensor.shape[1], img_tensor.shape[2]))
 
+@tf.function(reduce_retracing=True)
+def _compute_heatmap_graph(img_tensor, feature_extractor, classifier):
+    """
+    Compiled static graph for heavy tensor math to prevent Python overhead.
+    """
     with tf.GradientTape() as tape:
-        # 1. Get intermediate output from the feature extractor
-        last_conv_layer_output = feature_extractor(img_tensor)
-        
-        # 2. Explicitly tell the tape to track this intermediate tensor
+        # 1. Get intermediate output (training=False is crucial for speed)
+        last_conv_layer_output = feature_extractor(img_tensor, training=False)
         tape.watch(last_conv_layer_output)
         
-        # 3. Pass the tracked tensor into the classifier
-        preds = classifier(last_conv_layer_output)
-        
-        if pred_index is None:
-            pred_index = tf.argmax(preds[0])
+        # 2. Pass to classifier
+        preds = classifier(last_conv_layer_output, training=False)
+        pred_index = tf.argmax(preds[0])
         class_channel = preds[:, pred_index]
 
-    # The tape now sees a definitive path from last_conv_layer_output to class_channel
+    # 3. Compute gradients
     grads = tape.gradient(class_channel, last_conv_layer_output)
     
-    # Failsafe to prevent crashes if the gradient is ever lost again
     if grads is None:
         return tf.zeros(last_conv_layer_output.shape[1:3])
-    
+        
     pooled_grads = tf.reduce_mean(grads, axis=(0, 1, 2))
     last_conv_layer_output = last_conv_layer_output[0]
     heatmap = last_conv_layer_output @ pooled_grads[..., tf.newaxis]
@@ -93,6 +84,19 @@ def compute_heatmap(img_tensor, grad_models, pred_index=None):
     return heatmap
 
 
+def compute_heatmap(img_tensor, grad_models, pred_index=None):
+    """
+    Optimized heatmap calculation routing to the compiled graph.
+    """
+    feature_extractor, classifier = grad_models
+    
+    # Safety check if the model failed to find a conv layer
+    if feature_extractor is None or classifier is None:
+        return tf.zeros((img_tensor.shape[1], img_tensor.shape[2]))
+
+    return _compute_heatmap_graph(img_tensor, feature_extractor, classifier)
+
+
 def make_gradcam_heatmap(img_array, grad_model, pred_index=None):
     """
     Wrapper for compute_heatmap to handle numpy conversion.
@@ -100,7 +104,8 @@ def make_gradcam_heatmap(img_array, grad_model, pred_index=None):
     if grad_model is None:
         return np.zeros((img_array.shape[1], img_array.shape[2]))
 
-    img_tensor = tf.cast(img_array, tf.float32)
+    # Ensure the tensor is explicitly created once
+    img_tensor = tf.convert_to_tensor(img_array, dtype=tf.float32)
     heatmap = compute_heatmap(img_tensor, grad_model, pred_index)
     return heatmap.numpy()
 
@@ -332,14 +337,15 @@ def main(
                         rgb_face = cv2.cvtColor(resized_face, cv2.COLOR_BGR2RGB)
                         input_face = np.expand_dims(rgb_face / 255.0, axis=0)
 
-                        prediction = model.predict(input_face, verbose=0)[0][0]
+                        # Optimized prediction using direct model call instead of predict()
+                        prediction = model(input_face, training=False)[0][0].numpy()
                         is_target = prediction >= threshold
                         label = f"{'Target' if is_target else 'Unknown'} ({prediction:.2f})"
                         color = (0, 255, 0) if is_target else (0, 0, 255)
 
                         if gradcam_active:
-                            # Phase 2: Frame skipping and caching
-                            if frame_count % 5 == 0 or face_idx not in cached_heatmap_data:
+                            # Phase 2: Increased frame skipping interval for caching (from 5 to 15)
+                            if frame_count % 15 == 0 or face_idx not in cached_heatmap_data:
                                 heatmap = make_gradcam_heatmap(input_face, grad_model)
                                 cached_heatmap_data[face_idx] = heatmap
                             else:
