@@ -24,13 +24,10 @@ def get_grad_model(model, last_conv_layer_name=None):
     if last_conv_layer_name is None:
         return None
 
-    # Force graph initialization if .output raises a ValueError
-    try:
-        _ = model.output
-    except ValueError:
-        # Perform a forward pass to initialize the functional graph
-        # Using 128x128x3 as defined in your config and model architecture
-        dummy_input = tf.zeros((1, 128, 128, 3))
+    # Ensure the model is built and output properties are defined.
+    # Sequential models may require a call before .output is accessible.
+    if not model.built:
+        dummy_input = tf.zeros((1, *model.input_shape[1:]))
         model(dummy_input)
 
     return tf.keras.Model(
