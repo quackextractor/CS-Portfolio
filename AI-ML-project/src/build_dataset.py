@@ -233,14 +233,17 @@ def run_building(output_csv: str = None) -> None:
 
     # Extract video name from filepath to prevent data leakage
     def get_video_name(path):
-        # Path looks like data/processed/positive/video_name/frame_0001.jpg
-        # or data/processed/negative/scraped/some_image.jpg
+        # Normalize slashes for cross-platform compatibility
+        path_str = str(path).replace('\\', '/')
+        parts = Path(path_str).parts
+        
         # We want the immediate parent folder if it's not 'positive' or 'negative'
-        parts = Path(path).parts
-        # parts might be ('data', 'processed', 'positive', 'video_folder', 'frame.jpg')
-        # We want 'video_folder'
         if len(parts) > 3 and parts[2] in ('positive', 'negative'):
-            return parts[3]
+            folder = parts[3]
+            # Treat each scraped image as independent to allow even distribution
+            if folder == 'scraped':
+                return f"scraped_{Path(path_str).stem}"
+            return folder
         return "unknown"
 
     df['video_name'] = df['filepath'].apply(get_video_name)
@@ -255,13 +258,13 @@ def run_building(output_csv: str = None) -> None:
         random.shuffle(videos)
 
         n_vids = len(videos)
-        train_end = int(n_vids * 0.7)
-        val_end = int(n_vids * 0.85)
+        
+        # 80% Train, 10% Val, 10% Test
+        train_end = int(n_vids * 0.8)
+        val_end = int(n_vids * 0.9)
 
         train_vids = set(videos[:train_end])
         val_vids = set(videos[train_end:val_end])
-        val_vids = set(videos[train_end:val_end])
-        # test_vids = set(videos[val_end:]) # Reserved for future use
 
         def assign_split(vid):
             if vid in train_vids:
@@ -314,4 +317,4 @@ if __name__ == "__main__":
         run_building()
     else:
         # Backward compatibility or default behavior if no flags passed
-        run_processing(trigger_build=True)
+        run_processing(trigger_build=True)
