@@ -5,11 +5,9 @@ import tensorflow as tf
 import yaml
 import logging
 
-
 def load_config(config_path: str = "config.yaml") -> dict:
     with open(config_path, "r") as f:
         return yaml.safe_load(f)
-
 
 def get_grad_model(model, last_conv_layer_name=None):
     """
@@ -17,36 +15,37 @@ def get_grad_model(model, last_conv_layer_name=None):
     to guarantee explicit gradient tracking.
     """
     if last_conv_layer_name is None:
-        for layer in reversed(model.layers):
-            if "Conv2D" in layer.__class__.__name__:
+        # First try to find the explicitly named optimal layer
+        for layer in model.layers:
+            if layer.name == "target_conv_layer":
                 last_conv_layer_name = layer.name
                 break
+        
+        # Fallback to the last convolutional layer found
+        if last_conv_layer_name is None:
+            for layer in reversed(model.layers):
+                if "Conv2D" in layer.__class__.__name__:
+                    last_conv_layer_name = layer.name
+                    break
 
     if last_conv_layer_name is None:
         return None, None
 
-    # Part 1: Feature Extractor (Input to Last Conv Layer)
     last_conv_layer = model.get_layer(last_conv_layer_name)
     feature_extractor = tf.keras.Model(
         inputs=model.layers[0].input, 
         outputs=last_conv_layer.output
     )
 
-    # Part 2: Classifier (Last Conv Layer to Final Output)
     classifier_input = tf.keras.Input(shape=last_conv_layer.output.shape[1:])
     x = classifier_input
     
-    # Identify where the classifier portion starts
     layer_idx = model.layers.index(last_conv_layer)
-    
-    # Rebuild the remaining layers sequentially
     for layer in model.layers[layer_idx + 1:]:
         x = layer(x)
         
     classifier = tf.keras.Model(inputs=classifier_input, outputs=x)
-
     return feature_extractor, classifier
-
 
 @tf.function(reduce_retracing=True)
 def _compute_heatmap_graph(img_tensor, feature_extractor, classifier):
@@ -54,16 +53,13 @@ def _compute_heatmap_graph(img_tensor, feature_extractor, classifier):
     Compiled static graph for heavy tensor math to prevent Python overhead.
     """
     with tf.GradientTape() as tape:
-        # 1. Get intermediate output (training=False is crucial for speed)
         last_conv_layer_output = feature_extractor(img_tensor, training=False)
         tape.watch(last_conv_layer_output)
         
-        # 2. Pass to classifier
         preds = classifier(last_conv_layer_output, training=False)
         pred_index = tf.argmax(preds[0])
         class_channel = preds[:, pred_index]
 
-    # 3. Compute gradients
     grads = tape.gradient(class_channel, last_conv_layer_output)
     
     if grads is None:
@@ -74,103 +70,72 @@ def _compute_heatmap_graph(img_tensor, feature_extractor, classifier):
     heatmap = last_conv_layer_output @ pooled_grads[..., tf.newaxis]
     heatmap = tf.squeeze(heatmap)
 
-    # Normalization (Min-Max scaling for peak normalization)
+    # Apply ReLU to keep only features with a positive influence on the class
+    heatmap = tf.maximum(heatmap, 0.0)
+
     heatmap_min = tf.reduce_min(heatmap)
     heatmap_max = tf.reduce_max(heatmap)
     heatmap = (heatmap - heatmap_min) / (heatmap_max - heatmap_min + 1e-8)
 
-    # Non-linear power transformation (gamma correction)
     heatmap = tf.pow(heatmap, 0.6)
     return heatmap
 
-
 def compute_heatmap(img_tensor, grad_models, pred_index=None):
-    """
-    Optimized heatmap calculation routing to the compiled graph.
-    """
     feature_extractor, classifier = grad_models
-    
-    # Safety check if the model failed to find a conv layer
     if feature_extractor is None or classifier is None:
         return tf.zeros((img_tensor.shape[1], img_tensor.shape[2]))
-
     return _compute_heatmap_graph(img_tensor, feature_extractor, classifier)
 
-
 def make_gradcam_heatmap(img_array, grad_model, pred_index=None):
-    """
-    Wrapper for compute_heatmap to handle numpy conversion.
-    """
     if grad_model is None:
         return np.zeros((img_array.shape[1], img_array.shape[2]))
-
-    # Ensure the tensor is explicitly created once
     img_tensor = tf.convert_to_tensor(img_array, dtype=tf.float32)
     heatmap = compute_heatmap(img_tensor, grad_model, pred_index)
     return heatmap.numpy()
 
-
 def display_gradcam(frame, heatmap, bbox, alpha=0.6, sensitivity=1.0):
-    """
-    Overlays the Grad-CAM heatmap on the detected face in the frame.
-    """
     x, y, w, h = bbox
 
-    # Apply sensitivity multiplier
+    # Safety net for casting
+    heatmap = np.nan_to_num(heatmap, nan=0.0, posinf=1.0, neginf=0.0)
     heatmap = np.clip(heatmap * sensitivity, 0.0, 1.0)
 
-    # Rescale heatmap to a range 0-255
-    heatmap = np.uint8(255 * heatmap)
+    # Resize before color mapping for smoother output
+    heatmap = cv2.resize(heatmap, (w, h))
 
-    # Use jet colormap to colorize heatmap
+    heatmap = np.uint8(255 * heatmap)
     jet = cv2.applyColorMap(heatmap, cv2.COLORMAP_JET)
 
-    # Resize heatmap to match the bounding box size
-    jet = cv2.resize(jet, (w, h))
-
-    # Create an overlay by combining the original ROI and the colorized heatmap
     roi = frame[y: y + h, x: x + w]
     overlay = cv2.addWeighted(roi, 1 - alpha, jet, alpha, 0)
-
-    # Replace the ROI in the original frame
     frame[y: y + h, x: x + w] = overlay
     return frame
 
-
 def _build_face_detector(model_path: str, running_mode=None, result_callback=None):
-    """
-    Construct a MediaPipe Tasks FaceDetector.
-    """
     try:
         import mediapipe as mp
     except ImportError as err:
-        raise ImportError(
-            "mediapipe is not installed. Run: pip install -r requirements.txt"
-        ) from err
+        raise ImportError("mediapipe is not installed. Run: pip install -r requirements.txt") from err
 
     if not os.path.isfile(model_path):
         raise FileNotFoundError(f"Face detector model not found at '{model_path}'.")
 
-    try:
-        BaseOptions = mp.tasks.BaseOptions
-        FaceDetector = mp.tasks.vision.FaceDetector
-        FaceDetectorOptions = mp.tasks.vision.FaceDetectorOptions
-        VisionRunningMode = mp.tasks.vision.RunningMode
+    BaseOptions = mp.tasks.BaseOptions
+    FaceDetector = mp.tasks.vision.FaceDetector
+    FaceDetectorOptions = mp.tasks.vision.FaceDetectorOptions
+    VisionRunningMode = mp.tasks.vision.RunningMode
 
-        if running_mode is None:
-            running_mode = VisionRunningMode.IMAGE
+    if running_mode is None:
+        running_mode = VisionRunningMode.IMAGE
 
-        is_live = running_mode == VisionRunningMode.LIVE_STREAM
-        options = FaceDetectorOptions(
-            base_options=BaseOptions(model_asset_path=model_path),
-            running_mode=running_mode,
-            min_detection_confidence=0.5,
-            result_callback=result_callback if is_live else None
-        )
-        return FaceDetector.create_from_options(options)
-    except Exception as e:
-        raise RuntimeError(f"Failed to initialise MediaPipe FaceDetector: {e}") from e
-
+    is_live = running_mode == VisionRunningMode.LIVE_STREAM
+    options = FaceDetectorOptions(
+        base_options=BaseOptions(model_asset_path=model_path),
+        running_mode=running_mode,
+        min_detection_confidence=0.5,
+        result_callback=result_callback if is_live else None
+    )
+    return FaceDetector.create_from_options(options)
 
 def main(
     video_path: str = None,
@@ -187,9 +152,7 @@ def main(
     img_size = config["model"]["img_size"]
     camera_index = config["camera"]["index"]
     threshold = config["model"].get("threshold", 0.5)
-    face_model_path = config["model"].get(
-        "face_detector_model_path", "models/blaze_face_short_range.task"
-    )
+    face_model_path = config["model"].get("face_detector_model_path", "models/blaze_face_short_range.task")
 
     if not str(model_path).endswith(".keras"):
         logging.error(f"Error: Model file must be in .keras format. Received: {model_path}")
@@ -215,12 +178,7 @@ def main(
     VisionRunningMode = mp.tasks.vision.RunningMode
     if screen or (not video_path and not screen):
         mode = VisionRunningMode.LIVE_STREAM
-        face_detector = _build_face_detector(
-            face_model_path, running_mode=mode, result_callback=live_stream_callback
-        )
-    elif video_path:
-        mode = VisionRunningMode.IMAGE
-        face_detector = _build_face_detector(face_model_path, running_mode=mode)
+        face_detector = _build_face_detector(face_model_path, running_mode=mode, result_callback=live_stream_callback)
     else:
         mode = VisionRunningMode.IMAGE
         face_detector = _build_face_detector(face_model_path, running_mode=mode)
@@ -260,7 +218,7 @@ def main(
     current_sensitivity = heatmap_sensitivity
     mirrored = False
     frame_count = 0
-    cached_heatmap_data = {}  # {face_id: heatmap}
+    cached_heatmap_data = {}
 
     if video_path and total_frames > 0:
         def on_trackbar(val):
@@ -282,7 +240,6 @@ def main(
 
             if not ret:
                 if video_path:
-                    # End of video reached: pause and step back one frame
                     paused = True
                     current_pos = cap.get(cv2.CAP_PROP_POS_FRAMES)
                     cap.set(cv2.CAP_PROP_POS_FRAMES, max(0, current_pos - 1))
@@ -295,7 +252,6 @@ def main(
             if mirrored:
                 frame = cv2.flip(frame, 1)
 
-            # Phase 1: Dynamic Frame Downscaling for detection
             ih, iw, _ = frame.shape
             scale_factor = 1.0
             if iw > 1280:
@@ -307,26 +263,21 @@ def main(
             rgb_frame = cv2.cvtColor(detection_frame, cv2.COLOR_BGR2RGB)
             mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb_frame)
 
-            timestamp_ms = int(time.time() * 1000)
             if mode == VisionRunningMode.LIVE_STREAM:
+                timestamp_ms = int(time.time() * 1000)
                 face_detector.detect_async(mp_image, timestamp_ms)
                 detection_result = latest_result
-            elif mode == VisionRunningMode.VIDEO:
-                v_timestamp_ms = int(cap.get(cv2.CAP_PROP_POS_MSEC))
-                detection_result = face_detector.detect_for_video(mp_image, v_timestamp_ms)
             else:
                 detection_result = face_detector.detect(mp_image)
 
             if detection_result and detection_result.detections:
                 for face_idx, detection in enumerate(detection_result.detections):
                     bbox = detection.bounding_box
-                    # Map back to original resolution
                     x = int(bbox.origin_x / scale_factor)
                     y = int(bbox.origin_y / scale_factor)
                     w = int(bbox.width / scale_factor)
                     h = int(bbox.height / scale_factor)
 
-                    # Margin for cropping
                     margin_x, margin_y = int(w * 0.1), int(h * 0.1)
                     x_min, y_min = max(0, x - margin_x), max(0, y - margin_y)
                     x_max, y_max = min(iw, x + w + margin_x), min(ih, y + h + margin_y)
@@ -337,14 +288,12 @@ def main(
                         rgb_face = cv2.cvtColor(resized_face, cv2.COLOR_BGR2RGB)
                         input_face = np.expand_dims(rgb_face / 255.0, axis=0)
 
-                        # Optimized prediction using direct model call instead of predict()
                         prediction = model(input_face, training=False)[0][0].numpy()
                         is_target = prediction >= threshold
                         label = f"{'Target' if is_target else 'Unknown'} ({prediction:.2f})"
                         color = (0, 255, 0) if is_target else (0, 0, 255)
 
                         if gradcam_active:
-                            # Phase 2: Increased frame skipping interval for caching (from 5 to 15)
                             if frame_count % 15 == 0 or face_idx not in cached_heatmap_data:
                                 heatmap = make_gradcam_heatmap(input_face, grad_model)
                                 cached_heatmap_data[face_idx] = heatmap
@@ -361,7 +310,7 @@ def main(
                             frame, label, (x_min, y_min - 10),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.9, color, 2
                         )
-                frame_count += 1
+            frame_count += 1
 
             if video_path and total_frames > 0:
                 current_frame = int(cap.get(cv2.CAP_PROP_POS_FRAMES))
@@ -402,7 +351,6 @@ def main(
         sct.close()
     face_detector.close()
     cv2.destroyAllWindows()
-
 
 if __name__ == "__main__":
     main()

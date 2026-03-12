@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.20.0] - 2026-03-12
+### Added
+* Explicit `name='target_conv_layer'` added to the final convolutional block in `notebooks/model_training.ipynb` to guarantee reliable feature extraction.
+* ReLU activation (`tf.maximum(heatmap, 0.0)`) applied to the Grad-CAM computation in `src/app.py` to filter out negative gradients and strictly highlight positive class contributors.
+* Safety casting (`np.nan_to_num`) introduced to heatmap generation to prevent division-by-zero crashes on empty feature maps.
+
+### Changed
+* Replaced `Flatten` and `Dense` layers with `GlobalAveragePooling2D` in the CNN architecture to preserve spatial mapping for Grad-CAM and reduce total parameter count.
+* Optimized Grad-CAM rendering by resizing the 1D heatmap before applying the OpenCV Jet colormap, resulting in smoother visual overlays and lower interpolation overhead.
+* Switched local video processing to MediaPipe `IMAGE` mode to fully support interactive playback controls (pause, rewind, skip) without crashing the sequential timestamp tracker.
+* Consolidated MediaPipe import logic and removed redundant comments in `src/app.py` for cleaner code execution.
+
+### Fixed
+* Fixed the `frame_count` variable scope so it increments globally rather than only when a face is detected, resolving unpredictable Grad-CAM caching intervals.
+* Fixed potential layer extraction failures by prioritizing the explicitly named target layer before falling back to reverse iteration.
+
 ## [1.19.0] - 2026-03-11
 ### Added
 - Pre-built multi-output gradient model in `src/app.py` for faster Grad-CAM inference.
