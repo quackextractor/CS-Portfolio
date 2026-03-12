@@ -111,8 +111,8 @@ def process_images(
 
         ih, iw, _ = img_bgr.shape
 
-        margin_x = int(w * 0.1)
-        margin_y = int(h * 0.1)
+        margin_x = int(w * 0.05)
+        margin_y = int(h * 0.05)
 
         x_min = max(0, x - margin_x)
         y_min = max(0, y - margin_y)
@@ -190,32 +190,51 @@ def build_dataset(skip_blurry: bool = True, blur_threshold: float = 10.0) -> Non
 
     df = pd.DataFrame(all_records)
 
-    # Mitigating data leakage: 
-    # Sort files to keep sequential video frames grouped together, 
-    # then assign consecutive blocks to Train/Val/Test.
-    df = df.sort_values("filepath").reset_index(drop=True)
+    # Extract video name from filepath to prevent data leakage
+    # Assumes filepath format like 'data/processed/positive/video_name_frame_123.jpg'
+    def get_video_name(path):
+        basename = os.path.basename(path)
+        # Handle cases like video_name_frame_123.jpg or video_name_123.jpg
+        # We want to strip the trailing frame identifier
+        import re
+        # Look for _frame_N, _N, etc at the end before extension
+        name_without_ext = os.path.splitext(basename)[0]
+        # Match pattern like _frame_123 or just _123 at the end
+        match = re.search(r'(_frame)?_\d+$', name_without_ext)
+        if match:
+            return name_without_ext[:match.start()]
+        return name_without_ext
+
+    df['video_name'] = df['filepath'].apply(get_video_name)
 
     train_dfs = []
     val_dfs = []
     test_dfs = []
 
+    import random
+    random.seed(42)
+
     for label in df['label'].unique():
         label_df = df[df['label'] == label].copy()
-        n = len(label_df)
-        
-        # 70% Train, 15% Validation, 15% Test
-        train_end = int(n * 0.7)
-        val_end = int(n * 0.85)
-        
-        train_subset = label_df.iloc[:train_end].copy()
+        videos = sorted(label_df['video_name'].unique())
+        random.shuffle(videos)
+
+        n_vids = len(videos)
+        train_end = int(n_vids * 0.7)
+
+        train_vids = set(videos[:train_end])
+        val_vids = set(videos[train_end:val_end])
+        test_vids = set(videos[val_end:])
+
+        train_subset = label_df[label_df['video_name'].isin(train_vids)].copy()
         train_subset['split'] = 'train'
         train_dfs.append(train_subset)
-        
-        val_subset = label_df.iloc[train_end:val_end].copy()
+
+        val_subset = label_df[label_df['video_name'].isin(val_vids)].copy()
         val_subset['split'] = 'val'
         val_dfs.append(val_subset)
-        
-        test_subset = label_df.iloc[val_end:].copy()
+
+        test_subset = label_df[label_df['video_name'].isin(test_vids)].copy()
         test_subset['split'] = 'test'
         test_dfs.append(test_subset)
 
@@ -248,4 +267,4 @@ if __name__ == "__main__":
         help="Variance of Laplacian threshold for blur detection",
     )
     args = parser.parse_args()
-    build_dataset(args.skip_blurry, args.blur_threshold)
+    build_dataset(args.skip_blurry, args.blur_threshold)

@@ -1,7 +1,7 @@
 import yaml
 import pytest
 from unittest.mock import patch
-from src.app import main, load_config, make_gradcam_heatmap, display_gradcam
+from src.app import main, load_config, display_gradcam
 import numpy as np
 import tensorflow as tf
 
@@ -114,15 +114,15 @@ def test_main_with_screen(
 
 def test_make_gradcam_heatmap():
     # Create a simple model for testing
-    inputs = tf.keras.Input(shape=(128, 128, 3))
-    x = tf.keras.layers.Conv2D(32, (3, 3), name="conv2d_5")(inputs)
-    outputs = tf.keras.layers.GlobalAveragePooling2D()(x)
-    outputs = tf.keras.layers.Dense(1, activation="sigmoid")(outputs)
-    model = tf.keras.Model(inputs, outputs)
+    input_layer = tf.keras.Input(shape=(128, 128, 3))
+    x = tf.keras.layers.Conv2D(32, (3, 3), name="target_conv_layer")(input_layer)
+    x = tf.keras.layers.GlobalAveragePooling2D()(x)
+    output_layer = tf.keras.layers.Dense(1, activation="sigmoid")(x)
+    model = tf.keras.Model(inputs=input_layer, outputs=output_layer)
 
     dummy_img = np.random.random((1, 128, 128, 3)).astype("float32")
     from src.app import make_gradcam_heatmap, get_grad_model
-    grad_model = get_grad_model(model, "conv2d_5")
+    grad_model = get_grad_model(model, "target_conv_layer")
     heatmap = make_gradcam_heatmap(dummy_img, grad_model)
 
     assert heatmap.shape == (126, 126)  # Output of 128x128 with 3x3 conv is 126x126

@@ -1,5 +1,4 @@
 import os
-import time
 import cv2
 import yaml
 import logging
@@ -16,9 +15,11 @@ try:
 except ImportError:
     mss = None
 
+
 def load_config(config_path: str = "config.yaml") -> dict:
     with open(config_path, "r") as f:
         return yaml.safe_load(f)
+
 
 def get_grad_model(model, last_conv_layer_name=None):
     """
@@ -30,7 +31,7 @@ def get_grad_model(model, last_conv_layer_name=None):
             if layer.name == "target_conv_layer":
                 last_conv_layer_name = layer.name
                 break
-        
+
         if last_conv_layer_name is None:
             for layer in reversed(model.layers):
                 if "Conv2D" in layer.__class__.__name__:
@@ -42,7 +43,7 @@ def get_grad_model(model, last_conv_layer_name=None):
 
     last_conv_layer = model.get_layer(last_conv_layer_name)
     feature_extractor = tf.keras.Model(
-        inputs=model.layers[0].input, 
+        inputs=model.input,
         outputs=last_conv_layer.output
     )
 
@@ -257,7 +258,7 @@ def main(
                     w = int(bbox.width / scale_factor)
                     h = int(bbox.height / scale_factor)
 
-                    margin_x, margin_y = int(w * 0.1), int(h * 0.1)
+                    margin_x, margin_y = int(w * 0.05), int(h * 0.05)
                     x_min, y_min = max(0, x - margin_x), max(0, y - margin_y)
                     x_max, y_max = min(iw, x + w + margin_x), min(ih, y + h + margin_y)
 
@@ -351,4 +352,4 @@ def main(
     cv2.destroyAllWindows()
 
 if __name__ == "__main__":
-    main()
+    main()

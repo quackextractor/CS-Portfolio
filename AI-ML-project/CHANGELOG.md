@@ -12,11 +12,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Integrated `seaborn` and `sklearn.metrics` into the training notebook for professional performance visualization.
 
 ### Changed
-* Refactored the dataset splitting logic in `build_dataset.py` to use **contiguous block splitting** instead of random shuffling. This groups sequential video frames together to prevent data leakage between training and testing sets.
+* Refactored the dataset splitting logic in `build_dataset.py` to use **video-level grouping** instead of frame-level slicing. This ensures all frames from a single video source stay within the same split (Train, Val, or Test), effectively eliminating data leakage.
+* Tightened facial detection crop margins from **0.1 to 0.05** across both the training pipeline (`build_dataset.py`) and real-time inference (`app.py`) for more precise facial alignment.
 * Updated `model_training.ipynb` to utilize the new `val` split for `EarlyStopping` and `ReduceLROnPlateau` callbacks, reserving the `test` split exclusively for post-training validation.
 
 ### Fixed
 * Resolved the **Data Leakage** issue where near-identical frames from the same video source were appearing in both training and validation sets, which previously caused artificially inflated accuracy metrics.
+* Fixed a `ValueError` in `test_app.py` related to Keras model input initialization in the Grad-CAM test suite.
+* Introduced `tests/test_split_integrity.py` to programmatically verify that video-level splitting prevents future regressions.
 
 ## [1.20.0] - 2026-03-12
 ### Added

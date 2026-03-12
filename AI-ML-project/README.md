@@ -1,9 +1,9 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Version](https://img.shields.io/badge/version-1.20.0-blue.svg)](https://github.com/quackextractor/CS-Portfolio)
+[![Version](https://img.shields.io/badge/version-1.21.0-blue.svg)](https://github.com/quackextractor/CS-Portfolio)
 
 # Target Face Detector
 
-This repository contains the source code, data pipeline, and documentation generator for the Target Face Detector. This version (1.19.0) features significant performance optimizations for high-resolution screens, accelerated Grad-CAM inference, and improved visualization quality via XLA-ready gradient ascent steps.
+This repository contains the source code, data pipeline, and documentation generator for the Target Face Detector. This version (1.21.0) features a refined video-to-split distribution logic to eliminate data leakage, improved data augmentation, and tighter crop margins (0.05) for superior facial alignment.
 
 ## Prerequisites
 
