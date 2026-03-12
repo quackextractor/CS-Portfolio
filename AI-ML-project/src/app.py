@@ -24,38 +24,55 @@ def load_config(config_path: str = "config.yaml") -> dict:
 def get_grad_model(model, last_conv_layer_name=None):
     """
     Splits the model into a feature extractor and a classifier
-    to guarantee explicit gradient tracking.
+    by functionally rebuilding the layers to avoid Keras 3 input graph bugs.
     """
     if last_conv_layer_name is None:
-        for layer in model.layers:
-            if layer.name == "target_conv_layer":
+        for layer in reversed(model.layers):
+            if "Conv2D" in layer.__class__.__name__:
                 last_conv_layer_name = layer.name
                 break
-
-        if last_conv_layer_name is None:
-            for layer in reversed(model.layers):
-                if "Conv2D" in layer.__class__.__name__:
-                    last_conv_layer_name = layer.name
-                    break
 
     if last_conv_layer_name is None:
         return None, None
 
-    last_conv_layer = model.get_layer(last_conv_layer_name)
-    feature_extractor = tf.keras.Model(
-        inputs=model.input,
-        outputs=last_conv_layer.output
-    )
+    # 1. Safely determine the input shape
+    try:
+        input_shape = model.input_shape[1:]
+    except AttributeError:
+        input_shape = (128, 128, 3)
 
-    classifier_input = tf.keras.Input(shape=last_conv_layer.output.shape[1:])
-    x = classifier_input
+    # 2. Rebuild the Feature Extractor functionally
+    feature_input = tf.keras.Input(shape=input_shape)
+    x = feature_input
+    
+    last_conv_layer = None
+    for layer in model.layers:
+        # Skip InputLayer to avoid "object is not callable" errors
+        if isinstance(layer, tf.keras.layers.InputLayer):
+            continue
+            
+        x = layer(x)
+        if layer.name == last_conv_layer_name:
+            last_conv_layer = layer
+            break
+
+    if last_conv_layer is None:
+        return None, None
+        
+    feature_extractor = tf.keras.Model(inputs=feature_input, outputs=x)
+
+    # 3. Rebuild the Classifier functionally
+    classifier_input = tf.keras.Input(shape=x.shape[1:])
+    y = classifier_input
     
     layer_idx = model.layers.index(last_conv_layer)
     for layer in model.layers[layer_idx + 1:]:
-        x = layer(x)
+        y = layer(y)
         
-    classifier = tf.keras.Model(inputs=classifier_input, outputs=x)
+    classifier = tf.keras.Model(inputs=classifier_input, outputs=y)
+    
     return feature_extractor, classifier
+
 
 @tf.function(reduce_retracing=True)
 def _compute_heatmap_graph(img_tensor, feature_extractor, classifier):
@@ -159,7 +176,8 @@ def main(
         return
 
     try:
-        model = tf.keras.models.load_model(model_path)
+        # Added compile=False to bypass optimizer shape warnings
+        model = tf.keras.models.load_model(model_path, compile=False)
         grad_model = get_grad_model(model)
     except Exception as e:
         logging.error(f"Error loading model: {e}")
@@ -358,5 +376,6 @@ def main(
     
     cv2.destroyAllWindows()
 
+
 if __name__ == "__main__":
-    main()
+    main()
