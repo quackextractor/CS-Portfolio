@@ -32,5 +32,5 @@ defaults:
 models:
   downloads:
     - description: "BlazeFace short-range face detector (MediaPipe Tasks)"
-      url: "https://github.com/google/mediapipe/raw/master/mediapipe/modules/face_detection/face_detection_full_range.tflite"
+      url: "https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/latest/blaze_face_short_range.tflite"
       dest: "vendor/models/blaze_face_short_range.tflite"
