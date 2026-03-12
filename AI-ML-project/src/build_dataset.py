@@ -5,13 +5,10 @@ import glob
 import pandas as pd
 import argparse
 from tqdm import tqdm
-from sklearn.model_selection import train_test_split
-
 
 def load_config(config_path: str = "config.yaml") -> dict:
     with open(config_path, "r") as f:
         return yaml.safe_load(f)
-
 
 def is_blurry(image, threshold: float = 10.0) -> bool:
     """Returns True if the image is considered blurry."""
@@ -20,7 +17,6 @@ def is_blurry(image, threshold: float = 10.0) -> bool:
     else:
         gray = image
     return cv2.Laplacian(gray, cv2.CV_64F).var() < threshold
-
 
 def _build_face_detector(model_path: str):
     """
@@ -65,7 +61,6 @@ def _build_face_detector(model_path: str):
             "Ensure mediapipe >= 0.10.9 is installed and the model file is valid."
         ) from e
 
-
 def process_images(
     input_dir: str,
     output_dir: str,
@@ -82,9 +77,7 @@ def process_images(
     import mediapipe as mp
 
     records = []
-
     face_detector = _build_face_detector(model_path)
-
     os.makedirs(output_dir, exist_ok=True)
 
     image_paths = glob.glob(os.path.join(input_dir, "*.[jp][pn]g")) + glob.glob(
@@ -99,23 +92,17 @@ def process_images(
         img_bgr = cv2.imread(img_path)
         if img_bgr is None:
             discarded_count += 1
-            # logging.warning or print is fine, but avoid cluttering tqdm
-            # print(f"Failed to read image: {img_path}")
             continue
 
-        # Tasks API requires an mp.Image in RGB format
         img_rgb = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)
         mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=img_rgb)
-
         detection_result = face_detector.detect(mp_image)
 
-        # We strictly require exactly one face
         if not detection_result.detections or len(detection_result.detections) != 1:
             discarded_count += 1
             continue
 
         detection = detection_result.detections[0]
-        # BoundingBox is now absolute pixels in the Tasks API
         bbox = detection.bounding_box
         x = bbox.origin_x
         y = bbox.origin_y
@@ -124,7 +111,6 @@ def process_images(
 
         ih, iw, _ = img_bgr.shape
 
-        # Add a slight margin (helps CNN generalise)
         margin_x = int(w * 0.1)
         margin_y = int(h * 0.1)
 
@@ -160,15 +146,12 @@ def process_images(
     )
     return records
 
-
 def build_dataset(skip_blurry: bool = True, blur_threshold: float = 10.0) -> None:
     config = load_config()
     raw_positive_dir = config["data"]["raw_positive_dir"]
     raw_negative_dir = config["data"]["raw_negative_dir"]
     processed_dir = config["data"]["processed_dir"]
     dataset_csv = config["data"]["dataset_csv"]
-    test_split_size = config["data"].get("test_split_size", 0.2)
-    random_seed = config["data"].get("random_seed", 42)
     img_size = config["model"]["img_size"]
     model_path = config["model"].get(
         "face_detector_model_path", "models/blaze_face_short_range.task"
@@ -207,22 +190,44 @@ def build_dataset(skip_blurry: bool = True, blur_threshold: float = 10.0) -> Non
 
     df = pd.DataFrame(all_records)
 
-    # Stratified split to maintain positive/negative ratios in both sets
-    train_df, test_df = train_test_split(
-        df, test_size=test_split_size, stratify=df["label"], random_state=random_seed
-    )
+    # Mitigating data leakage: 
+    # Sort files to keep sequential video frames grouped together, 
+    # then assign consecutive blocks to Train/Val/Test.
+    df = df.sort_values("filepath").reset_index(drop=True)
 
-    train_df["split"] = "train"
-    test_df["split"] = "test"
+    train_dfs = []
+    val_dfs = []
+    test_dfs = []
 
-    final_df = pd.concat([train_df, test_df]).sort_index()
+    for label in df['label'].unique():
+        label_df = df[df['label'] == label].copy()
+        n = len(label_df)
+        
+        # 70% Train, 15% Validation, 15% Test
+        train_end = int(n * 0.7)
+        val_end = int(n * 0.85)
+        
+        train_subset = label_df.iloc[:train_end].copy()
+        train_subset['split'] = 'train'
+        train_dfs.append(train_subset)
+        
+        val_subset = label_df.iloc[train_end:val_end].copy()
+        val_subset['split'] = 'val'
+        val_dfs.append(val_subset)
+        
+        test_subset = label_df.iloc[val_end:].copy()
+        test_subset['split'] = 'test'
+        test_dfs.append(test_subset)
+
+    final_df = pd.concat(train_dfs + val_dfs + test_dfs).sort_index()
 
     os.makedirs(os.path.dirname(dataset_csv), exist_ok=True)
     final_df.to_csv(dataset_csv, index=False)
 
     print(f"Dataset successfully built with {len(final_df)} records.")
-    print(f"Training samples: {len(train_df)}")
-    print(f"Testing samples: {len(test_df)}")
+    print(f"Training samples: {len(final_df[final_df['split'] == 'train'])}")
+    print(f"Validation samples: {len(final_df[final_df['split'] == 'val'])}")
+    print(f"Testing samples: {len(final_df[final_df['split'] == 'test'])}")
     print(f"CSV saved to {dataset_csv}")
 
 

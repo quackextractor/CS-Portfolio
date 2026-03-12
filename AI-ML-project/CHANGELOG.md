@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.21.0] - 2026-03-12
+### Added
+* Implemented a **three-way data split** (70% Train, 15% Validation, 15% Holdout Test) in `build_dataset.py` to ensure a truly unseen dataset for final model evaluation.
+* Added a **Holdout Evaluation** section to `notebooks/model_training.ipynb`, including a Confusion Matrix and a detailed Classification Report (Precision, Recall, F1-score).
+* Integrated `seaborn` and `sklearn.metrics` into the training notebook for professional performance visualization.
+
+### Changed
+* Refactored the dataset splitting logic in `build_dataset.py` to use **contiguous block splitting** instead of random shuffling. This groups sequential video frames together to prevent data leakage between training and testing sets.
+* Updated `model_training.ipynb` to utilize the new `val` split for `EarlyStopping` and `ReduceLROnPlateau` callbacks, reserving the `test` split exclusively for post-training validation.
+
+### Fixed
+* Resolved the **Data Leakage** issue where near-identical frames from the same video source were appearing in both training and validation sets, which previously caused artificially inflated accuracy metrics.
+
 ## [1.20.0] - 2026-03-12
 ### Added
 * Explicit `name='target_conv_layer'` added to the final convolutional block in `notebooks/model_training.ipynb` to guarantee reliable feature extraction.
