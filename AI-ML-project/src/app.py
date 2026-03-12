@@ -49,35 +49,33 @@ def get_grad_model(model, last_conv_layer_name=None):
 
 @tf.function(reduce_retracing=True)
 def _compute_heatmap_graph(img_tensor, feature_extractor, classifier):
-    """
-    Compiled static graph for heavy tensor math to prevent Python overhead.
-    """
     with tf.GradientTape() as tape:
         last_conv_layer_output = feature_extractor(img_tensor, training=False)
         tape.watch(last_conv_layer_output)
         
         preds = classifier(last_conv_layer_output, training=False)
-        pred_index = tf.argmax(preds[0])
-        class_channel = preds[:, pred_index]
+        # For Binary (1 output), we take the gradient of the raw score
+        class_channel = preds[:, 0] 
 
     grads = tape.gradient(class_channel, last_conv_layer_output)
     
     if grads is None:
         return tf.zeros(last_conv_layer_output.shape[1:3])
         
+    # Standard Grad-CAM: Weight channels by the mean gradient
     pooled_grads = tf.reduce_mean(grads, axis=(0, 1, 2))
     last_conv_layer_output = last_conv_layer_output[0]
     heatmap = last_conv_layer_output @ pooled_grads[..., tf.newaxis]
     heatmap = tf.squeeze(heatmap)
 
-    # Apply ReLU to keep only features with a positive influence on the class
+    # ReLU: We only care about positive influence
     heatmap = tf.maximum(heatmap, 0.0)
 
-    heatmap_min = tf.reduce_min(heatmap)
+    # Robust Normalization: Avoid division by zero and handle low-signal frames
     heatmap_max = tf.reduce_max(heatmap)
-    heatmap = (heatmap - heatmap_min) / (heatmap_max - heatmap_min + 1e-8)
-
-    heatmap = tf.pow(heatmap, 0.6)
+    if heatmap_max > 0:
+        heatmap = heatmap / heatmap_max
+    
     return heatmap
 
 def compute_heatmap(img_tensor, grad_models, pred_index=None):
@@ -93,25 +91,28 @@ def make_gradcam_heatmap(img_array, grad_model, pred_index=None):
     heatmap = compute_heatmap(img_tensor, grad_model, pred_index)
     return heatmap.numpy()
 
-def display_gradcam(frame, heatmap, bbox, alpha=0.6, sensitivity=1.0):
+def display_gradcam(frame, heatmap, bbox, alpha=0.5, sensitivity=2.0):
     x, y, w, h = bbox
 
-    # Safety net for casting
-    heatmap = np.nan_to_num(heatmap, nan=0.0, posinf=1.0, neginf=0.0)
-    heatmap = np.clip(heatmap * sensitivity, 0.0, 1.0)
+    # 1. Boost the heatmap intensity using sensitivity
+    heatmap = heatmap * sensitivity
+    
+    # 2. Use a different power law to make 'hot' spots broader
+    # Gamma < 1 makes the peaks larger; Gamma > 1 makes them sharper
+    heatmap = np.power(heatmap, 0.5) 
+    
+    heatmap = np.clip(heatmap, 0, 1)
+    heatmap = (heatmap * 255).astype(np.uint8)
 
-    # Cast to float32 to prevent OpenCV assertion errors
-    heatmap = heatmap.astype(np.float32)
+    # 3. Apply color map
+    heatmap_img = cv2.applyColorMap(heatmap, cv2.COLORMAP_JET)
+    heatmap_img = cv2.resize(heatmap_img, (w, h))
 
-    # Resize before color mapping for smoother output
-    heatmap = cv2.resize(heatmap, (w, h))
-
-    heatmap = np.uint8(255 * heatmap)
-    jet = cv2.applyColorMap(heatmap, cv2.COLORMAP_JET)
-
-    roi = frame[y: y + h, x: x + w]
-    overlay = cv2.addWeighted(roi, 1 - alpha, jet, alpha, 0)
-    frame[y: y + h, x: x + w] = overlay
+    # 4. Blend
+    roi = frame[y:y+h, x:x+w]
+    # Increase alpha slightly to see the 'glow' better
+    overlay = cv2.addWeighted(roi, 1.0 - alpha, heatmap_img, alpha, 0)
+    frame[y:y+h, x:x+w] = overlay
     return frame
 
 def _build_face_detector(model_path: str, running_mode=None, result_callback=None):
