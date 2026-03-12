@@ -45,11 +45,18 @@ def extract_frames(
             config_data = json.load(f)
 
         for entry in config_data:
+            # Respect "is_positive" if present, otherwise use "negative"
+            is_positive = entry.get("is_positive")
+            if is_positive is not None:
+                entry_negative = not is_positive
+            else:
+                entry_negative = entry.get("negative", negative)
+
             jobs.append({
                 "video_path": entry.get("video_path"),
                 "frame_rate": entry.get("frame_rate", frame_rate),
                 "segments": entry.get("segments", []),
-                "negative": entry.get("negative", negative)
+                "negative": entry_negative
             })
     elif video_path:
         abs_video_path = os.path.abspath(os.path.normpath(video_path))

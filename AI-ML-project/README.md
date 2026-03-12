@@ -1,9 +1,9 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Version](https://img.shields.io/badge/version-1.22.0-blue.svg)](https://github.com/quackextractor/CS-Portfolio)
+[![Version](https://img.shields.io/badge/version-1.23.0-blue.svg)](https://github.com/quackextractor/CS-Portfolio)
 
 # Target Face Detector
 
-This repository contains the source code, data pipeline, and documentation generator for the Target Face Detector. This version (1.22.0) features a refined data pipeline with split processing and building commands, support for negative class routing, and recursive directory processing with subfolder mirroring.
+This repository contains the source code, data pipeline, and documentation generator for the Target Face Detector. This version features a refined data pipeline with split processing and building commands, support for negative class routing, and recursive directory processing with subfolder mirroring.
 
 ## Prerequisites
 
