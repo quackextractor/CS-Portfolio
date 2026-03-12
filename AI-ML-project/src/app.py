@@ -100,6 +100,9 @@ def display_gradcam(frame, heatmap, bbox, alpha=0.6, sensitivity=1.0):
     heatmap = np.nan_to_num(heatmap, nan=0.0, posinf=1.0, neginf=0.0)
     heatmap = np.clip(heatmap * sensitivity, 0.0, 1.0)
 
+    # Cast to float32 to prevent OpenCV assertion errors
+    heatmap = heatmap.astype(np.float32)
+
     # Resize before color mapping for smoother output
     heatmap = cv2.resize(heatmap, (w, h))
 
