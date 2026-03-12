@@ -24,9 +24,11 @@ def test_extract_frames_valid_file(temp_video, tmp_path):
     output_dir = tmp_path / "output"
     extract_frames(temp_video, str(output_dir), frame_rate=2)
 
-    # Check if frames were saved
-    # 10 frames total, frame_rate=2 -> should be 5 frames (0, 2, 4, 6, 8)
-    files = os.listdir(output_dir)
+    # Check if frames were saved in a subfolder named after the video
+    video_name = os.path.splitext(os.path.basename(temp_video))[0]
+    subfolder = output_dir / video_name
+    assert os.path.exists(subfolder)
+    files = os.listdir(subfolder)
     assert len(files) == 5
     assert all(f.endswith(".jpg") for f in files)
 
@@ -37,8 +39,9 @@ def test_extract_frames_directory(temp_video, tmp_path):
     # Provide the directory containing the video
     extract_frames(str(tmp_path), str(output_dir), frame_rate=5)
 
-    # 10 frames total, frame_rate=5 -> should be 2 frames (0, 5)
-    files = os.listdir(output_dir)
+    video_name = os.path.splitext(os.path.basename(temp_video))[0]
+    subfolder = output_dir / video_name
+    files = os.listdir(subfolder)
     assert len(files) == 2
 
 
@@ -52,9 +55,12 @@ def test_extract_frames_directory_batch(temp_video, tmp_path):
     output_dir = tmp_path / "output_batch"
     extract_frames(str(tmp_path), str(output_dir), frame_rate=5, batch=True)
 
-    # 10 frames per video -> 2 videos -> 4 frames total
-    files = os.listdir(output_dir)
-    assert len(files) == 4
+    # Check subfolders
+    v1_name = os.path.splitext(os.path.basename(temp_video))[0]
+    v2_name = "test_video2"
+    
+    assert len(os.listdir(output_dir / v1_name)) == 2
+    assert len(os.listdir(output_dir / v2_name)) == 2
 
 
 def test_extract_frames_invalid_path(capsys, tmp_path):

@@ -84,11 +84,13 @@ def _compute_heatmap_graph(img_tensor, feature_extractor, classifier):
     
     return heatmap
 
+
 def compute_heatmap(img_tensor, grad_models, pred_index=None):
     feature_extractor, classifier = grad_models
     if feature_extractor is None or classifier is None:
         return tf.zeros((img_tensor.shape[1], img_tensor.shape[2]))
     return _compute_heatmap_graph(img_tensor, feature_extractor, classifier)
+
 
 def make_gradcam_heatmap(img_array, grad_model, pred_index=None):
     if grad_model is None:
@@ -96,6 +98,7 @@ def make_gradcam_heatmap(img_array, grad_model, pred_index=None):
     img_tensor = tf.convert_to_tensor(img_array, dtype=tf.float32)
     heatmap = compute_heatmap(img_tensor, grad_model, pred_index)
     return heatmap.numpy()
+
 
 def display_gradcam(frame, heatmap, bbox, alpha=0.5, sensitivity=2.0):
     x, y, w, h = bbox
@@ -114,6 +117,7 @@ def display_gradcam(frame, heatmap, bbox, alpha=0.5, sensitivity=2.0):
     frame[y:y+h, x:x+w] = overlay
     return frame
 
+
 def _build_face_detector(model_path: str):
     if not os.path.isfile(model_path):
         raise FileNotFoundError(f"Face detector model not found at '{model_path}'.")
@@ -129,6 +133,7 @@ def _build_face_detector(model_path: str):
         min_detection_confidence=0.5
     )
     return FaceDetector.create_from_options(options)
+
 
 def main(
     video_path: str = None,
@@ -148,7 +153,9 @@ def main(
         return
 
     if not os.path.exists(model_path):
-        logging.error(f"Error: Model file not found at {model_path}. Please train first.")
+        logging.error(
+            f"Error: Model file not found at {model_path}. Please train first."
+        )
         return
 
     try:
@@ -267,27 +274,27 @@ def main(
                         resized_face = cv2.resize(cropped_face, (img_size, img_size))
                         rgb_face = cv2.cvtColor(resized_face, cv2.COLOR_BGR2RGB)
                         normalized_face = rgb_face / 255.0
-                        
+                       
                         faces_batch.append(normalized_face)
                         face_coords.append((x_min, y_min, x_max, y_max))
 
                 if faces_batch:
                     batch_tensor = np.array(faces_batch)
                     predictions = model(batch_tensor, training=False)
-                    
+                   
                     new_cached_heatmaps = {}
-                    
+                   
                     for face_idx, (prediction_tensor, coords) in enumerate(zip(predictions, face_coords)):
                         prediction = prediction_tensor[0].numpy()
                         is_target = prediction >= threshold
                         label = f"{'Target' if is_target else 'Unknown'} ({prediction:.2f})"
                         color = (0, 255, 0) if is_target else (0, 0, 255)
-                        
+                       
                         x_min, y_min, x_max, y_max = coords
 
                         if gradcam_active:
                             input_face = np.expand_dims(faces_batch[face_idx], axis=0)
-                            
+                           
                             if frame_count % 15 == 0 or face_idx not in cached_heatmap_data:
                                 heatmap = make_gradcam_heatmap(input_face, grad_model)
                                 new_cached_heatmaps[face_idx] = heatmap

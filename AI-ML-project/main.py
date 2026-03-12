@@ -112,22 +112,52 @@ def main():
         help="Initial sensitivity multiplier for Grad-CAM heatmap",
     )
 
-    # Command: build
-    parser_build = subparsers.add_parser(
-        "build",
-        help="Clean, crop, and normalize raw images to build the dataset CSV",
+    # Command: process
+    parser_process = subparsers.add_parser(
+        "process",
+        help="Clean, crop, and normalize raw images from raw/ folders to processed/ folders",
     )
-    parser_build.add_argument(
+    parser_process.add_argument(
+        "--class_target",
+        type=str,
+        choices=["positive", "negative", "both"],
+        default="both",
+        help="Restrict processing to a specific class",
+    )
+    parser_process.add_argument(
+        "--folder",
+        type=str,
+        default=None,
+        help="Process only a specific subfolder within the target class directory",
+    )
+    parser_process.add_argument(
+        "--build",
+        action="store_true",
+        help="Trigger dataset CSV generation after processing finishes",
+    )
+    parser_process.add_argument(
         "--no_skip_blurry",
         action="store_false",
         dest="skip_blurry",
         help="Do not skip blurry faces",
     )
-    parser_build.add_argument(
+    parser_process.add_argument(
         "--blur_threshold",
         type=float,
         default=defaults.get("build", {}).get("blur_threshold", 10.0),
         help="Variance of Laplacian threshold for blur detection",
+    )
+
+    # Command: build
+    parser_build = subparsers.add_parser(
+        "build",
+        help="Generate the dataset CSV from processed images",
+    )
+    parser_build.add_argument(
+        "--output_csv",
+        type=str,
+        default=config.get("data", {}).get("dataset_csv", "data/processed/dataset.csv"),
+        help="Override standard dataset CSV output path",
     )
 
     # Command: scrape
@@ -150,14 +180,18 @@ def main():
     parser_scrape.add_argument(
         "--output_dir",
         type=str,
-        default=defaults.get("scrape", {}).get("output_dir", "data/raw/negative"),
+        default=defaults.get("scrape", {}).get("output_dir", "data/raw/negative/scraped"),
         help="Output directory",
     )
 
-    # Command: extract
     parser_extract = subparsers.add_parser(
         "extract",
-        help="Extract frames from personal videos for the positive class",
+        help="Extract frames from personal videos for the positive or negative class",
+    )
+    parser_extract.add_argument(
+        "--negative",
+        action="store_true",
+        help="Route extracted frames to the negative class directory",
     )
     parser_extract.add_argument(
         "video_path",
@@ -256,11 +290,20 @@ def main():
             use_gradcam=gradcam_mode,
             heatmap_sensitivity=heatmap_sensitivity,
         )
-    elif args.command == "build":
-        from src.build_dataset import build_dataset
+    elif args.command == "process":
+        from src.build_dataset import run_processing
         skip_blurry = getattr(args, "skip_blurry", True)
         blur_threshold = getattr(args, "blur_threshold", 10.0)
-        build_dataset(skip_blurry, blur_threshold)
+        run_processing(
+            class_target=args.class_target,
+            folder=args.folder,
+            trigger_build=args.build,
+            skip_blurry=skip_blurry,
+            blur_threshold=blur_threshold,
+        )
+    elif args.command == "build":
+        from src.build_dataset import run_building
+        run_building(args.output_csv)
     elif args.command == "scrape":
         from src.pexels_scraper import download_pexels_images
         download_pexels_images(args.query, args.total, args.output_dir)
@@ -272,14 +315,16 @@ def main():
                 config_path=args.config,
                 output_dir=args.output_dir,
                 frame_rate=args.frame_rate,
-                batch=batch_mode
+                batch=batch_mode,
+                negative=args.negative
             )
         elif args.video_path:
             extract_frames(
                 video_path=args.video_path,
                 output_dir=args.output_dir,
                 frame_rate=args.frame_rate,
-                batch=batch_mode
+                batch=batch_mode,
+                negative=args.negative
             )
         else:
             print("Error: Either video_path or --config must be provided.")

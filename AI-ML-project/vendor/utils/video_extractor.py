@@ -27,7 +27,8 @@ def extract_frames(
     output_dir: str = "data/raw/positive",
     frame_rate: int = 1,
     batch: bool = False,
-    config_path: Optional[str] = None
+    config_path: Optional[str] = None,
+    negative: bool = False
 ) -> None:
     """
     Extracts frames from video files based on CLI path or a JSON configuration.
@@ -47,7 +48,8 @@ def extract_frames(
             jobs.append({
                 "video_path": entry.get("video_path"),
                 "frame_rate": entry.get("frame_rate", frame_rate),
-                "segments": entry.get("segments", [])
+                "segments": entry.get("segments", []),
+                "negative": entry.get("negative", negative)
             })
     elif video_path:
         abs_video_path = os.path.abspath(os.path.normpath(video_path))
@@ -64,23 +66,39 @@ def extract_frames(
 
             paths = [os.path.join(abs_video_path, v) for v in videos]
             if not batch:
-                paths = [paths[0]]
+                patterns = [paths[0]]
+            else:
+                patterns = paths
 
-            for p in paths:
-                jobs.append({"video_path": p, "frame_rate": frame_rate, "segments": []})
+            for p in patterns:
+                jobs.append({"video_path": p, "frame_rate": frame_rate, "segments": [], "negative": negative})
         else:
-            jobs.append({"video_path": abs_video_path, "frame_rate": frame_rate, "segments": []})
+            jobs.append({"video_path": abs_video_path, "frame_rate": frame_rate, "segments": [], "negative": negative})
     else:
         print("Error: Either video_path or config_path must be provided.")
         return
-
-    os.makedirs(output_dir, exist_ok=True)
 
     for job in jobs:
         v_path = job["video_path"]
         v_rate = job["frame_rate"]
         segments = job["segments"]
+        is_neg = job["negative"]
         video_name = Path(v_path).stem
+
+        # Dynamic output directory within the specified output_dir
+        # If the user explicitly passed output_dir, we respect it.
+        # However, the requirement says frames should be in output_dir/video_name/
+        current_output_dir = os.path.join(output_dir, video_name)
+        
+        # If we are using the 'main.py' defaults, output_dir will be 'data/raw/positive' or 'data/raw/negative'
+        # But if the 'negative' flag is set, we want to ensure it goes to the negative dir.
+        if is_neg and "positive" in output_dir:
+            # Heuristic: if output_dir looks like positive but we want negative, swap it.
+            # This is to handle the CLI --output_dir interacting with --negative.
+            output_dir = output_dir.replace("positive", "negative")
+            current_output_dir = os.path.join(output_dir, video_name)
+
+        os.makedirs(current_output_dir, exist_ok=True)
 
         cap = cv2.VideoCapture(v_path)
         if not cap.isOpened():
@@ -103,8 +121,9 @@ def extract_frames(
             cap.set(cv2.CAP_PROP_POS_MSEC, start_sec * 1000)
 
             # Estimate steps for the segment
-            seg_frames = int((end_sec - start_sec) * fps)
-            pbar = tqdm(total=seg_frames, desc=f"  Extracting {video_name}", leave=False)
+            duration = end_sec - start_sec
+            seg_frames_estimate = int(duration * fps)
+            pbar = tqdm(total=seg_frames_estimate, desc=f"  Extracting {video_name}", leave=False)
 
             current_frame_idx = 0
             while True:
@@ -118,7 +137,7 @@ def extract_frames(
 
                 if current_frame_idx % v_rate == 0:
                     frame_filename = os.path.join(
-                        output_dir, f"{video_name}_frame_{saved_count:04d}.jpg"
+                        current_output_dir, f"{video_name}_frame_{saved_count:04d}.jpg"
                     )
                     cv2.imwrite(frame_filename, frame)
                     saved_count += 1
@@ -128,7 +147,7 @@ def extract_frames(
             pbar.close()
 
         cap.release()
-        print(f"Extracted {saved_count} frames from {video_name} into {output_dir}")
+        print(f"Extracted {saved_count} frames from {video_name} into {current_output_dir}")
 
 
 if __name__ == "__main__":
@@ -151,6 +170,9 @@ if __name__ == "__main__":
     parser.add_argument(
         "--batch", action="store_true", help="Process all videos in a given directory"
     )
+    parser.add_argument(
+        "--negative", action="store_true", help="Route extracted frames to negative class"
+    )
 
     args = parser.parse_args()
     extract_frames(
@@ -158,5 +180,6 @@ if __name__ == "__main__":
         output_dir=args.output_dir,
         frame_rate=args.frame_rate,
         batch=args.batch,
-        config_path=args.config
+        config_path=args.config,
+        negative=args.negative
     )

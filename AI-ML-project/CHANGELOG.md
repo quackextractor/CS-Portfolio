@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.22.0] - 2026-03-12
+### Added
+- **Split CLI Commands**: Refactored the monolithic `build` command into separate `process` (preprocessing) and `build` (CSV generation) commands for better pipeline control.
+- **Negative Class Routing**: Added `--negative` flag to `extract` command and JSON config support (`"negative": true`) to route extracted frames directly to the negative class directory.
+- **Video-Specific Subfolders**: Automatic creation of subfolders for each video within `data/raw/` (e.g., `data/raw/positive/my_video/`) to maintain data organization.
+- **Recursive Directory Processing**: `process_images` now recursively scans input directories and mirrors the subfolder structure in the `data/processed/` directory.
+
+### Changed
+- **Configurable Dataset Building**: The `build` command now supports custom `--output_csv` paths and leverages the mirrored directory structure for video-level splitting.
+- **Enhanced Configuration**: Updated `config.yaml` with dedicated `output_dir` for Pexels scraper to isolate external data.
+- **Integrated Verification**: Added new unit and integration tests covering the split processing/building logic and CLI command registration.
+
+### Fixed
+- **Path Robustness**: Refactored path handling in `build_dataset.py` and `video_extractor.py` to use `pathlib` and handle nested subfolders correctly.
+- **Data Leakage Prevention**: Split logic in `run_building` now correctly extracts video names from nested paths to ensure rigorous video-level separation.
+- **Linting & Quality**: Comprehensive codebase cleanup resolving PEP 8 violations and improving overall code readability.
+
 ## [1.21.0] - 2026-03-12
 ### Added
 * Implemented a **three-way data split** (70% Train, 15% Validation, 15% Holdout Test) in `build_dataset.py` to ensure a truly unseen dataset for final model evaluation.

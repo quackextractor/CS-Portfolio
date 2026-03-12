@@ -1,9 +1,9 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Version](https://img.shields.io/badge/version-1.21.0-blue.svg)](https://github.com/quackextractor/CS-Portfolio)
+[![Version](https://img.shields.io/badge/version-1.22.0-blue.svg)](https://github.com/quackextractor/CS-Portfolio)
 
 # Target Face Detector
 
-This repository contains the source code, data pipeline, and documentation generator for the Target Face Detector. This version (1.21.0) features a refined video-to-split distribution logic to eliminate data leakage, improved data augmentation, and tighter crop margins (0.05) for superior facial alignment.
+This repository contains the source code, data pipeline, and documentation generator for the Target Face Detector. This version (1.22.0) features a refined data pipeline with split processing and building commands, support for negative class routing, and recursive directory processing with subfolder mirroring.
 
 ## Prerequisites
 
@@ -47,8 +47,15 @@ The project is operated entirely through a unified CLI managed by `main.py`. Onc
 * `python main.py scrape`: Download portrait images for the negative class (supports multiple hard negative queries in `config.yaml`).
 * `python main.py extract <video_path>`: Extract frames from personal videos for the positive class.
   * Optionally, use `--config <path.json>` for **Advanced Batch Extraction** (supports segment seeking and dynamic frame skipping).
+  * Use `--negative` to route extracted frames to the negative class directory.
   * Optionally, use `--batch` to process all videos in a specified folder.
-* `python main.py build`: Clean, crop, and normalize raw images to build the dataset CSV.
+* `python main.py process`: Preprocess raw images (crop, blur check, normalize).
+  * Use `--class_target <positive|negative|both>` to limit processing.
+  * Use `--folder <subfolder>` to process a specific video subfolder.
+  * Use `--build` to automatically trigger the CSV building step after processing.
+* `python main.py build`: Scan processed images and generate the dataset CSV.
+  * Supports custom `--output_csv` paths.
+  * Performs video-level level splitting to prevent data leakage.
 * `python main.py run`: Launch the live webcam face detection application. Supports `LIVE_STREAM` and `VIDEO` modes for high-performance processing.
 * `python main.py visualize`: Generate an activation maximization image (model vision).
 * `python main.py status`: Show dataset statistics (counts, MB, and video subtotals).

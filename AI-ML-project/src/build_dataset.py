@@ -1,10 +1,11 @@
 import os
 import cv2
 import yaml
-import glob
 import pandas as pd
 import argparse
 from tqdm import tqdm
+from pathlib import Path
+
 
 def load_config(config_path: str = "config.yaml") -> dict:
     with open(config_path, "r") as f:
@@ -71,18 +72,21 @@ def process_images(
     blur_threshold: float = 10.0,
 ) -> list:
     """
-    Processes images in a directory: detects faces, crops, resizes, and saves them.
-    Returns a list of dictionaries with metadata for the CSV.
+    Processes images in a directory (recursively): detects faces, crops, resizes, and saves them.
+    Mirrors the subfolder structure of the input_dir.
     """
     import mediapipe as mp
 
     records = []
     face_detector = _build_face_detector(model_path)
-    os.makedirs(output_dir, exist_ok=True)
 
-    image_paths = glob.glob(os.path.join(input_dir, "*.[jp][pn]g")) + glob.glob(
-        os.path.join(input_dir, "*.jpeg")
-    )
+    # Find all image files recursively
+    image_paths = []
+    valid_extensions = ('.jpg', '.jpeg', '.png')
+    for root, _, files in os.walk(input_dir):
+        for f in files:
+            if f.lower().endswith(valid_extensions):
+                image_paths.append(os.path.join(root, f))
 
     processed_count = 0
     discarded_count = 0
@@ -131,8 +135,10 @@ def process_images(
 
         resized_face = cv2.resize(cropped_face, (img_size, img_size))
 
-        filename = os.path.basename(img_path)
-        output_path = os.path.join(output_dir, filename)
+        # Mirror subfolder structure
+        rel_path = os.path.relpath(img_path, input_dir)
+        output_path = os.path.join(output_dir, rel_path)
+        os.makedirs(os.path.dirname(output_path), exist_ok=True)
         cv2.imwrite(output_path, resized_face)
 
         rel_output_path = os.path.relpath(output_path, start=".")
@@ -146,71 +152,100 @@ def process_images(
     )
     return records
 
-def build_dataset(skip_blurry: bool = True, blur_threshold: float = 10.0) -> None:
+def run_processing(
+    class_target: str = "both",
+    folder: str = None,
+    trigger_build: bool = False,
+    skip_blurry: bool = True,
+    blur_threshold: float = 10.0,
+) -> None:
     config = load_config()
     raw_positive_dir = config["data"]["raw_positive_dir"]
     raw_negative_dir = config["data"]["raw_negative_dir"]
     processed_dir = config["data"]["processed_dir"]
-    dataset_csv = config["data"]["dataset_csv"]
     img_size = config["model"]["img_size"]
     model_path = config["model"].get(
         "face_detector_model_path", "models/blaze_face_short_range.task"
     )
 
-    proc_pos_dir = os.path.join(processed_dir, "positive")
-    proc_neg_dir = os.path.join(processed_dir, "negative")
+    if folder:
+        raw_positive_dir = os.path.join(raw_positive_dir, folder)
+        raw_negative_dir = os.path.join(raw_negative_dir, folder)
+        proc_pos_dir = os.path.join(processed_dir, "positive", folder)
+        proc_neg_dir = os.path.join(processed_dir, "negative", folder)
+    else:
+        proc_pos_dir = os.path.join(processed_dir, "positive")
+        proc_neg_dir = os.path.join(processed_dir, "negative")
 
-    print("Processing positive class (Target)...")
-    pos_records = process_images(
-        raw_positive_dir,
-        proc_pos_dir,
-        label=1,
-        img_size=img_size,
-        model_path=model_path,
-        skip_blurry=skip_blurry,
-        blur_threshold=blur_threshold,
-    )
+    if class_target in ("positive", "both") and os.path.exists(raw_positive_dir):
+        print(f"Processing positive class: {raw_positive_dir}")
+        process_images(
+            raw_positive_dir,
+            proc_pos_dir,
+            label=1,
+            img_size=img_size,
+            model_path=model_path,
+            skip_blurry=skip_blurry,
+            blur_threshold=blur_threshold,
+        )
 
-    print("Processing negative class (Random)...")
-    neg_records = process_images(
-        raw_negative_dir,
-        proc_neg_dir,
-        label=0,
-        img_size=img_size,
-        model_path=model_path,
-        skip_blurry=skip_blurry,
-        blur_threshold=blur_threshold,
-    )
+    if class_target in ("negative", "both") and os.path.exists(raw_negative_dir):
+        print(f"Processing negative class: {raw_negative_dir}")
+        process_images(
+            raw_negative_dir,
+            proc_neg_dir,
+            label=0,
+            img_size=img_size,
+            model_path=model_path,
+            skip_blurry=skip_blurry,
+            blur_threshold=blur_threshold,
+        )
 
-    all_records = pos_records + neg_records
+    if trigger_build:
+        run_building()
 
-    if not all_records:
-        print("No faces processed. Please check raw data.")
+def run_building(output_csv: str = None) -> None:
+    config = load_config()
+    processed_dir = config["data"]["processed_dir"]
+    if output_csv is None:
+        output_csv = config["data"]["dataset_csv"]
+
+    print(f"Building dataset CSV from {processed_dir}...")
+    
+    records = []
+    # Scan processed/positive and processed/negative
+    for label, sub in [(1, "positive"), (0, "negative")]:
+        target_dir = os.path.join(processed_dir, sub)
+        if not os.path.exists(target_dir):
+            continue
+        for root, _, files in os.walk(target_dir):
+            for f in files:
+                if f.lower().endswith(('.jpg', '.jpeg', '.png')):
+                    abs_p = os.path.join(root, f)
+                    rel_p = os.path.relpath(abs_p, start=".")
+                    records.append({"filepath": rel_p, "label": label})
+
+    if not records:
+        print("No processed images found. Run 'process' command first.")
         return
 
-    df = pd.DataFrame(all_records)
+    df = pd.DataFrame(records)
 
     # Extract video name from filepath to prevent data leakage
-    # Assumes filepath format like 'data/processed/positive/video_name_frame_123.jpg'
     def get_video_name(path):
-        basename = os.path.basename(path)
-        # Handle cases like video_name_frame_123.jpg or video_name_123.jpg
-        # We want to strip the trailing frame identifier
-        import re
-        # Look for _frame_N, _N, etc at the end before extension
-        name_without_ext = os.path.splitext(basename)[0]
-        # Match pattern like _frame_123 or just _123 at the end
-        match = re.search(r'(_frame)?_\d+$', name_without_ext)
-        if match:
-            return name_without_ext[:match.start()]
-        return name_without_ext
+        # Path looks like data/processed/positive/video_name/frame_0001.jpg
+        # or data/processed/negative/scraped/some_image.jpg
+        # We want the immediate parent folder if it's not 'positive' or 'negative'
+        parts = Path(path).parts
+        # parts might be ('data', 'processed', 'positive', 'video_folder', 'frame.jpg')
+        # We want 'video_folder'
+        if len(parts) > 3 and parts[2] in ('positive', 'negative'):
+            return parts[3]
+        return "unknown"
 
     df['video_name'] = df['filepath'].apply(get_video_name)
 
-    train_dfs = []
-    val_dfs = []
-    test_dfs = []
-
+    train_dfs, val_dfs, test_dfs = [], [], []
     import random
     random.seed(42)
 
@@ -221,50 +256,62 @@ def build_dataset(skip_blurry: bool = True, blur_threshold: float = 10.0) -> Non
 
         n_vids = len(videos)
         train_end = int(n_vids * 0.7)
+        val_end = int(n_vids * 0.85)
 
         train_vids = set(videos[:train_end])
         val_vids = set(videos[train_end:val_end])
-        test_vids = set(videos[val_end:])
+        val_vids = set(videos[train_end:val_end])
+        # test_vids = set(videos[val_end:]) # Reserved for future use
 
-        train_subset = label_df[label_df['video_name'].isin(train_vids)].copy()
-        train_subset['split'] = 'train'
-        train_dfs.append(train_subset)
+        def assign_split(vid):
+            if vid in train_vids:
+                return 'train'
+            if vid in val_vids:
+                return 'val'
+            return 'test'
 
-        val_subset = label_df[label_df['video_name'].isin(val_vids)].copy()
-        val_subset['split'] = 'val'
-        val_dfs.append(val_subset)
+        label_df['split'] = label_df['video_name'].apply(assign_split)
+        train_dfs.append(label_df[label_df['split'] == 'train'])
+        val_dfs.append(label_df[label_df['split'] == 'val'])
+        test_dfs.append(label_df[label_df['split'] == 'test'])
 
-        test_subset = label_df[label_df['video_name'].isin(test_vids)].copy()
-        test_subset['split'] = 'test'
-        test_dfs.append(test_subset)
-
-    final_df = pd.concat(train_dfs + val_dfs + test_dfs).sort_index()
-
-    os.makedirs(os.path.dirname(dataset_csv), exist_ok=True)
-    final_df.to_csv(dataset_csv, index=False)
+    all_dfs = train_dfs + val_dfs + test_dfs
+    if not all_dfs:
+        print("Error: No data subsets were created. Check video folder names and data.")
+        return
+    final_df = pd.concat(all_dfs).sort_index()
+    dir_name = os.path.dirname(output_csv)
+    if dir_name:
+        os.makedirs(dir_name, exist_ok=True)
+    final_df.to_csv(output_csv, index=False)
 
     print(f"Dataset successfully built with {len(final_df)} records.")
-    print(f"Training samples: {len(final_df[final_df['split'] == 'train'])}")
-    print(f"Validation samples: {len(final_df[final_df['split'] == 'val'])}")
-    print(f"Testing samples: {len(final_df[final_df['split'] == 'test'])}")
-    print(f"CSV saved to {dataset_csv}")
+    print(f"Split stats: Train={len(final_df[final_df['split'] == 'train'])}, "
+          f"Val={len(final_df[final_df['split'] == 'val'])}, "
+          f"Test={len(final_df[final_df['split'] == 'test'])}")
+    print(f"CSV saved to {output_csv}")
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="Clean, crop, and normalize raw images using MediaPipe."
-    )
-    parser.add_argument(
-        "--no_skip_blurry",
-        action="store_false",
-        dest="skip_blurry",
-        help="Do not skip blurry faces",
-    )
-    parser.add_argument(
-        "--blur_threshold",
-        type=float,
-        default=10.0,
-        help="Variance of Laplacian threshold for blur detection",
-    )
+    parser = argparse.ArgumentParser(description="Build dataset logic")
+    parser.add_argument("--process", action="store_true")
+    parser.add_argument("--build", action="store_true")
+    parser.add_argument("--class_target", default="both")
+    parser.add_argument("--folder", default=None)
+    parser.add_argument("--no_skip_blurry", action="store_false", dest="skip_blurry")
+    parser.add_argument("--blur_threshold", type=float, default=10.0)
     args = parser.parse_args()
-    build_dataset(args.skip_blurry, args.blur_threshold)
+
+    if args.process:
+        run_processing(
+            class_target=args.class_target,
+            folder=args.folder,
+            trigger_build=args.build,
+            skip_blurry=args.skip_blurry,
+            blur_threshold=args.blur_threshold
+        )
+    elif args.build:
+        run_building()
+    else:
+        # Backward compatibility or default behavior if no flags passed
+        run_processing(trigger_build=True)
