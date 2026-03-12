@@ -4,7 +4,7 @@ import argparse
 import json
 from tqdm import tqdm
 from pathlib import Path
-from typing import Optional, List, Dict, Union
+from typing import Optional, Union
 
 
 def timestamp_to_seconds(timestamp: Union[str, int, float]) -> float:
@@ -78,13 +78,22 @@ def extract_frames(
                 patterns = paths
 
             for p in patterns:
-                jobs.append({"video_path": p, "frame_rate": frame_rate, "segments": [], "negative": negative})
+                jobs.append({
+                    "video_path": p,
+                    "frame_rate": frame_rate,
+                    "segments": [],
+                    "negative": negative
+                })
         else:
-            jobs.append({"video_path": abs_video_path, "frame_rate": frame_rate, "segments": [], "negative": negative})
+            jobs.append({
+                "video_path": abs_video_path,
+                "frame_rate": frame_rate,
+                "segments": [],
+                "negative": negative
+            })
     else:
         print("Error: Either video_path or config_path must be provided.")
         return
-
     for job in jobs:
         v_path = job["video_path"]
         v_rate = job["frame_rate"]
@@ -97,11 +106,9 @@ def extract_frames(
         # However, the requirement says frames should be in output_dir/video_name/
         current_output_dir = os.path.join(output_dir, video_name)
         
-        # If we are using the 'main.py' defaults, output_dir will be 'data/raw/positive' or 'data/raw/negative'
-        # But if the 'negative' flag is set, we want to ensure it goes to the negative dir.
+        # Heuristic: if output_dir looks like positive but we want negative, swap it.
+        # This is to handle the CLI --output_dir interacting with --negative.
         if is_neg and "positive" in output_dir:
-            # Heuristic: if output_dir looks like positive but we want negative, swap it.
-            # This is to handle the CLI --output_dir interacting with --negative.
             output_dir = output_dir.replace("positive", "negative")
             current_output_dir = os.path.join(output_dir, video_name)
 
@@ -130,7 +137,11 @@ def extract_frames(
             # Estimate steps for the segment
             duration = end_sec - start_sec
             seg_frames_estimate = int(duration * fps)
-            pbar = tqdm(total=seg_frames_estimate, desc=f"  Extracting {video_name}", leave=False)
+            pbar = tqdm(
+                total=seg_frames_estimate,
+                desc=f"  Extracting {video_name}",
+                leave=False
+            )
 
             current_frame_idx = 0
             while True:

@@ -82,3 +82,39 @@ def test_extract_frames_empty_directory(capsys, tmp_path):
 
     captured = capsys.readouterr()
     assert "Error: No video files found in directory" in captured.out
+
+
+def test_extract_frames_is_positive_false(temp_video, tmp_path):
+    """Test that is_positive: false in config routes to negative directory."""
+    import json
+    config_path = tmp_path / "config.json"
+    output_dir = tmp_path / "data" / "raw" / "positive" # Default output dir
+    
+    config_data = [
+        {
+            "video_path": temp_video,
+            "frame_rate": 2,
+            "is_positive": False
+        }
+    ]
+    
+    with open(config_path, "w") as f:
+        json.dump(config_data, f)
+        
+    # the extract_frames function itself has a default of data/raw/positive.
+    # we want to ensure it changes it to data/raw/negative if "is_positive" is false.
+    extract_frames(config_path=str(config_path), output_dir=str(output_dir))
+    
+    video_name = os.path.splitext(os.path.basename(temp_video))[0]
+    
+    # Check that it DOES NOT exist in positive
+    positive_subfolder = output_dir / video_name
+    assert not os.path.exists(positive_subfolder)
+    
+    # Check that it DOES exist in negative
+    negative_dir = str(output_dir).replace("positive", "negative")
+    negative_subfolder = os.path.join(negative_dir, video_name)
+    assert os.path.exists(negative_subfolder)
+    
+    files = os.listdir(negative_subfolder)
+    assert len(files) == 5

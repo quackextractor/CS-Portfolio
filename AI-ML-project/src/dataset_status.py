@@ -1,30 +1,55 @@
 import os
 import glob
 from collections import defaultdict
+from pathlib import Path
 
 
 def get_dir_stats(directory):
-    """Calculates count and total size in MB of files in a directory."""
-    files = glob.glob(os.path.join(directory, "*.*"))
-    count = len(files)
-    total_size = sum(os.path.getsize(f) for f in files) / (1024 * 1024)
-    return count, total_size, files
+    """Calculates count and total size in MB of files in a directory (recursively)."""
+    all_files = []
+    total_size = 0
+    
+    if not os.path.exists(directory):
+        return 0, 0, []
+
+    for root, _, files in os.walk(directory):
+        for f in files:
+            # Match any file with an extension
+            if "." in f:
+                f_path = os.path.join(root, f)
+                all_files.append(f_path)
+                total_size += os.path.getsize(f_path)
+    
+    count = len(all_files)
+    total_size_mb = total_size / (1024 * 1024)
+    return count, total_size_mb, all_files
 
 
-def get_video_name(filename):
+def get_source_name(file_path, base_dir):
     """
-    Extracts video name from filename.
-    Assumes format like 'video_name_frame_0000.jpg' or similar.
-    We look for the pattern before '_frame_'.
+    Determines the source name (subfolder or video name) from the file path.
     """
+    try:
+        rel_path = os.path.relpath(file_path, base_dir)
+        parts = Path(rel_path).parts
+        if len(parts) > 1:
+            # It's in a subfolder, use the subfolder name as the source
+            return parts[0]
+    except ValueError:
+        pass
+    
+    # Fallback to filename-based naming if not in a subfolder or error
+    filename = os.path.basename(file_path)
     if "_frame_" in filename:
         return filename.split("_frame_")[0]
+    
     # Fallback: take everything before the last underscore if it looks like a frame number
     base = os.path.splitext(filename)[0]
-    parts = base.split("_")
-    if len(parts) > 1 and parts[-1].isdigit():
-        return "_".join(parts[:-1])
-    return "unknown"
+    parts_list = base.split("_")
+    if len(parts_list) > 1 and parts_list[-1].isdigit():
+        return "_".join(parts_list[:-1])
+        
+    return "root"
 
 
 def print_status(config):
@@ -38,11 +63,11 @@ def print_status(config):
 
     # Raw stats
     raw_pos_count, raw_pos_size, raw_pos_files = get_dir_stats(raw_pos_dir)
-    raw_neg_count, raw_neg_size, _ = get_dir_stats(raw_neg_dir)
+    raw_neg_count, raw_neg_size, raw_neg_files = get_dir_stats(raw_neg_dir)
 
     # Processed stats
     proc_pos_count, proc_pos_size, proc_pos_files = get_dir_stats(proc_pos_dir)
-    proc_neg_count, proc_neg_size, _ = get_dir_stats(proc_neg_dir)
+    proc_neg_count, proc_neg_size, proc_neg_files = get_dir_stats(proc_neg_dir)
 
     print("\n" + "="*40)
     print(" TARGET DATASET STATUS REPORT ")
@@ -64,26 +89,30 @@ def print_status(config):
         diff_pct = (total_proc - total_raw) / total_raw * 100
         print(f"\nTotal Diff:  {diff_pct:>+6.1f}% ({total_proc} vs {total_raw})")
 
-    # Grouping by Video
-    print("\nPOSITIVE FRAMES BY VIDEO (SUBTOTALS):")
+    def print_table(title, raw_files, proc_files, raw_base, proc_base):
+        print(f"\n{title}:")
+        
+        def group_by_source(files, base):
+            groups = defaultdict(int)
+            for f in files:
+                name = get_source_name(f, base)
+                groups[name] += 1
+            return groups
 
-    def group_by_video(files):
-        groups = defaultdict(int)
-        for f in files:
-            name = get_video_name(os.path.basename(f))
-            groups[name] += 1
-        return groups
+        raw_groups = group_by_source(raw_files, raw_base)
+        proc_groups = group_by_source(proc_files, proc_base)
 
-    raw_video_groups = group_by_video(raw_pos_files)
-    proc_video_groups = group_by_video(proc_pos_files)
+        all_sources = sorted(set(list(raw_groups.keys()) + list(proc_groups.keys())))
 
-    all_videos = sorted(set(list(raw_video_groups.keys()) + list(proc_video_groups.keys())))
+        print(f"  {'Source Name':<30} | {'Raw':>6} | {'Proc':>6}")
+        print(f"  {'-'*30}-|{'-'*8}|{'-'*8}")
+        for source in all_sources:
+            r_cnt = raw_groups.get(source, 0)
+            p_cnt = proc_groups.get(source, 0)
+            print(f"  {source[:30]:<30} | {r_cnt:>6} | {p_cnt:>6}")
 
-    print(f"  {'Video Source':<30} | {'Raw':>6} | {'Proc':>6}")
-    print(f"  {'-'*30}-|{'-'*8}|{'-'*8}")
-    for video in all_videos:
-        r_cnt = raw_video_groups.get(video, 0)
-        p_cnt = proc_video_groups.get(video, 0)
-        print(f"  {video[:30]:<30} | {r_cnt:>6} | {p_cnt:>6}")
+    # Grouping by Video / Source
+    print_table("POSITIVE FRAMES BY SOURCE (SUBTOTALS)", raw_pos_files, proc_pos_files, raw_pos_dir, proc_pos_dir)
+    print_table("NEGATIVE FRAMES BY SOURCE (SUBTOTALS)", raw_neg_files, proc_neg_files, raw_neg_dir, proc_neg_dir)
 
     print("="*40 + "\n")

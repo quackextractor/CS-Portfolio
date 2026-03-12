@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.23.1] - 2026-03-12
+### Changed
+- **Enhanced Status Report**: The `status` command now recursively scans data directories to support nested subfolders and provides a detailed breakdown of both positive and negative frames by their source (video or subfolder).
+- **Subfolder-Aware Source Detection**: Improved source name extraction in the status report to correctly identify source folders regardless of their depth in the `data/raw/` or `data/processed/` hierarchy.
+
 ## [1.23.0] - 2026-03-12
 ### Fixed
 - **Extraction Config Support**: `extract --config` now correctly respects `"is_positive": false` in JSON configuration files, routing extracted frames to the negative class directory as expected.
