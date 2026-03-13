@@ -27,9 +27,12 @@ def gradient_ascent_step(img, target_model, base_size, loss_mode, filter_idx, ji
             loss = tf.reduce_mean(outputs[0, :, :, filter_idx])
 
         # Total Variation penalty for clustered/smooth features
-        loss -= 1e-3 * tf.reduce_sum(tf.image.total_variation(img_shifted))
+        tv_penalty = 1e-3 * tf.reduce_sum(tf.image.total_variation(img_shifted))
+        loss -= tf.cast(tv_penalty, loss.dtype)
+        
         # Simple L2 decay
-        loss -= 1e-4 * tf.reduce_sum(tf.square(img_shifted))
+        l2_penalty = 1e-4 * tf.reduce_sum(tf.square(img_shifted))
+        loss -= tf.cast(l2_penalty, loss.dtype)
 
     gradients = tape.gradient(loss, img_shifted)
     # Normalize gradients
