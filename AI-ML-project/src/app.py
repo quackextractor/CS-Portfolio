@@ -237,6 +237,7 @@ def main(
     force_read = False
     updating_trackbar = False
     gradcam_active = use_gradcam
+    grid_mode_active = False
     current_sensitivity = heatmap_sensitivity
     mirrored = False
     frame_count = 0
@@ -252,7 +253,9 @@ def main(
                 cap.set(cv2.CAP_PROP_POS_FRAMES, val)
                 force_read = True
         cv2.createTrackbar("Progress", window_name, 0, total_frames, on_trackbar)
-        logging.info("Controls: [Space] Pause, [a/d] Skip, [g] Grad-CAM, [m] Mirror, [q] Quit")
+        logging.info("Controls: [Space] Pause, [a/d] Skip, [g] Grad-CAM, [m] Mirror, [t] Grid Mode, [q] Quit")
+    else:
+        logging.info("Controls: [g] Grad-CAM, [m] Mirror, [t] Grid Mode, [q] Quit")
 
     while True:
         if not paused or force_read:
@@ -380,6 +383,17 @@ def main(
                     if gradcam_active:
                         cached_heatmap_data = new_cached_heatmaps
 
+            if grid_mode_active:
+                f_h, f_w = frame.shape[:2]
+                mid_x, mid_y = f_w // 2, f_h // 2
+                
+                cv2.line(frame, (mid_x, 0), (mid_x, f_h), (0, 255, 255), 2)
+                cv2.line(frame, (0, mid_y), (f_w, mid_y), (0, 255, 255), 2)
+                
+                c_w, c_h = mid_x, mid_y
+                c_x, c_y = f_w // 4, f_h // 4
+                cv2.rectangle(frame, (c_x, c_y), (c_x + c_w, c_y + c_h), (0, 255, 255), 2)
+
             frame_count += 1
 
             if video_path and total_frames > 0:
@@ -408,6 +422,9 @@ def main(
         elif key == ord("m"):
             mirrored = not mirrored
             logging.info(f"Mirror Mode: {'ON' if mirrored else 'OFF'}")
+        elif key == ord("t"):
+            grid_mode_active = not grid_mode_active
+            logging.info(f"Grid Mode: {'ON' if grid_mode_active else 'OFF'}")
         elif key == ord("["):
             current_sensitivity = max(1.0, current_sensitivity - 1.0)
             logging.info(f"Heatmap Sensitivity: {current_sensitivity:.1f}x")
