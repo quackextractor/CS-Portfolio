@@ -4,7 +4,7 @@ import argparse
 import json
 from tqdm import tqdm
 from pathlib import Path
-from typing import Optional, Union
+from typing import Optional, Union, Tuple
 
 
 def timestamp_to_seconds(timestamp: Union[str, int, float]) -> float:
@@ -25,10 +25,11 @@ def timestamp_to_seconds(timestamp: Union[str, int, float]) -> float:
 def extract_frames(
     video_path: Optional[str] = None,
     output_dir: str = "data/raw/positive",
-    frame_rate: int = 1,
+    frame_rate: Union[int, str] = "auto",
     batch: bool = False,
     config_path: Optional[str] = None,
-    negative: bool = False
+    negative: bool = False,
+    auto_target: Tuple[int, int] = (200, 300)
 ) -> None:
     """
     Extracts frames from video files based on CLI path or a JSON configuration.
@@ -94,20 +95,18 @@ def extract_frames(
     else:
         print("Error: Either video_path or config_path must be provided.")
         return
+    
     for job in jobs:
         v_path = job["video_path"]
-        v_rate = job["frame_rate"]
+        v_rate_raw = job["frame_rate"]
         segments = job["segments"]
         is_neg = job["negative"]
         video_name = Path(v_path).stem
 
         # Dynamic output directory within the specified output_dir
-        # If the user explicitly passed output_dir, we respect it.
-        # However, the requirement says frames should be in output_dir/video_name/
         current_output_dir = os.path.join(output_dir, video_name)
         
         # Heuristic: if output_dir looks like positive but we want negative, swap it.
-        # This is to handle the CLI --output_dir interacting with --negative.
         if is_neg and "positive" in output_dir:
             output_dir = output_dir.replace("positive", "negative")
             current_output_dir = os.path.join(output_dir, video_name)
@@ -137,9 +136,19 @@ def extract_frames(
             # Estimate steps for the segment
             duration = end_sec - start_sec
             seg_frames_estimate = int(duration * fps)
+            
+            # Determine the actual frame rate skip interval
+            if str(v_rate_raw).lower() == "auto":
+                target_count = (auto_target[0] + auto_target[1]) // 2
+                if target_count <= 0:
+                    target_count = 250
+                actual_v_rate = max(1, seg_frames_estimate // target_count)
+            else:
+                actual_v_rate = max(1, int(v_rate_raw))
+
             pbar = tqdm(
                 total=seg_frames_estimate,
-                desc=f"  Extracting {video_name}",
+                desc=f"  Extracting {video_name} (interval: {actual_v_rate})",
                 leave=False
             )
 
@@ -153,7 +162,7 @@ def extract_frames(
                 if pos_msec > end_sec * 1000:
                     break
 
-                if current_frame_idx % v_rate == 0:
+                if current_frame_idx % actual_v_rate == 0:
                     frame_filename = os.path.join(
                         current_output_dir, f"{video_name}_frame_{saved_count:04d}.jpg"
                     )
@@ -183,7 +192,7 @@ if __name__ == "__main__":
         help="Output directory for frames",
     )
     parser.add_argument(
-        "--frame_rate", type=int, default=5, help="Extract 1 frame every N frames"
+        "--frame_rate", type=str, default="auto", help="Extract 1 frame every N frames, or 'auto'"
     )
     parser.add_argument(
         "--batch", action="store_true", help="Process all videos in a given directory"

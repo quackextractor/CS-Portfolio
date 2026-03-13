@@ -19,7 +19,8 @@ defaults:
     output_dir: "data/raw/negative/scraped"
   extract:
     output_dir: "data/raw/positive"
-    frame_rate: 5
+    frame_rate: "auto"
+    auto_frame_target: [200, 300]
   build:
     skip_blurry: true
     blur_threshold: 10.0

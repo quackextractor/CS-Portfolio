@@ -213,9 +213,9 @@ def main():
     )
     parser_extract.add_argument(
         "--frame_rate",
-        type=int,
-        default=defaults.get("extract", {}).get("frame_rate", 5),
-        help="Extract 1 frame every N frames",
+        type=str,
+        default=str(defaults.get("extract", {}).get("frame_rate", "auto")),
+        help="Extract 1 frame every N frames, or 'auto'",
     )
     parser_extract.add_argument(
         "--batch", action="store_true", help="Process all videos in a given directory"
@@ -310,13 +310,19 @@ def main():
     elif args.command == "extract":
         from vendor.utils.video_extractor import extract_frames
         batch_mode = getattr(args, "batch", False)
+        
+        # Load the auto target interval from config
+        auto_target_list = defaults.get("extract", {}).get("auto_frame_target", [200, 300])
+        auto_target = tuple(auto_target_list)
+
         if args.config:
             extract_frames(
                 config_path=args.config,
                 output_dir=args.output_dir,
                 frame_rate=args.frame_rate,
                 batch=batch_mode,
-                negative=args.negative
+                negative=args.negative,
+                auto_target=auto_target
             )
         elif args.video_path:
             extract_frames(
@@ -324,7 +330,8 @@ def main():
                 output_dir=args.output_dir,
                 frame_rate=args.frame_rate,
                 batch=batch_mode,
-                negative=args.negative
+                negative=args.negative,
+                auto_target=auto_target
             )
         else:
             print("Error: Either video_path or --config must be provided.")
