@@ -176,12 +176,13 @@ def main(
     screen: bool = False,
     use_gradcam: bool = False,
     heatmap_sensitivity: float = 5.0,
+    threshold_override: float = None,
 ):
     config = load_config()
     model_path = config["model"]["output_path"]
     img_size = config["model"]["img_size"]
     camera_index = config["camera"]["index"]
-    threshold = config["model"].get("threshold", 0.5)
+    threshold = threshold_override if threshold_override is not None else config["model"].get("threshold", 0.5)
     face_model_path = config["model"].get("face_detector_model_path", "models/blaze_face_short_range.task")
 
     if not str(model_path).endswith(".keras"):
