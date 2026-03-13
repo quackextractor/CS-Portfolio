@@ -21,6 +21,25 @@ def load_config(config_path: str = "config.yaml") -> dict:
         return yaml.safe_load(f)
 
 
+def generate_tiles(detection_frame):
+    h, w = detection_frame.shape[:2]
+    
+    # Yield 1: Full frame
+    yield detection_frame, 0, 0
+
+    # Yield 2 to 5: Quadrants
+    mid_x, mid_y = w // 2, h // 2
+    yield detection_frame[0:mid_y, 0:mid_x], 0, 0
+    yield detection_frame[0:mid_y, mid_x:w], mid_x, 0
+    yield detection_frame[mid_y:h, 0:mid_x], 0, mid_y
+    yield detection_frame[mid_y:h, mid_x:w], mid_x, mid_y
+
+    # Yield 6: Center Crop
+    q_w, q_h = mid_x, mid_y
+    c_x, c_y = w // 4, h // 4
+    yield detection_frame[c_y:c_y+q_h, c_x:c_x+q_w], c_x, c_y
+
+
 def get_grad_model(model, last_conv_layer_name=None):
     """
     Splits the model into a feature extractor and a classifier
@@ -267,21 +286,48 @@ def main(
             else:
                 detection_frame = frame
 
-            rgb_frame = cv2.cvtColor(detection_frame, cv2.COLOR_BGR2RGB)
-            mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb_frame)
+            all_boxes = []
+            all_scores = []
 
-            detection_result = face_detector.detect(mp_image)
+            for tile, x_offset, y_offset in generate_tiles(detection_frame):
+                rgb_tile = cv2.cvtColor(tile, cv2.COLOR_BGR2RGB)
+                mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb_tile)
+                detection_result = face_detector.detect(mp_image)
 
-            if detection_result and detection_result.detections:
+                if detection_result and detection_result.detections:
+                    for detection in detection_result.detections:
+                        bbox = detection.bounding_box
+                        origin_x = bbox.origin_x
+                        origin_y = bbox.origin_y
+                        width = bbox.width
+                        height = bbox.height
+
+                        new_x = origin_x + x_offset
+                        new_y = origin_y + y_offset
+
+                        all_boxes.append([new_x, new_y, width, height])
+                        all_scores.append(float(detection.categories[0].score))
+
+            if all_boxes:
+                all_boxes_arr = np.array(all_boxes)
+                all_scores_arr = np.array(all_scores)
+                
+                indices = cv2.dnn.NMSBoxes(all_boxes_arr.tolist(), all_scores_arr.tolist(), 0.5, 0.4)
+                
+                final_boxes = []
+                if len(indices) > 0:
+                    for i in indices.flatten():
+                        final_boxes.append(all_boxes[i])
+
                 faces_batch = []
                 face_coords = []
                 
-                for detection in detection_result.detections:
-                    bbox = detection.bounding_box
-                    x = int(bbox.origin_x / scale_factor)
-                    y = int(bbox.origin_y / scale_factor)
-                    w = int(bbox.width / scale_factor)
-                    h = int(bbox.height / scale_factor)
+                for box in final_boxes:
+                    x, y, w, h = box
+                    x = int(x / scale_factor)
+                    y = int(y / scale_factor)
+                    w = int(w / scale_factor)
+                    h = int(h / scale_factor)
 
                     margin_x, margin_y = int(w * 0.05), int(h * 0.05)
                     x_min, y_min = max(0, x - margin_x), max(0, y - margin_y)
