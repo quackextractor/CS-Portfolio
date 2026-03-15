@@ -254,9 +254,9 @@ def main(
                 cap.set(cv2.CAP_PROP_POS_FRAMES, val)
                 force_read = True
         cv2.createTrackbar("Progress", window_name, 0, total_frames, on_trackbar)
-        logging.info("Controls: [Space] Pause, [a/d] Skip, [g] Grad-CAM, [m] Mirror, [t] Grid Mode, [q] Quit")
+        logging.info("Controls: [Space] Pause, [a/d] Skip, [g] Grad-CAM, [m] Mirror, [t] Grid Mode, [-/+] Threshold, [q] Quit")
     else:
-        logging.info("Controls: [g] Grad-CAM, [m] Mirror, [t] Grid Mode, [q] Quit")
+        logging.info("Controls: [g] Grad-CAM, [m] Mirror, [t] Grid Mode, [-/+] Threshold, [q] Quit")
 
     while True:
         if not paused or force_read:
@@ -426,6 +426,12 @@ def main(
         elif key == ord("t"):
             grid_mode_active = not grid_mode_active
             logging.info(f"Grid Mode: {'ON' if grid_mode_active else 'OFF'}")
+        elif key == ord("-"):
+            threshold = max(0.0, threshold - 0.05)
+            logging.info(f"Threshold adjusted: {threshold:.2f}")
+        elif key == ord("=") or key == ord("+"):
+            threshold = min(1.0, threshold + 0.05)
+            logging.info(f"Threshold adjusted: {threshold:.2f}")
         elif key == ord("["):
             current_sensitivity = max(1.0, current_sensitivity - 1.0)
             logging.info(f"Heatmap Sensitivity: {current_sensitivity:.1f}x")

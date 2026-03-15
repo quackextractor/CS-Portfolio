@@ -111,6 +111,12 @@ def main():
         default=defaults.get("run", {}).get("heatmap_sensitivity", 5.0),
         help="Initial sensitivity multiplier for Grad-CAM heatmap",
     )
+    parser_run.add_argument(
+        "--threshold",
+        type=float,
+        default=None,
+        help="Override the target face detection threshold from config.yaml",
+    )
 
     # Command: process
     parser_process = subparsers.add_parser(
@@ -284,11 +290,13 @@ def main():
         screen_mode = getattr(args, "screen", False)
         gradcam_mode = getattr(args, "gradcam", False)
         heatmap_sensitivity = getattr(args, "heatmap_sensitivity", 5.0)
+        threshold_val = getattr(args, "threshold", None)
         run_inference(
             video_path=args.video,
             screen=screen_mode,
             use_gradcam=gradcam_mode,
             heatmap_sensitivity=heatmap_sensitivity,
+            threshold_override=threshold_val,
         )
     elif args.command == "process":
         from src.build_dataset import run_processing
