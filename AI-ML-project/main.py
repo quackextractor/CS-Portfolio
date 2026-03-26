@@ -289,6 +289,24 @@ def main():
         help="Show dataset statistics (counts and sizes)",
     )
 
+    # Command: pack
+    parser_pack = subparsers.add_parser(
+        "pack",
+        help="Copy dataset frames to a temp folder, zip them into an archive, and clean up",
+    )
+    parser_pack.add_argument(
+        "--csv",
+        type=str,
+        default=config.get("data", {}).get("dataset_csv", "data/processed/dataset.csv"),
+        help="Path to the dataset.csv file",
+    )
+    parser_pack.add_argument(
+        "--output",
+        type=str,
+        default="data/processed.zip",
+        help="Path and name for the output zip file",
+    )
+
     # Check if no arguments were passed, print help and exit
     if len(sys.argv) == 1:
         parser.print_help(sys.stderr)
@@ -375,6 +393,9 @@ def main():
     elif args.command == "status":
         from src.dataset_status import print_status
         print_status(config)
+    elif args.command == "pack":
+        from vendor.utils.pack_dataset import pack_dataset
+        pack_dataset(args.csv, args.output)
 
 
 def validate_config(config):
