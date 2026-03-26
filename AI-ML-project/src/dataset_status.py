@@ -2,6 +2,7 @@ import os
 import glob
 from collections import defaultdict
 from pathlib import Path
+import pandas as pd
 
 
 def get_dir_stats(directory):
@@ -33,53 +34,32 @@ def get_source_name(file_path, base_dir):
         rel_path = os.path.relpath(file_path, base_dir)
         parts = Path(rel_path).parts
         if len(parts) > 1:
-            # It's in a subfolder, use the subfolder name as the source
+            # It is in a subfolder, use the subfolder name as the source
             return parts[0]
+        return "root"
     except ValueError:
-        pass
-    
-    # Fallback to filename-based naming if not in a subfolder or error
-    filename = os.path.basename(file_path)
-    if "_frame_" in filename:
-        return filename.split("_frame_")[0]
-    
-    # Fallback: take everything before the last underscore if it looks like a frame number
-    base = os.path.splitext(filename)[0]
-    parts_list = base.split("_")
-    if len(parts_list) > 1 and parts_list[-1].isdigit():
-        return "_".join(parts_list[:-1])
-        
-    return "root"
+        return "unknown"
 
 
 def print_status(config):
-    """Calculates and prints the dataset status."""
-    raw_pos_dir = config["data"]["raw_positive_dir"]
-    raw_neg_dir = config["data"]["raw_negative_dir"]
-    proc_dir = config["data"]["processed_dir"]
+    raw_pos_dir = config.get("data", {}).get("raw_positive_dir", "data/raw/positive")
+    raw_neg_dir = config.get("data", {}).get("raw_negative_dir", "data/raw/negative")
+    processed_dir = config.get("data", {}).get("processed_dir", "data/processed")
+    proc_pos_dir = os.path.join(processed_dir, "positive")
+    proc_neg_dir = os.path.join(processed_dir, "negative")
 
-    proc_pos_dir = os.path.join(proc_dir, "positive")
-    proc_neg_dir = os.path.join(proc_dir, "negative")
-
-    # Raw stats
     raw_pos_count, raw_pos_size, raw_pos_files = get_dir_stats(raw_pos_dir)
     raw_neg_count, raw_neg_size, raw_neg_files = get_dir_stats(raw_neg_dir)
-
-    # Processed stats
     proc_pos_count, proc_pos_size, proc_pos_files = get_dir_stats(proc_pos_dir)
     proc_neg_count, proc_neg_size, proc_neg_files = get_dir_stats(proc_neg_dir)
 
-    print("\n" + "="*40)
-    print(" TARGET DATASET STATUS REPORT ")
-    print("="*40)
-
-    print("\nRAW DATA:")
-    print(f"  Positive:  {raw_pos_count:>5} frames  ({raw_pos_size:>7.2f} MB)")
-    print(f"  Negative:  {raw_neg_count:>5} frames  ({raw_neg_size:>7.2f} MB)")
-
-    print("\nPROCESSED DATA:")
-    print(f"  Positive:  {proc_pos_count:>5} frames  ({proc_pos_size:>7.2f} MB)")
-    print(f"  Negative:  {proc_neg_count:>5} frames  ({proc_neg_size:>7.2f} MB)")
+    print("\n" + "="*60)
+    print("DIRECTORY STATISTICS")
+    print("="*60)
+    print(f"RAW TARGET (1):    {raw_pos_count:>5} frames  ({raw_pos_size:>7.2f} MB)")
+    print(f"RAW RANDOM (0):    {raw_neg_count:>5} frames  ({raw_neg_size:>7.2f} MB)")
+    print(f"PROC TARGET (1):   {proc_pos_count:>5} frames  ({proc_pos_size:>7.2f} MB)")
+    print(f"PROC RANDOM (0):   {proc_neg_count:>5} frames  ({proc_neg_size:>7.2f} MB)")
 
     # Calculations
     total_raw = raw_pos_count + raw_neg_count
@@ -105,14 +85,112 @@ def print_status(config):
         all_sources = sorted(set(list(raw_groups.keys()) + list(proc_groups.keys())))
 
         print(f"  {'Source Name':<30} | {'Raw':>6} | {'Proc':>6}")
-        print(f"  {'-'*30}-|{'-'*8}|{'-'*8}")
+        print(f"  {'-'*30}-+-{'-'*6}-+-{'-'*6}")
         for source in all_sources:
-            r_cnt = raw_groups.get(source, 0)
-            p_cnt = proc_groups.get(source, 0)
-            print(f"  {source[:30]:<30} | {r_cnt:>6} | {p_cnt:>6}")
+            r_c = raw_groups.get(source, 0)
+            p_c = proc_groups.get(source, 0)
+            s_name = source if len(source) <= 30 else source[:27] + "..."
+            print(f"  {s_name:<30} | {r_c:>6} | {p_c:>6}")
 
-    # Grouping by Video / Source
-    print_table("POSITIVE FRAMES BY SOURCE (SUBTOTALS)", raw_pos_files, proc_pos_files, raw_pos_dir, proc_pos_dir)
-    print_table("NEGATIVE FRAMES BY SOURCE (SUBTOTALS)", raw_neg_files, proc_neg_files, raw_neg_dir, proc_neg_dir)
+    print_table("TARGET CLASS (1)", raw_pos_files, proc_pos_files, raw_pos_dir, proc_pos_dir)
+    print_table("RANDOM CLASS (0)", raw_neg_files, proc_neg_files, raw_neg_dir, proc_neg_dir)
 
-    print("="*40 + "\n")
+
+    # ---------------------------------------------------------
+    # CSV Dataset Statistics
+    # ---------------------------------------------------------
+    csv_path = config.get("data", {}).get("dataset_csv", "data/processed/dataset.csv")
+    print("\n" + "="*60)
+    print("DATASET CSV STATISTICS")
+    print("="*60)
+
+    if not os.path.exists(csv_path):
+        print(f"CSV file not found at: {csv_path}")
+        print("Run 'python main.py build' to generate the dataset CSV.")
+        return
+
+    try:
+        df = pd.read_csv(csv_path)
+    except Exception as e:
+        print(f"Error reading CSV: {e}")
+        return
+
+    total_frames = len(df)
+    print(f"Total Configured Frames: {total_frames}\n")
+
+    if total_frames == 0:
+        print("Dataset is empty.")
+        return
+
+    # 1. Overall Class Balance
+    print("--- Class Balance ---")
+    class_counts = df['label'].value_counts().sort_index(ascending=False)
+    for label, count in class_counts.items():
+        class_name = "Target (1)" if label == 1 else "Random (0)"
+        pct = (count / total_frames) * 100
+        print(f"  {class_name:<12}: {count:>5} frames ({pct:>5.1f}%)")
+
+    # 2. Split Distribution
+    print("\n--- Split Distribution (Train/Val/Test) ---")
+    if 'split' in df.columns:
+        split_counts = df['split'].value_counts()
+        for split_name, count in split_counts.items():
+            pct = (count / total_frames) * 100
+            print(f"  {split_name.capitalize():<12}: {count:>5} frames ({pct:>5.1f}%)")
+        
+        print("\n  [Breakdown by Class & Split]")
+        cross_tab = pd.crosstab(df['label'], df['split'], margins=True, margins_name="Total")
+        cross_tab.index = cross_tab.index.map(lambda x: "Target (1)" if x == 1 else ("Random (0)" if x == 0 else "Total"))
+        
+        # Format the cross_tab output to match indentation
+        cross_tab_str = cross_tab.to_string()
+        print("  " + cross_tab_str.replace("\n", "\n  "))
+    else:
+        print("  'split' column not found in CSV.")
+
+    # 3. Video-Level Breakdown
+    print("\n--- Video / Folder Breakdown ---")
+    if 'video_name' in df.columns:
+        
+        # Create a display grouping to prevent thousands of scraped images from flooding the output
+        df['display_name'] = df['video_name'].apply(
+            lambda x: 'scraped (individual images)' if str(x).startswith('scraped_') else x
+        )
+
+        # Aggregate split name and frame count per video (grouping scraped images by split)
+        video_stats = df.groupby(['label', 'display_name', 'split']).agg(
+            frames=('filepath', 'count')
+        ).reset_index()
+
+        for label in [1, 0]:
+            class_name = "TARGET (1)" if label == 1 else "RANDOM (0)"
+            print(f"\n  {class_name} VIDEOS:")
+            
+            # Sort by split (test -> train -> val roughly) and then by frame size
+            class_videos = video_stats[video_stats['label'] == label].sort_values(by=['split', 'frames'], ascending=[True, False])
+            
+            if class_videos.empty:
+                print("    No videos found.")
+                continue
+
+            print(f"    {'Video Name':<40} | {'Split':<6} | {'Frames':>6}")
+            print(f"    {'-'*40}-+-{'-'*6}-+-{'-'*6}")
+            
+            for _, row in class_videos.iterrows():
+                v_name = str(row['display_name'])
+                if len(v_name) > 40:
+                    v_name = v_name[:37] + "..."
+                print(f"    {v_name:<40} | {str(row['split']):<6} | {row['frames']:>6}")
+    else:
+        print("  'video_name' column not found in CSV.")
+
+if __name__ == "__main__":
+    import yaml
+    import sys
+    config_path = "config.yaml"
+    if os.path.exists(config_path):
+        with open(config_path, "r") as f:
+            cfg = yaml.safe_load(f)
+        print_status(cfg)
+    else:
+        print("Run this script via 'python main.py status'")

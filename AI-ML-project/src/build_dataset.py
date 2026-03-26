@@ -232,16 +232,11 @@ def run_building(output_csv: str = None, balance_dataset: bool = True) -> None:
 
     df = pd.DataFrame(records)
 
-    # Extract video name from filepath to prevent data leakage
     def get_video_name(path):
-        # Normalize slashes for cross-platform compatibility
         path_str = str(path).replace('\\', '/')
         parts = Path(path_str).parts
-        
-        # We want the immediate parent folder if it's not 'positive' or 'negative'
         if len(parts) > 3 and parts[2] in ('positive', 'negative'):
             folder = parts[3]
-            # Treat each scraped image as independent to allow even distribution
             if folder == 'scraped':
                 return f"scraped_{Path(path_str).stem}"
             return folder
@@ -250,7 +245,6 @@ def run_building(output_csv: str = None, balance_dataset: bool = True) -> None:
     df['video_name'] = df['filepath'].apply(get_video_name)
 
     if balance_dataset:
-        # PROPORTIONAL FOLDER-BASED UNDERSAMPLING WITH CHRONOLOGICAL SPACING
         label_counts = df['label'].value_counts()
         min_count = label_counts.min()
         
@@ -262,25 +256,20 @@ def run_building(output_csv: str = None, balance_dataset: bool = True) -> None:
             total_class_frames = len(label_df)
             
             if total_class_frames > min_count:
-                # Calculate the percentage of frames to keep
                 retention_frac = min_count / total_class_frames
                 print(f"  Class {label} majority: Keeping ~{retention_frac*100:.1f}% of frames per folder.")
                 
-                def sample_proportional(group):
-                    # Ensure we keep at least 1 frame per folder if it exists
+                # FIX: Using a safe loop instead of groupby.apply() to preserve the video_name column
+                sampled_groups = []
+                for _, group in label_df.groupby('video_name'):
                     n_keep = max(1, int(round(len(group) * retention_frac)))
                     n_keep = min(n_keep, len(group))
                     
-                    # Sort chronologically by filepath
                     group = group.sort_values('filepath')
-                    
-                    # Calculate perfectly even mathematical intervals
                     spaced_indices = np.linspace(0, len(group) - 1, n_keep, dtype=int)
-                    
-                    # Select only the frames at those intervals
-                    return group.iloc[spaced_indices]
+                    sampled_groups.append(group.iloc[spaced_indices])
 
-                sampled_df = label_df.groupby('video_name', group_keys=False).apply(sample_proportional)
+                sampled_df = pd.concat(sampled_groups)
                 
                 # Fix minor discrepancies caused by rounding
                 if len(sampled_df) > min_count:
@@ -346,7 +335,6 @@ def run_building(output_csv: str = None, balance_dataset: bool = True) -> None:
           f"Val={len(final_df[final_df['split'] == 'val'])}, "
           f"Test={len(final_df[final_df['split'] == 'test'])}")
     print(f"CSV saved to {output_csv}")
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Build dataset logic")
