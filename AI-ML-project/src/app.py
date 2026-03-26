@@ -209,7 +209,7 @@ def main(
 
     try:
         # Added compile=False to bypass optimizer shape warnings
-        model = tf.keras.models.load_model(model_path, compile=False)
+        model = tf.keras.models.load_model(model_path, compile=False, safe_mode=False)
         grad_model = get_grad_model(model)
     except Exception as e:
         logging.error(f"Error loading model: {e}")
