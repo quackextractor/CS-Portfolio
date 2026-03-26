@@ -45,6 +45,11 @@ def get_grad_model(model, last_conv_layer_name=None):
     Splits the model into a feature extractor and a classifier
     by functionally rebuilding the layers to avoid Keras 3 input graph bugs.
     """
+    
+    # If the loaded model is a wrapper, extract the inner base model
+    if len(model.layers) >= 2 and isinstance(model.layers[6], tf.keras.Model):
+        model = model.layers[6] 
+
     if last_conv_layer_name is None:
         for layer in reversed(model.layers):
             if "Conv2D" in layer.__class__.__name__:
@@ -184,7 +189,6 @@ def main(
     model_path = config["model"]["output_path"]
     img_size = config["model"]["img_size"]
     camera_index = config["camera"]["index"]
-    threshold = threshold_override if threshold_override is not None else config["model"].get("threshold", 0.5)
     face_model_path = config["model"].get("face_detector_model_path", "models/blaze_face_short_range.task")
 
     # Setup Mining Configuration & Directories
@@ -215,6 +219,24 @@ def main(
     except Exception as e:
         logging.error(f"Error loading model: {e}")
         return
+
+    # Extract the baked-in threshold from the model name
+    baked_threshold = 0.5
+    if model.name and "thresh_" in model.name:
+        try:
+            thresh_str = model.name.split("thresh_")[-1].replace("p", ".")
+            baked_threshold = float(thresh_str)
+        except ValueError:
+            pass
+
+    # Determine the final threshold to use
+    if threshold_override is not None:
+        threshold = threshold_override
+    elif "threshold" in config["model"]:
+        threshold = float(config["model"]["threshold"])
+    else:
+        threshold = baked_threshold
+        logging.info(f"No threshold found in config. Using model baked-in threshold: {threshold:.4f}")
 
     face_detector = _build_face_detector(face_model_path)
 
