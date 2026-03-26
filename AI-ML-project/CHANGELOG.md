@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.24.0] - 2026-03-26
+### Added
+- **Hard Negative Mining**: Introduced a live false positive mining feature to capture misidentified faces during inference.
+- **Inference CLI Arguments**: Added `--mine` and `--minefr` flags to the `run` command for granular control over mining.
+- **Interactive Mining Controls**: Integrated `n` to toggle mining and `{` / `}` to adjust extraction frequency dynamically.
+- **Direct Dataset Integration**: Mined crops are saved to `data/processed/negative/FALSE_POSITIVES/`, ready for immediate inclusion in the next dataset build.
+
+### Fixed
+- **Test Suite Integrity**: Fixed an incorrect import in `tests/test_split_integrity.py` that was causing baseline test failures.
+
 ## [1.23.1] - 2026-03-12
 ### Changed
 - **Enhanced Status Report**: The `status` command now recursively scans data directories to support nested subfolders and provides a detailed breakdown of both positive and negative frames by their source (video or subfolder).

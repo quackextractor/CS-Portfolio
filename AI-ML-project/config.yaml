@@ -26,6 +26,9 @@ defaults:
     blur_threshold: 10.0
   run:
     heatmap_sensitivity: 5.0
+    mining:
+      enabled: false
+      frame_rate: 10
   visualize:
     iterations: 100
     lr: 0.1

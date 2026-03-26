@@ -132,5 +132,7 @@ venv\Scripts\activate
 pip install -r requirements.txt
 python main.py run
 # Or use a video file:
-# python main.py run --video test_video.mp4
+python main.py run --video test_video.mp4
+# Or enable Hard Negative Mining (saves false positives):
+python main.py run --mine --minefr 5
 ```

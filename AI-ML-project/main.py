@@ -117,6 +117,15 @@ def main():
         default=None,
         help="Override the target face detection threshold from config.yaml",
     )
+    parser_run.add_argument(
+        "--mine", action="store_true", help="Enable live false positive mining."
+    )
+    parser_run.add_argument(
+        "--minefr",
+        type=int,
+        default=None,
+        help="Frame-rate (interval) for mining extractions.",
+    )
 
     # Command: process
     parser_process = subparsers.add_parser(
@@ -297,6 +306,8 @@ def main():
             use_gradcam=gradcam_mode,
             heatmap_sensitivity=heatmap_sensitivity,
             threshold_override=threshold_val,
+            mine_enabled=args.mine,
+            mine_frame_rate=args.minefr,
         )
     elif args.command == "process":
         from src.build_dataset import run_processing

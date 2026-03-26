@@ -1,5 +1,5 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Version](https://img.shields.io/badge/version-1.23.1-blue.svg)](https://github.com/quackextractor/CS-Portfolio)
+[![Version](https://img.shields.io/badge/version-1.24.0-blue.svg)](https://github.com/quackextractor/CS-Portfolio)
 
 # Target Face Detector
 
@@ -57,6 +57,8 @@ The project is operated entirely through a unified CLI managed by `main.py`. Onc
   * Supports custom `--output_csv` paths.
   * Performs video-level level splitting to prevent data leakage.
 * `python main.py run`: Launch the live webcam face detection application. Supports `LIVE_STREAM` and `VIDEO` modes for high-performance processing.
+  * Use `--mine` to enable **Hard Negative Mining** (saves false positives to `data/processed/negative/FALSE_POSITIVES/`).
+  * Use `--minefr <int>` to set the extraction frequency (e.g., `--minefr 5` saves every 5th frame).
 * `python main.py visualize`: Generate an activation maximization image (model vision).
 * `python main.py status`: Show dataset statistics (counts, MB, and video subtotals).
 * `python main.py docs`: Generate the LaTeX documentation PDF (includes automated CNN architecture diagrams).
@@ -152,3 +154,5 @@ Press the `q` key on your keyboard to instantly quit the application and release
 | `g` | Toggle Grad-CAM |
 | `[` / `]` | Decrease/Increase Heatmap Sensitivity |
 | `m` | Toggle Horizontal Mirror |
+| `n` | Toggle Hard Negative Mining |
+| `{` / `}` | Decrease/Increase Mining Frequency |

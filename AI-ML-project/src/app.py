@@ -177,6 +177,8 @@ def main(
     use_gradcam: bool = False,
     heatmap_sensitivity: float = 5.0,
     threshold_override: float = None,
+    mine_enabled: bool = False,
+    mine_frame_rate: int = None,
 ):
     config = load_config()
     model_path = config["model"]["output_path"]
@@ -184,6 +186,17 @@ def main(
     camera_index = config["camera"]["index"]
     threshold = threshold_override if threshold_override is not None else config["model"].get("threshold", 0.5)
     face_model_path = config["model"].get("face_detector_model_path", "models/blaze_face_short_range.task")
+
+    # Setup Mining Configuration & Directories
+    mining_defaults = config.get("defaults", {}).get("run", {}).get("mining", {})
+    if mine_frame_rate is None:
+        mine_frame_rate = mining_defaults.get("frame_rate", 10)
+    
+    mining_dir = os.path.join("data", "processed", "negative", "FALSE_POSITIVES")
+    os.makedirs(mining_dir, exist_ok=True)
+    
+    is_mining = mine_enabled
+    mine_counter = 0
 
     if not str(model_path).endswith(".keras"):
         logging.error(f"Error: Model file must be in .keras format. Received: {model_path}")
@@ -256,7 +269,7 @@ def main(
         cv2.createTrackbar("Progress", window_name, 0, total_frames, on_trackbar)
         logging.info("Controls: [Space] Pause, [a/d] Skip, [g] Grad-CAM, [m] Mirror, [t] Grid Mode, [-/+] Threshold, [q] Quit")
     else:
-        logging.info("Controls: [g] Grad-CAM, [m] Mirror, [t] Grid Mode, [-/+] Threshold, [q] Quit")
+        logging.info("Controls: [g] Grad-CAM, [m] Mirror, [t] Grid Mode, [-/+] Threshold, [n] Toggle Mining, [ { / } ] Mine FR, [q] Quit")
 
     while True:
         if not paused or force_read:
@@ -380,6 +393,16 @@ def main(
                             frame, label, (x_min, y_min - 10),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.9, color, 2
                         )
+
+                        # Mining Extraction Logic
+                        if is_mining and is_target and (mine_counter % mine_frame_rate == 0):
+                            from datetime import datetime
+                            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+                            save_path = os.path.join(mining_dir, f"mined_fp_{timestamp}.jpg")
+                            
+                            # Save the un-normalized 128x128 crop
+                            cv2.imwrite(save_path, resized_face)
+                            logging.info(f"Saved false positive: {save_path}")
                     
                     if gradcam_active:
                         cached_heatmap_data = new_cached_heatmaps
@@ -395,7 +418,12 @@ def main(
                 c_x, c_y = f_w // 4, f_h // 4
                 cv2.rectangle(frame, (c_x, c_y), (c_x + c_w, c_y + c_h), (0, 255, 255), 2)
 
+            if is_mining:
+                status_text = f"MINING ON (1/{mine_frame_rate})"
+                cv2.putText(frame, status_text, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
+
             frame_count += 1
+            mine_counter += 1
 
             if video_path and total_frames > 0:
                 current_frame = int(cap.get(cv2.CAP_PROP_POS_FRAMES))
@@ -438,6 +466,15 @@ def main(
         elif key == ord("]"):
             current_sensitivity = min(20.0, current_sensitivity + 1.0)
             logging.info(f"Heatmap Sensitivity: {current_sensitivity:.1f}x")
+        elif key == ord("n"):
+            is_mining = not is_mining
+            logging.info(f"Mining toggled: {'ON' if is_mining else 'OFF'}")
+        elif key == ord("{"):
+            mine_frame_rate = max(1, mine_frame_rate - 1)
+            logging.info(f"Mining frame rate decreased to: {mine_frame_rate}")
+        elif key == ord("}"):
+            mine_frame_rate += 1
+            logging.info(f"Mining frame rate increased to: {mine_frame_rate}")
 
     if cap:
         cap.release()

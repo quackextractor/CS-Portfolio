@@ -1,7 +1,7 @@
 import os
 import pandas as pd
 import pytest
-from src.build_dataset import build_dataset
+from src.build_dataset import run_building as build_dataset
 from unittest.mock import patch
 
 
