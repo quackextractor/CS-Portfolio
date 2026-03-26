@@ -174,6 +174,15 @@ def main():
         default=config.get("data", {}).get("dataset_csv", "data/processed/dataset.csv"),
         help="Override standard dataset CSV output path",
     )
+    parser_build.add_argument(
+        "--no_balance",
+        action="store_false",
+        dest="balance_dataset",
+        help="Disable automatic proportional dataset balancing",
+    )
+    parser_build.set_defaults(
+        balance_dataset=defaults.get("build", {}).get("balance_dataset", True)
+    )
 
     # Command: scrape
     parser_scrape = subparsers.add_parser(
@@ -322,7 +331,10 @@ def main():
         )
     elif args.command == "build":
         from src.build_dataset import run_building
-        run_building(args.output_csv)
+        run_building(
+            output_csv=args.output_csv,
+            balance_dataset=args.balance_dataset
+        )
     elif args.command == "scrape":
         from src.pexels_scraper import download_pexels_images
         download_pexels_images(args.query, args.total, args.output_dir)

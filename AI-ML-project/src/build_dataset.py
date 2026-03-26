@@ -1,6 +1,7 @@
 import os
 import cv2
 import yaml
+import numpy as np
 import pandas as pd
 import argparse
 from tqdm import tqdm
@@ -160,11 +161,11 @@ def run_processing(
     blur_threshold: float = 10.0,
 ) -> None:
     config = load_config()
-    raw_positive_dir = config["data"]["raw_positive_dir"]
-    raw_negative_dir = config["data"]["raw_negative_dir"]
-    processed_dir = config["data"]["processed_dir"]
-    img_size = config["model"]["img_size"]
-    model_path = config["model"].get(
+    raw_positive_dir = config.get("data", {}).get("raw_positive_dir", "data/raw/positive")
+    raw_negative_dir = config.get("data", {}).get("raw_negative_dir", "data/raw/negative")
+    processed_dir = config.get("data", {}).get("processed_dir", "data/processed")
+    img_size = config.get("model", {}).get("img_size", 128)
+    model_path = config.get("model", {}).get(
         "face_detector_model_path", "models/blaze_face_short_range.task"
     )
 
@@ -204,11 +205,11 @@ def run_processing(
     if trigger_build:
         run_building()
 
-def run_building(output_csv: str = None) -> None:
+def run_building(output_csv: str = None, balance_dataset: bool = True) -> None:
     config = load_config()
-    processed_dir = config["data"]["processed_dir"]
+    processed_dir = config.get("data", {}).get("processed_dir", "data/processed")
     if output_csv is None:
-        output_csv = config["data"]["dataset_csv"]
+        output_csv = config.get("data", {}).get("dataset_csv", "data/processed/dataset.csv")
 
     print(f"Building dataset CSV from {processed_dir}...")
     
@@ -247,6 +248,58 @@ def run_building(output_csv: str = None) -> None:
         return "unknown"
 
     df['video_name'] = df['filepath'].apply(get_video_name)
+
+    if balance_dataset:
+        # PROPORTIONAL FOLDER-BASED UNDERSAMPLING WITH CHRONOLOGICAL SPACING
+        label_counts = df['label'].value_counts()
+        min_count = label_counts.min()
+        
+        print(f"Balancing dataset: Targeting {min_count} frames per class.")
+        
+        balanced_dfs = []
+        for label in df['label'].unique():
+            label_df = df[df['label'] == label]
+            total_class_frames = len(label_df)
+            
+            if total_class_frames > min_count:
+                # Calculate the percentage of frames to keep
+                retention_frac = min_count / total_class_frames
+                print(f"  Class {label} majority: Keeping ~{retention_frac*100:.1f}% of frames per folder.")
+                
+                def sample_proportional(group):
+                    # Ensure we keep at least 1 frame per folder if it exists
+                    n_keep = max(1, int(round(len(group) * retention_frac)))
+                    n_keep = min(n_keep, len(group))
+                    
+                    # Sort chronologically by filepath
+                    group = group.sort_values('filepath')
+                    
+                    # Calculate perfectly even mathematical intervals
+                    spaced_indices = np.linspace(0, len(group) - 1, n_keep, dtype=int)
+                    
+                    # Select only the frames at those intervals
+                    return group.iloc[spaced_indices]
+
+                sampled_df = label_df.groupby('video_name', group_keys=False).apply(sample_proportional)
+                
+                # Fix minor discrepancies caused by rounding
+                if len(sampled_df) > min_count:
+                    sampled_df = sampled_df.sample(n=min_count, random_state=42)
+                elif len(sampled_df) < min_count:
+                    shortfall = min_count - len(sampled_df)
+                    unused_df = label_df.drop(sampled_df.index)
+                    if len(unused_df) > 0:
+                        makeup_df = unused_df.sample(n=min(shortfall, len(unused_df)), random_state=42)
+                        sampled_df = pd.concat([sampled_df, makeup_df])
+                    
+                balanced_dfs.append(sampled_df)
+            else:
+                print(f"  Class {label} minority: Keeping all {min_count} frames.")
+                balanced_dfs.append(label_df)
+
+        df = pd.concat(balanced_dfs).reset_index(drop=True)
+    else:
+        print(f"Skipping dataset balancing. Using all {len(df)} records.")
 
     train_dfs, val_dfs, test_dfs = [], [], []
     import random
@@ -303,6 +356,8 @@ if __name__ == "__main__":
     parser.add_argument("--folder", default=None)
     parser.add_argument("--no_skip_blurry", action="store_false", dest="skip_blurry")
     parser.add_argument("--blur_threshold", type=float, default=10.0)
+    parser.add_argument("--no_balance", action="store_false", dest="balance_dataset", help="Disable automatic dataset balancing")
+    parser.set_defaults(balance_dataset=True)
     args = parser.parse_args()
 
     if args.process:
@@ -314,7 +369,7 @@ if __name__ == "__main__":
             blur_threshold=args.blur_threshold
         )
     elif args.build:
-        run_building()
+        run_building(balance_dataset=args.balance_dataset)
     else:
         # Backward compatibility or default behavior if no flags passed
         run_processing(trigger_build=True)
