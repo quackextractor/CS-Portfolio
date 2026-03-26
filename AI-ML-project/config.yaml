@@ -24,6 +24,7 @@ defaults:
   build:
     skip_blurry: true
     blur_threshold: 10.0
+    protected_folders: ["FALSE_POSITIVES"]
   run:
     heatmap_sensitivity: 5.0
     mining:

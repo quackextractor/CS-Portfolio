@@ -208,6 +208,8 @@ def run_processing(
 def run_building(output_csv: str = None, balance_dataset: bool = True) -> None:
     config = load_config()
     processed_dir = config.get("data", {}).get("processed_dir", "data/processed")
+    protected_folders = config.get("defaults", {}).get("build", {}).get("protected_folders", ["FALSE_POSITIVES"])
+    
     if output_csv is None:
         output_csv = config.get("data", {}).get("dataset_csv", "data/processed/dataset.csv")
 
@@ -232,11 +234,16 @@ def run_building(output_csv: str = None, balance_dataset: bool = True) -> None:
 
     df = pd.DataFrame(records)
 
+    # Extract video name from filepath to prevent data leakage
     def get_video_name(path):
+        # Normalize slashes for cross-platform compatibility
         path_str = str(path).replace('\\', '/')
         parts = Path(path_str).parts
+        
+        # We want the immediate parent folder if it's not 'positive' or 'negative'
         if len(parts) > 3 and parts[2] in ('positive', 'negative'):
             folder = parts[3]
+            # Treat each scraped image as independent to allow even distribution
             if folder == 'scraped':
                 return f"scraped_{Path(path_str).stem}"
             return folder
@@ -256,32 +263,54 @@ def run_building(output_csv: str = None, balance_dataset: bool = True) -> None:
             total_class_frames = len(label_df)
             
             if total_class_frames > min_count:
-                retention_frac = min_count / total_class_frames
-                print(f"  Class {label} majority: Keeping ~{retention_frac*100:.1f}% of frames per folder.")
-                
-                # FIX: Using a safe loop instead of groupby.apply() to preserve the video_name column
-                sampled_groups = []
-                for _, group in label_df.groupby('video_name'):
-                    n_keep = max(1, int(round(len(group) * retention_frac)))
-                    n_keep = min(n_keep, len(group))
-                    
-                    group = group.sort_values('filepath')
-                    spaced_indices = np.linspace(0, len(group) - 1, n_keep, dtype=int)
-                    sampled_groups.append(group.iloc[spaced_indices])
+                # Isolate protected folders
+                is_protected = label_df['video_name'].isin(protected_folders)
+                protected_df = label_df[is_protected]
+                regular_df = label_df[~is_protected]
 
-                sampled_df = pd.concat(sampled_groups)
-                
-                # Fix minor discrepancies caused by rounding
-                if len(sampled_df) > min_count:
-                    sampled_df = sampled_df.sample(n=min_count, random_state=42)
-                elif len(sampled_df) < min_count:
-                    shortfall = min_count - len(sampled_df)
-                    unused_df = label_df.drop(sampled_df.index)
-                    if len(unused_df) > 0:
-                        makeup_df = unused_df.sample(n=min(shortfall, len(unused_df)), random_state=42)
-                        sampled_df = pd.concat([sampled_df, makeup_df])
+                n_protected = len(protected_df)
+
+                if n_protected >= min_count:
+                    print(f"  Class {label} majority: Protected frames ({n_protected}) meet or exceed target ({min_count}). Downsampling only protected frames.")
+                    protected_df = protected_df.sort_values('filepath')
+                    spaced_indices = np.linspace(0, len(protected_df) - 1, min_count, dtype=int)
+                    sampled_df = protected_df.iloc[spaced_indices]
+                    balanced_dfs.append(sampled_df)
+                else:
+                    n_rem = min_count - n_protected
+                    if n_protected > 0:
+                        print(f"  Class {label} majority: Keeping all {n_protected} protected frames.")
                     
-                balanced_dfs.append(sampled_df)
+                    if len(regular_df) > 0:
+                        retention_frac = n_rem / len(regular_df)
+                        print(f"  Class {label} majority: Keeping ~{retention_frac*100:.1f}% of regular frames per folder.")
+                        
+                        sampled_groups = []
+                        for _, group in regular_df.groupby('video_name'):
+                            n_keep = max(1, int(round(len(group) * retention_frac)))
+                            n_keep = min(n_keep, len(group))
+                            
+                            group = group.sort_values('filepath')
+                            spaced_indices = np.linspace(0, len(group) - 1, n_keep, dtype=int)
+                            sampled_groups.append(group.iloc[spaced_indices])
+
+                        sampled_regular_df = pd.concat(sampled_groups) if sampled_groups else pd.DataFrame()
+                        
+                        # Fix minor discrepancies caused by rounding
+                        if len(sampled_regular_df) > n_rem:
+                            sampled_regular_df = sampled_regular_df.sample(n=n_rem, random_state=42)
+                        elif len(sampled_regular_df) < n_rem:
+                            shortfall = n_rem - len(sampled_regular_df)
+                            unused_df = regular_df.drop(sampled_regular_df.index)
+                            if len(unused_df) > 0:
+                                makeup_df = unused_df.sample(n=min(shortfall, len(unused_df)), random_state=42)
+                                sampled_regular_df = pd.concat([sampled_regular_df, makeup_df])
+                            
+                        sampled_df = pd.concat([protected_df, sampled_regular_df])
+                    else:
+                        sampled_df = protected_df
+
+                    balanced_dfs.append(sampled_df)
             else:
                 print(f"  Class {label} minority: Keeping all {min_count} frames.")
                 balanced_dfs.append(label_df)
@@ -335,6 +364,7 @@ def run_building(output_csv: str = None, balance_dataset: bool = True) -> None:
           f"Val={len(final_df[final_df['split'] == 'val'])}, "
           f"Test={len(final_df[final_df['split'] == 'test'])}")
     print(f"CSV saved to {output_csv}")
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Build dataset logic")
