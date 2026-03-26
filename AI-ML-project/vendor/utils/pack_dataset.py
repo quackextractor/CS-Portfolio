@@ -2,11 +2,12 @@ import os
 import pandas as pd
 import zipfile
 from pathlib import Path
+from tqdm import tqdm
 
 def pack_dataset(csv_path: str, output_zip: str):
     """
     Reads the dataset CSV and writes all referenced frames directly into an
-    uncompressed zip archive, bypassing the slow temporary copy phase.
+    uncompressed zip archive with a progress bar, bypassing the temp folder.
     """
     if not os.path.exists(csv_path):
         print(f"Error: CSV file not found at {csv_path}")
@@ -35,20 +36,21 @@ def pack_dataset(csv_path: str, output_zip: str):
     count = 0
     missing = 0
 
-    # Write directly to the zip file, skipping the temp folder entirely
+    # Write directly to the zip file
     with zipfile.ZipFile(base_name, 'w', zipfile.ZIP_STORED) as zipf:
-        for filepath in df['filepath']:
+        # Initialize tqdm progress bar
+        for filepath in tqdm(df['filepath'], desc="Zipping", unit="file"):
             filepath_str = str(filepath)
             
             if os.path.exists(filepath_str):
                 path_obj = Path(filepath_str)
                 
                 try:
-                    # Find 'processed' in the path and set it as the root for the archive
+                    # Find 'processed' in the path to start internal zip structure there
                     processed_idx = path_obj.parts.index('processed')
                     arcname = os.path.join(*path_obj.parts[processed_idx:])
                 except ValueError:
-                    # Fallback if 'processed' is somehow not in the filepath
+                    # Fallback to full path if 'processed' isn't found
                     arcname = filepath_str
                 
                 zipf.write(filepath_str, arcname)
