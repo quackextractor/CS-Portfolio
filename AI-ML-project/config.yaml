@@ -9,7 +9,7 @@ model:
   output_path: "vendor/models/target_detector.keras"
   face_detector_model_path: "vendor/models/blaze_face_short_range.tflite"
   img_size: 128
-  threshold: 0.5645
+# threshold: 0.5645 # Use model threshold instead
 camera:
   index: 0
 defaults:
