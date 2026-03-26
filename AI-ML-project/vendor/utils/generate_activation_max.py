@@ -7,11 +7,12 @@ from tqdm import tqdm
 
 
 @tf.function
-def gradient_ascent_step(img, target_model, base_size, loss_mode, filter_idx, jitter=2):
+def gradient_ascent_step(img, target_model, base_size, loss_mode, filter_idx, jitter=4):
     """
     Core gradient ascent step optimized with TensorFlow XLA.
+    Includes spatial masking to force centralized structures.
     """
-    # Spatial jitter to prevent noise patterns
+    # Increased spatial jitter to prevent hyper-specific micro-patterns
     shift_x = tf.random.uniform(shape=[], minval=-jitter, maxval=jitter + 1, dtype=tf.int32)
     shift_y = tf.random.uniform(shape=[], minval=-jitter, maxval=jitter + 1, dtype=tf.int32)
     img_shifted = tf.roll(tf.roll(img, shift_x, axis=1), shift_y, axis=2)
@@ -26,8 +27,8 @@ def gradient_ascent_step(img, target_model, base_size, loss_mode, filter_idx, ji
         else:
             loss = tf.reduce_mean(outputs[0, :, :, filter_idx])
 
-        # Total Variation penalty for clustered/smooth features
-        tv_penalty = 1e-3 * tf.reduce_sum(tf.image.total_variation(img_shifted))
+        # Increased Total Variation penalty to force smoother, larger regions
+        tv_penalty = 5e-3 * tf.reduce_sum(tf.image.total_variation(img_shifted))
         loss -= tf.cast(tv_penalty, loss.dtype)
         
         # Simple L2 decay
@@ -35,11 +36,24 @@ def gradient_ascent_step(img, target_model, base_size, loss_mode, filter_idx, ji
         loss -= tf.cast(l2_penalty, loss.dtype)
 
     gradients = tape.gradient(loss, img_shifted)
+    
     # Normalize gradients
     gradients /= (tf.math.sqrt(tf.reduce_mean(tf.square(gradients))) + 1e-8)
     # Unshift gradients
     gradients = tf.roll(tf.roll(gradients, -shift_x, axis=1), -shift_y, axis=2)
-    return gradients
+
+    # Apply Center Spatial Mask to force structure
+    _, h, w, _ = gradients.shape
+    y = tf.cast(tf.range(h), tf.float32) - tf.cast(h // 2, tf.float32)
+    x = tf.cast(tf.range(w), tf.float32) - tf.cast(w // 2, tf.float32)
+    y, x = tf.meshgrid(y, x, indexing='ij')
+    
+    # Create a bell curve (Gaussian) mask targeting the center
+    sigma = tf.cast(h, tf.float32) / 4.0
+    mask = tf.exp(-(x**2 + y**2) / (2.0 * sigma**2))
+    mask = tf.reshape(mask, [1, h, w, 1])
+
+    return gradients * mask
 
 
 def run_gradient_ascent(
@@ -101,18 +115,28 @@ def get_inference_submodel(model, target="output"):
 
 
 def generate_output_maximization(model, output_dir, base_size, iterations, learning_rate):
-    print("\n[1/2] Generating Class Maximization...")
+    print("\n[1/2] Generating Class Maximization with Spatial Priors...")
     activation_model = get_inference_submodel(model, target="output")
-    initial_img = tf.random.uniform(
-        (1, int(base_size / 2), int(base_size / 2), 3), minval=0.48, maxval=0.52
-    )
+
+    # Start with a soft centered blob instead of pure high-frequency noise
+    h, w = int(base_size / 2), int(base_size / 2)
+    y, x = np.ogrid[-h/2:h/2, -w/2:w/2]
+    mask = np.exp(-(x**2 + y**2) / (2.0 * (h/4.0)**2))
+    
+    # Base gray background with a slightly brighter center
+    base_blob = np.ones((1, h, w, 3)) * 0.45
+    base_blob[0, :, :, :] += np.expand_dims(mask, axis=-1) * 0.1
+    initial_img = tf.convert_to_tensor(base_blob, dtype=tf.float32)
+
+    # Added one more octave, reduced scale for smoother transitions
     img_final = run_gradient_ascent(
         activation_model, initial_img, base_size, iterations, learning_rate,
-        octaves=3, octave_scale=1.4, loss_mode="output"
+        octaves=4, octave_scale=1.3, loss_mode="output"
     )
+    
     final_img_np = (img_final.numpy()[0] * 255).astype(np.uint8)
     cv2.imwrite(
-        os.path.join(output_dir, "target_activation_maximization.png"),
+        os.path.join(output_dir, "target_activation_maximization_structured.png"),
         cv2.cvtColor(final_img_np, cv2.COLOR_RGB2BGR)
     )
 
