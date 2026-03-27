@@ -38,6 +38,11 @@ def pack_dataset(csv_path: str, output_zip: str):
 
     # Write directly to the zip file
     with zipfile.ZipFile(base_name, 'w', zipfile.ZIP_STORED) as zipf:
+        
+        # Add the CSV file itself to the root of the archive
+        zipf.write(csv_path, os.path.basename(csv_path))
+        print(f"Added {os.path.basename(csv_path)} to the archive.")
+
         # Initialize tqdm progress bar
         for filepath in tqdm(df['filepath'], desc="Zipping", unit="file"):
             filepath_str = str(filepath)
