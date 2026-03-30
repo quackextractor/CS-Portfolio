@@ -156,17 +156,3 @@ Press the `q` key on your keyboard to instantly quit the application and release
 | `m` | Toggle Horizontal Mirror |
 | `n` | Toggle Hard Negative Mining |
 | `{` / `}` | Decrease/Increase Mining Frequency |
-
-## Upgrading to Full TensorFlow (GPU Support)
-
-The default portable deployment uses `tensorflow-cpu` to save over a gigabyte of storage space, ensuring the environment fits easily on a USB drive and runs efficiently on standard school computers. 
-
-If you later move the project to a machine with a dedicated NVIDIA GPU and want to accelerate model training or inference, you can swap back to the full TensorFlow package.
-
-1. Open your terminal (or the `WinPython Command Prompt.exe` if using the USB deployment).
-2. Navigate to the project root directory.
-3. Uninstall the lightweight CPU version by running:
-   `pip uninstall tensorflow-cpu`
-4. Install the full TensorFlow library by running:
-   `pip install tensorflow`
-5. Open your `requirements.txt` file in a text editor and change `tensorflow-cpu>=2.14.0` back to `tensorflow>=2.14.0` to keep your environment documentation accurate.
