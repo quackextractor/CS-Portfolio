@@ -10,7 +10,7 @@ data:
   test_split_size: 0.2
   random_seed: 42
 model:
-  output_path: "vendor/models/target_detector2.keras"
+  output_path: "vendor/models/target_detector.keras"
   face_detector_model_path: "vendor/models/blaze_face_short_range.tflite"
   img_size: 128
 camera:
