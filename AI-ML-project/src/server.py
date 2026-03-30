@@ -86,6 +86,9 @@ def make_gradcam_heatmap(img_tensor, grad_model):
     return heatmap.numpy()
 
 def run_server():
+    log = logging.getLogger('werkzeug')
+    log.setLevel(logging.ERROR)
+    
     app = Flask(__name__)
     config = load_config()
     model_path = config["model"]["output_path"]
