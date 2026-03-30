@@ -70,24 +70,9 @@ def main(
 ):
     config = load_config()
     server_url = config.get("server", {}).get("url", "http://127.0.0.1:5000/predict")
-    config_url = server_url.replace("/predict", "/configure")
-    
-    model_path = config["model"]["output_path"]
     img_size = config["model"]["img_size"]
     camera_index = config["camera"]["index"]
     face_model_path = config["model"].get("face_detector_model_path", "models/blaze_face_short_range.task")
-
-    logging.info(f"Syncing configuration with remote server: requesting model '{model_path}'")
-    try:
-        response = requests.post(config_url, json={"model_path": model_path}, timeout=10.0)
-        if response.status_code == 200:
-            logging.info(f"Server synchronized successfully: {response.json().get('message')}")
-        else:
-            logging.error(f"Server refused configuration sync: {response.text}")
-            return
-    except Exception as e:
-        logging.error(f"Could not reach server at {config_url} for initial configuration sync. Is it running?")
-        return
 
     mining_defaults = config.get("defaults", {}).get("run", {}).get("mining", {})
     if mine_frame_rate is None:

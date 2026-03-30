@@ -91,56 +91,19 @@ def run_server():
     
     app = Flask(__name__)
     config = load_config()
-    initial_model_path = config["model"]["output_path"]
+    model_path = config["model"]["output_path"]
     img_size = config["model"]["img_size"]
 
-    # Store model state inside the Flask app context
-    app.config['CURRENT_MODEL_PATH'] = initial_model_path
-    app.config['MODEL'] = None
-    app.config['GRAD_MODEL'] = (None, None)
+    if not os.path.exists(model_path):
+        logging.error(f"Error: Model file not found at {model_path}.")
+        return
 
-    if os.path.exists(initial_model_path):
-        logging.info(f"Loading initial model from {initial_model_path}...")
-        app.config['MODEL'] = tf.keras.models.load_model(initial_model_path, compile=False, safe_mode=False)
-        app.config['GRAD_MODEL'] = get_grad_model(app.config['MODEL'])
-    else:
-        logging.warning(f"Initial model not found at {initial_model_path}. Waiting for client configuration.")
-
-    @app.route("/configure", methods=["POST"])
-    def configure():
-        data = request.json
-        new_path = data.get("model_path")
-        
-        if not new_path:
-            return jsonify({"error": "No model_path provided"}), 400
-            
-        if new_path == app.config['CURRENT_MODEL_PATH'] and app.config['MODEL'] is not None:
-            return jsonify({"status": "unchanged", "message": "Model is already loaded"})
-            
-        if not os.path.exists(new_path):
-            return jsonify({"error": f"Model file not found on server at {new_path}"}), 404
-            
-        try:
-            logging.info(f"Client requested model change. Loading {new_path}...")
-            new_model = tf.keras.models.load_model(new_path, compile=False, safe_mode=False)
-            new_grad_model = get_grad_model(new_model)
-            
-            # Hot-swap the models in memory
-            app.config['MODEL'] = new_model
-            app.config['GRAD_MODEL'] = new_grad_model
-            app.config['CURRENT_MODEL_PATH'] = new_path
-            
-            logging.info("Model swap successful.")
-            return jsonify({"status": "success", "message": f"Swapped to {new_path}"})
-        except Exception as e:
-            logging.error(f"Failed to load new model: {e}")
-            return jsonify({"error": str(e)}), 500
+    logging.info(f"Loading model from {model_path}...")
+    model = tf.keras.models.load_model(model_path, compile=False, safe_mode=False)
+    grad_model = get_grad_model(model)
 
     @app.route("/predict", methods=["POST"])
     def predict():
-        if app.config['MODEL'] is None:
-            return jsonify({"error": "No model loaded on server. Send /configure request first."}), 503
-
         data = request.json
         if not data or "faces" not in data:
             return jsonify({"error": "No faces provided"}), 400
@@ -159,9 +122,7 @@ def run_server():
             batch_faces.append(normalized_face)
 
         batch_tensor = np.array(batch_faces, dtype=np.float32)
-        
-        # Use the dynamically loaded model
-        predictions = app.config['MODEL'](batch_tensor, training=False)
+        predictions = model(batch_tensor, training=False)
         
         results = []
         for idx, pred_tensor in enumerate(predictions):
@@ -171,7 +132,7 @@ def run_server():
             if needs_gradcam:
                 input_face = np.expand_dims(batch_faces[idx], axis=0)
                 input_tensor = tf.convert_to_tensor(input_face, dtype=tf.float32)
-                heatmap_np = make_gradcam_heatmap(input_tensor, app.config['GRAD_MODEL'])
+                heatmap_np = make_gradcam_heatmap(input_tensor, grad_model)
                 
                 heatmap_uint8 = (heatmap_np * 255).astype(np.uint8)
                 _, buffer = cv2.imencode('.png', heatmap_uint8)
