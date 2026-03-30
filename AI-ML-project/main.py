@@ -72,10 +72,10 @@ def main():
     parser = argparse.ArgumentParser(
         description=(
             "Target Face Detector - Unified CLI Tool\n\n"
-            "Typical first-time setup:\n"
-            "  python main.py setup   # download required model files\n"
-            "  python main.py build   # process raw images into dataset CSV\n"
-            "  python main.py run     # launch live webcam inference"
+            "Deployment Commands:\n"
+            "  python main.py serve             # start the inference server (home PC)\n"
+            "  python main.py run --client      # launch lightweight webcam client (school PC)\n"
+            "  python main.py run               # launch standard local inference"
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
@@ -89,10 +89,21 @@ def main():
         help="Download required MediaPipe model files (run once after pip install)",
     )
 
+    # Command: serve
+    subparsers.add_parser(
+        "serve",
+        help="Start the Flask inference server to process images remotely",
+    )
+
     # Command: run
     parser_run = subparsers.add_parser(
         "run",
         help="Launch the live webcam face detection application, run on a video, or screenshare",
+    )
+    parser_run.add_argument(
+        "--client",
+        action="store_true",
+        help="Run in lightweight client mode (bypasses local TensorFlow requirements)",
     )
     parser_run.add_argument(
         "--video", type=str, default=None, help="Path to a video file for inference"
@@ -321,8 +332,17 @@ def main():
     if args.command == "setup":
         from vendor.setup_models import download_models
         download_models()
+    elif args.command == "serve":
+        from src.server import run_server
+        run_server()
     elif args.command == "run":
-        from src.app import main as run_inference
+        if getattr(args, "client", False):
+            from src.client import main as run_inference
+            logging.info("Running in lightweight client mode (Remote Inference)")
+        else:
+            from src.app import main as run_inference
+            logging.info("Running in standard mode (Local Inference)")
+
         screen_mode = getattr(args, "screen", False)
         gradcam_mode = getattr(args, "gradcam", False)
         heatmap_sensitivity = getattr(args, "heatmap_sensitivity", 5.0)

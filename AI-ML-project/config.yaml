@@ -1,3 +1,7 @@
+server:
+  host: "127.0.0.1"
+  port: 5000
+  url: "http://127.0.0.1:5000/predict"
 data:
   raw_positive_dir: "data/raw/positive"
   raw_negative_dir: "data/raw/negative"
@@ -9,7 +13,6 @@ model:
   output_path: "vendor/models/target_detector.keras"
   face_detector_model_path: "vendor/models/blaze_face_short_range.tflite"
   img_size: 128
-# threshold: 0.5645 # Use model threshold instead
 camera:
   index: 0
 defaults:
