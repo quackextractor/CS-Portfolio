@@ -75,8 +75,8 @@ def _compute_heatmap_graph(img_tensor, feature_extractor, classifier):
     heatmap = tf.maximum(heatmap, 0.0)
 
     heatmap_max = tf.reduce_max(heatmap)
-    if heatmap_max > 0:
-        heatmap = heatmap / heatmap_max
+    # Use divide_no_nan to safely handle the division without needing an 'if' statement
+    heatmap = tf.math.divide_no_nan(heatmap, heatmap_max)
     return heatmap
 
 def make_gradcam_heatmap(img_tensor, grad_model):
